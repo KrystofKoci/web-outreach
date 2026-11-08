@@ -1,0 +1,54 @@
+/* Společný základ vzorů hero (AI_FIRMA, 3. 11. 2026). Barvy, písma a rozvržení si určuje každý vzor sám. */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+body { margin: 0; }
+img, picture, svg, canvas { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+h1, h2, h3, h4, p, ul, ol, dl, dd, figure, blockquote { margin: 0; padding: 0; }
+ul, ol { list-style: none; }
+:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 4px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* plynulá změna tématu */
+body, body * { transition-property: background-color, border-color, color, fill, stroke; transition-duration: .35s; transition-timing-function: ease; }
+
+/* nadpis se složí: skryje se jen když běží pohyb (třídu .pohyb přidá skript v <head>) */
+html.pohyb [data-slozit] { visibility: hidden; }
+.sl-w { display: inline-block; vertical-align: top; clip-path: inset(-0.45em -0.12em -0.24em -0.12em); } /* horní rezerva kvůli vysoké diakritice verzálek (Č, Ř, Í) */
+.sl-i { display: inline-block; will-change: transform; }
+html.pohyb [data-po-nadpisu] { opacity: 0; }
+
+/* postupné odhalování */
+html.pohyb [data-odhalit]:not([data-odhalit="deti"]),
+html.pohyb [data-odhalit="deti"] > * { opacity: 0; transform: translate3d(0, 22px, 0);
+  transition: opacity .9s cubic-bezier(.2,.7,.1,1), transform .9s cubic-bezier(.2,.7,.1,1); }
+html.pohyb [data-odhalit].odhaleno:not([data-odhalit="deti"]),
+html.pohyb [data-odhalit="deti"].odhaleno > * { opacity: 1; transform: none; }
+
+/* magnet */
+[data-magnet] { transition: transform .45s cubic-bezier(.2,.7,.1,1), background-color .35s, color .35s, border-color .35s; will-change: transform; }
+[data-magnet-vnitrek] { display: inline-flex; transition: transform .45s cubic-bezier(.2,.7,.1,1); }
+
+/* parallax: vzor použije translate přes proměnné --px-scroll, --px-mys-x, --px-mys-y */
+
+/* stopa částic */
+[data-stopa] { position: relative; }
+.stopa-platno { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: var(--stopa-z, 5); }
+
+/* přepínač tématu: základ (vzor může přestylovat) */
+.tema-prepinac { width: 40px; height: 40px; border-radius: 999px; display: inline-grid; place-items: center;
+  border: 1px solid color-mix(in srgb, currentColor 28%, transparent); }
+.tema-prepinac svg { width: 18px; height: 18px; }
+.tema-prepinac .ikona-mesic { display: none; }
+html[data-tema="tmava"] .tema-prepinac .ikona-slunce { display: none; }
+html[data-tema="tmava"] .tema-prepinac .ikona-mesic { display: block; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  html.pohyb [data-slozit] { visibility: visible; }
+}
+
+/* focus na hlavních tlačítkách: obrys v barvě textu stránky (ne v barvě popisku tlačítka).
+   Kde CTA leží na fotce nebo ploše, na které --text nemá kontrast ≥ 3:1, nastav ve stránce --fokus. */
+[data-magnet]:focus-visible, .cta:focus-visible { outline: 2px solid var(--fokus, var(--text, currentColor)); outline-offset: 4px; }

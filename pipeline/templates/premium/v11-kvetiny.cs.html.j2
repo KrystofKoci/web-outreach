@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+
+<html lang="cs">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>{{ page_title }}</title>
+<meta content="{{ meta_description }}" name="description"/>
+<script>
+  (function(){var q=new URLSearchParams(location.search),h=document.documentElement;
+  h.dataset.tema=(q.get('tema')==='tmava'||location.hash==='#tmava')?'tmava':'svetla';
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&q.get('pohyb')!=='0'){h.classList.add('pohyb');h.classList.add('ps');setTimeout(function(){if(!h.classList.contains('ps-bezi'))h.classList.remove('ps');},4000);}})();
+</script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&amp;family=Inter+Tight:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="{{ A }}zaklad.css" rel="stylesheet"/>
+<style>
+  /* V11 Nadpis + mřížka nebo pás karet – wordmark nahoře + fotopás (kolo 8: bez objektu přes hranu): BUILT FLAVOUR (uxui_DZeW-cOIp79_1),
+     DESIGNTHINKING (marcelo_DeQEo7HBCM0_5); písmo a paleta BLOOM (uxui_DeOyWEjIGVp_4) */
+  :root {
+    --pozadi:#EFE9E0;        /* teplá slonovina */
+    --text:#1B1714;
+    --tlumeny:#625A52;
+    --linka:rgba(27,23,20,.14);
+    --akcent:#B4472A;        /* korál ztmavený pro AA */
+    --na-akcentu:#FFFFFF;
+    --stopa:#CDBFAF;
+    --pilulka:rgba(27,23,20,.05);
+    --pilulka-akt:#FFFFFF;
+    --foto-filtr: none;
+    --noc: transparent;          /* tónování fotek do noci (jen tmavá) */
+  }
+  html[data-tema="tmava"] {
+    --pozadi:#141110;
+    --text:#EDE6DC;
+    --tlumeny:#A0968C;
+    --linka:rgba(237,230,220,.14);
+    --akcent:#E58A64;
+    --na-akcentu:#1B1714;
+    --stopa:#3A302A;
+    --pilulka:rgba(237,230,220,.06);
+    --pilulka-akt:rgba(237,230,220,.14);
+    /* noc: fotky tmavší, chladnější a méně syté */
+    --foto-filtr: brightness(.7) saturate(.72) contrast(1.06);
+    --noc: linear-gradient(180deg, rgba(26,18,34,.18) 0%, rgba(20,14,28,.58) 100%);
+  }
+  body { background: var(--pozadi); color: var(--text); font-family: "Inter Tight", system-ui, sans-serif; font-size: 16px; line-height: 1.5; }
+  .verzalky { font-weight: 500; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; line-height: 1.7; }
+  .doplnit { color: var(--tlumeny); }
+
+  .hero { position: relative; min-height: max(100svh, 640px); overflow: hidden; isolation: isolate; display: flex; flex-direction: column; }
+
+  /* wordmark přes celou šířku nahoře */
+  .wordmark { position: relative; z-index: 2; margin: 1.9vw 0 0; padding: 0 1.6vw; font-family: "Unbounded", sans-serif; font-weight: 800; font-size: 20vw; line-height: .8;
+    letter-spacing: -.035em; text-align: center; white-space: nowrap; color: var(--text); }
+
+  /* řada pod wordmarkem: lišta (pilulková skupina) + popis + CTA */
+  .rada { position: relative; z-index: 6; display: flex; align-items: center; gap: 16px; padding: 1.5vw 2.6vw 1.6vw; }
+  .lista { position: relative; display: flex; align-items: center; gap: 10px; margin-right: auto; }   /* kolo 8: bez pivoňky odsune popis a CTA doprava */
+  .lista nav ul { display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--pilulka); border: 1px solid var(--linka); }
+  .lista nav a { display: block; padding: 9px 18px; border-radius: 999px; font-size: 14px; }
+  .lista nav a[aria-current="page"] { background: var(--pilulka-akt); }
+  .hamburger { display: none; width: 40px; height: 40px; place-items: center; border-radius: 50%; border: 1px solid var(--linka); }
+  .hamburger i { display: grid; gap: 5px; width: 18px; }
+  .hamburger span { display: block; height: 1.5px; background: currentColor; }
+  .hamburger[aria-expanded="true"] i { gap: 0; }
+  .hamburger[aria-expanded="true"] span:first-child { transform: translateY(.75px) rotate(45deg); }
+  .hamburger[aria-expanded="true"] span:last-child { transform: translateY(-.75px) rotate(-45deg); }
+  .menu-panel { position: absolute; top: calc(100% + 10px); left: 0; right: 0; z-index: 30; padding: 8px 22px 22px; border-radius: 20px;
+    background: var(--pozadi); border: 1px solid var(--linka); box-shadow: 0 18px 40px -24px rgba(0,0,0,.4); }
+  .menu-panel[hidden] { display: none; }
+  .menu-panel .pilulka-plna:focus-visible { outline-color: var(--text); outline-offset: 4px; }   /* obrys v barvě textu, ne bílý na světlém panelu */
+  .menu-panel li a { display: block; padding: 14px 0; font-size: 17px; border-bottom: 1px solid var(--linka); }
+  .menu-panel .pilulka-plna { margin-top: 18px; height: 48px; padding: 0 22px; border-radius: 999px; display: inline-flex; align-items: center; gap: 10px;
+    background: var(--akcent); color: var(--na-akcentu); font-weight: 500; }
+  .popis { flex: none; max-width: 15.5em; font-size: 15px; line-height: 1.45; color: var(--tlumeny); text-align: right; text-wrap: balance; }
+  .cta { flex: none; display: inline-flex; align-items: center; gap: 14px; height: 52px; padding: 0 6px 0 24px; border-radius: 999px;
+    background: var(--akcent); color: var(--na-akcentu); font-weight: 500; font-size: 15px; }
+  .cta .kolecko { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--text); color: var(--pozadi); }
+  .cta svg { width: 15px; height: 15px; }
+
+  /* fotopás */
+  .pas { position: relative; z-index: 1; flex: 1; min-height: 300px; display: grid; grid-template-columns: 1fr 1.32fr 1fr 1.32fr 1fr; gap: 6px; margin: 0; }
+  .pas figure { position: relative; overflow: hidden; margin: 0; }
+  .pas figure::after { content: ""; position: absolute; inset: 0; background: var(--noc); pointer-events: none; }
+  .pas img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: var(--foto-filtr); }
+  /* Pixel Scan (HorizonX, přepsáno do čistého WebGL): dokud fotka neprošla průchodem, kryje ji plocha stránky.
+     .ps nastaví hlavička jen s pohybem; když WebGL chybí, skript třídu sundá a fotky jsou rovnou celé. */
+  html.ps .pas figure { background: var(--pozadi); }
+  html.ps .pas figure:not(.ps-hotovo):not(.ps-jede) img, html.ps .pas figure:not(.ps-hotovo):not(.ps-jede)::after { visibility: hidden; }
+  .pas canvas.ps-platno { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+  .pas figure:nth-child(2) img { object-position: 45% 40%; }
+  .pas figure:nth-child(3) img { object-position: 50% 30%; }
+  .pas figure:nth-child(4) img { object-position: 40% 40%; }
+
+  .pata { position: relative; z-index: 6; display: flex; justify-content: space-between; align-items: center; padding: 14px 2.6vw 16px; color: var(--text); }
+  .pata p { margin: 0; }
+
+  /* ---------- nabídka s vějířem fotek (HorizonX „gallery-fan“ ve vanilla JS, převzato z V08 kvůli jednotnosti) ----------
+     Každá sekce: řádek nadpis | text | cena, pod ním 5 karet 2:3 (rádius 14 px, mezera 16 px).
+     S pohybem: sekce je scroll range, scéna je sticky; karty přijedou zprava, přes vějíř (abs(i−2)·3°, origin 50 % 0 %)
+     se složí do řady, popisky vyjedou zdola. Bez pohybu (reduced motion, ?pohyb=0) rovnou složený stav. */
+  .fan { position: relative; --kw: min(calc((100vw - 5.2vw - 64px) / 5), calc((100svh - 330px) * .6667)); }
+  .fan + .fan .fan-hlava { border-top-color: transparent; }
+  .fan-scena { padding: 96px 2.6vw 72px; }
+  .fan-hlava { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) auto; gap: 4vw; align-items: baseline;
+    padding-top: 28px; border-top: 1px solid var(--linka); }
+  .fan-hlava h2 { font-weight: 500; font-size: clamp(2rem, 3vw, 3rem); line-height: 1.08; letter-spacing: -.035em; margin: 0; }
+  .fan-hlava p { color: var(--tlumeny); max-width: 44ch; }
+  .fan-hlava .cena { white-space: nowrap; font-size: 15px; }
+  .fan-rada { display: flex; gap: 16px; margin-top: 48px; justify-content: center; }
+  .karta-fan { flex: none; width: var(--kw); margin: 0; }
+  .karta-fan .foto { display: block; width: 100%; aspect-ratio: 2 / 3; border-radius: 14px; overflow: hidden; transform-origin: 50% 0%;
+    background: color-mix(in srgb, var(--text) 8%, var(--pozadi)); }
+  .karta-fan img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  html[data-tema="tmava"] .karta-fan img { filter: brightness(.86) saturate(.9); }
+  .karta-fan figcaption { overflow: hidden; margin-top: 14px; min-height: 3.2em; }
+  .karta-fan figcaption span { display: block; }
+  .karta-fan .co { font-weight: 500; font-size: 17px; line-height: 1.25; letter-spacing: -.015em; }
+  .karta-fan .veta { font-size: 14px; line-height: 1.45; color: var(--tlumeny); margin-top: 3px; max-width: 30ch; }
+
+  @media (min-height: 560px) {
+    html.pohyb .fan { height: calc(100svh + 130vh); }
+    html.pohyb .fan-scena { position: sticky; top: 0; height: 100svh; overflow: clip; display: flex; flex-direction: column; justify-content: center; }
+    html.pohyb .karta-fan .foto, html.pohyb .karta-fan figcaption span { will-change: transform, opacity; }
+  }
+
+  /* ---------- hodnocení Google (jen když je recenzí víc než 45, viz RECENZE ve skriptu) ---------- */
+  .hodnoceni { padding: 110px 2.6vw 120px; border-top: 1px solid var(--linka); }
+  .hodnoceni[hidden] { display: none; }
+  .hod-souhrn { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 4vw; align-items: end; }
+  .hod-souhrn h2 { font-weight: 500; font-size: clamp(2rem, 3vw, 3rem); line-height: 1.08; letter-spacing: -.035em; }
+  .hod-cislo { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+  .hod-cislo .znamka { font-family: "Unbounded", sans-serif; font-weight: 800; font-size: clamp(2.4rem, 3.6vw, 3.6rem); line-height: 1; letter-spacing: -.035em; }
+  .hod-cislo .znamka.doplnit { font-family: inherit; font-weight: 500; font-size: clamp(1.3rem, 1.8vw, 1.8rem); letter-spacing: -.02em; }
+  .hod-cislo .pocet, .hod-cislo .podil { color: var(--tlumeny); font-size: 15px; }
+  .hvezdy { display: inline-flex; gap: 3px; color: var(--akcent); }
+  .hvezdy svg { width: 15px; height: 15px; }
+  .hod-seznam { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 56px; border-top: 1px solid var(--linka); }
+  .hod-seznam li { padding: 30px 32px 6px 0; display: grid; gap: 16px; align-content: start; }
+  .hod-seznam li + li { padding-left: 32px; border-left: 1px solid var(--linka); }
+  .hod-seznam blockquote { margin: 0; font-size: 18px; line-height: 1.45; letter-spacing: -.01em; color: var(--tlumeny); }
+  .hod-seznam .kdo { font-size: 14px; color: var(--tlumeny); }
+  .hod-zdroj { margin-top: 36px; font-size: 14px; color: var(--tlumeny); }
+  .hod-zdroj a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+
+  /* ---------- patička ---------- */
+  .paticka { padding: 64px 2.6vw 40px; border-top: 1px solid var(--linka); display: grid; grid-template-columns: 1fr repeat(3, auto); gap: 24px 64px; align-items: start; }
+  .paticka .logo { display: inline-block; margin-bottom: 10px; font-family: "Unbounded", sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -.035em; line-height: 1; }
+  .paticka p { color: var(--tlumeny); font-size: 14px; }
+  .paticka dt { color: var(--tlumeny); }
+  .paticka dd { margin: 4px 0 0; font-size: 15px; }
+  .paticka .spodek { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 16px; margin-top: 36px; padding-top: 20px; border-top: 1px solid var(--linka); font-size: 13px; color: var(--tlumeny); }
+
+  /* kolo 8: bez pivoňky je v řadě místo. Odstavec se nevejde jen mezi 761 a 980 px (pilulky + odstavec + CTA). */
+  @media (max-width: 980px) and (min-width: 761px) { .popis { display: none; } }
+  @media (max-width: 760px) {
+    .wordmark { margin-top: 18px; padding: 0 8px; font-size: 19.6vw; order: 1; }
+    /* řada se rozpustí: lišta a popis nahoře, CTA dole u palce pod pásem */
+    .rada { display: contents; }
+    .lista { order: 2; z-index: 8; margin: 14px 20px 0; justify-content: space-between; }
+    .lista nav { display: none; }
+    .lista .znacka { font-size: 14px; margin-right: auto; }
+    .hamburger { display: inline-grid; }
+    .popis { order: 3; position: relative; z-index: 6; margin: 10px 20px 16px; text-align: left; max-width: none; font-size: 15px; }
+    .pas { order: 4; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 6px; padding: 0 20px; scrollbar-width: none; min-height: 0; flex: 1 0 280px; }
+    .pas::-webkit-scrollbar { display: none; }
+    .pas figure { flex: 0 0 64vw; scroll-snap-align: start; scroll-margin-left: 20px; }
+    .cta { order: 5; position: relative; z-index: 6; align-self: flex-start; margin: 16px 20px 0; }
+    .pata { order: 6; padding: 12px 20px 16px; }
+    .fan { --kw: min(58vw, calc((100svh - 400px) * .6667)); }
+    .fan-scena { padding: 76px 20px 48px; }
+    .fan-hlava { grid-template-columns: 1fr auto; gap: 10px 16px; padding-top: 22px; }
+    .fan-hlava p { grid-column: 1 / -1; grid-row: 2; font-size: 15px; }
+    .fan-hlava .cena { grid-column: 2; grid-row: 1; }
+    .fan-rada { justify-content: flex-start; margin-top: 30px; overflow-x: auto; scroll-snap-type: x mandatory; margin-inline: -20px; padding: 0 20px 6px; scrollbar-width: none; }
+    .fan-rada::-webkit-scrollbar { display: none; }
+    .karta-fan { scroll-snap-align: start; }
+    html.pohyb .fan-rada { overflow: visible; scroll-snap-type: none; }
+    .hodnoceni { padding: 80px 20px 90px; }
+    .hod-souhrn { grid-template-columns: 1fr; gap: 20px; }
+    .hod-seznam { grid-template-columns: 1fr; margin-top: 36px; }
+    .hod-seznam li, .hod-seznam li + li { padding: 26px 0; border-left: 0; }
+    .hod-seznam li + li { border-top: 1px solid var(--linka); }
+    .paticka { grid-template-columns: 1fr 1fr; padding: 56px 20px 32px; gap: 24px; }
+    .paticka > div:first-child { grid-column: 1 / -1; }
+    .paticka .spodek { flex-direction: column; gap: 6px; }
+  }
+  @media (min-width: 761px) { .lista .znacka { display: none; } }
+</style>
+<style id="pz-css">
+.pz-hod{padding:clamp(56px,9vw,104px) 24px;text-align:center;color:inherit;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-hod .pz-in{max-width:560px;margin:0 auto}
+.pz-hod .pz-cislo{font-size:clamp(44px,7vw,72px);line-height:1;margin:0;font-weight:500;letter-spacing:-.02em}
+.pz-hod .pz-cislo span{font-size:.32em;opacity:.7;letter-spacing:0;margin-left:.3em}
+.pz-hod .pz-hv{position:relative;display:inline-block;font-size:22px;letter-spacing:4px;margin:14px 0 8px;color:color-mix(in srgb,currentColor 22%,transparent)}
+.pz-hod .pz-hv b{position:absolute;inset:0 auto 0 0;overflow:hidden;white-space:nowrap;color:var(--akcent,var(--accent,#E3A008));font-weight:400}
+.pz-hod .pz-pod{margin:0 0 14px;opacity:.78}
+.pz-hod a{color:inherit}
+.pz-pata{padding:28px 24px 34px;text-align:center;font-size:14px;opacity:.85;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-pata p{margin:4px 0}.pz-pata a{color:inherit}
+.pz-credit{font-size:12px;opacity:.7;text-align:center;padding:0 24px 22px}
+.pz-credit a{color:inherit}
+.pz-pv{position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;background:#111827;color:#fff;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;
+ padding:10px 14px;border-radius:14px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.pz-pv a{color:#fff}.pz-pv .pz-cta{background:#fff;color:#111827;text-decoration:none;font-weight:700;padding:.4em .85em;border-radius:999px}
+.pz-pv button{background:none;border:0;color:#fff;opacity:.8;cursor:pointer;font:inherit;text-decoration:underline}
+.pz-pv.pz-skryt{display:none}
+@media print{.pz-pv{display:none}}
+</style><style id="pz-ext-css">
+.pz-ext{color:var(--text,inherit);border-top:1px solid var(--linka,color-mix(in srgb,currentColor 14%,transparent))}
+.pz-ext .pz-obal{max-width:1180px;margin:0 auto;padding:clamp(64px,9vw,120px) clamp(20px,5vw,56px)}
+.pz-ext h2{font-family:var(--pz-h,inherit);font-size:clamp(30px,4.2vw,52px);line-height:1.05;margin:0 0 18px;font-weight:500;letter-spacing:-.01em}
+.pz-ext .pz-uvod{max-width:620px;color:var(--tlumeny,inherit);opacity:.95;margin:0 0 40px;font-size:18px;line-height:1.55}
+.pz-ext .pz-tri{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.pz-ext .pz-tri h3{font-size:20px;margin:0 0 8px;font-weight:600}
+.pz-ext .pz-tri p{margin:0;color:var(--tlumeny,inherit);line-height:1.55}
+.pz-ext .pz-tri div{padding-top:18px;border-top:2px solid var(--akcent,currentColor)}
+.pz-ext .pz-dva{display:grid;grid-template-columns:1fr 1.2fr;gap:clamp(28px,5vw,72px);align-items:start}
+.pz-ext dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:10px 18px}
+.pz-ext dt{color:var(--tlumeny,inherit)}.pz-ext dd{margin:0}
+.pz-ext a{color:inherit}
+.pz-ext .pz-hod-t{margin-top:26px;display:grid;grid-template-columns:auto 1fr;gap:6px 18px;font-variant-numeric:tabular-nums}
+.pz-ext .pz-hod-t .dnes{font-weight:700}
+.pz-ext form{display:grid;gap:14px}
+.pz-ext label{display:grid;gap:6px;font-size:14px;color:var(--tlumeny,inherit)}
+.pz-ext input,.pz-ext textarea{font:inherit;font-size:16px;color:var(--text,inherit);background:transparent;border:1px solid var(--linka,color-mix(in srgb,currentColor 25%,transparent));border-radius:12px;padding:12px 14px}
+.pz-ext textarea{min-height:120px;resize:vertical}
+.pz-ext input:focus,.pz-ext textarea:focus{outline:2px solid var(--akcent,currentColor);outline-offset:1px}
+.pz-ext button{justify-self:start;font:inherit;font-weight:600;background:var(--akcent,currentColor);color:var(--na-akcentu,#fff);border:0;border-radius:999px;padding:13px 24px;cursor:pointer}
+.pz-ext .pz-ok{min-height:1.4em;margin:0;font-size:15px}
+.pz-ext details{border-top:1px solid var(--linka,color-mix(in srgb,currentColor 18%,transparent));padding:18px 0}
+.pz-ext details:last-of-type{border-bottom:1px solid var(--linka,color-mix(in srgb,currentColor 18%,transparent))}
+.pz-ext summary{cursor:pointer;font-size:clamp(19px,2vw,23px);font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:16px}
+.pz-ext summary::after{content:"+";font-weight:400}.pz-ext details[open] summary::after{content:"–"}
+.pz-ext summary::-webkit-details-marker{display:none}
+.pz-ext details p{max-width:760px;line-height:1.65;color:var(--tlumeny,inherit);margin:12px 0 0}
+@media (max-width:820px){.pz-ext .pz-tri,.pz-ext .pz-dva{grid-template-columns:1fr}}
+</style></head>
+<body>
+<main>
+<section class="hero">
+<h1 class="wordmark" data-slozit="">{{ brand_up }}<span class="sr-only"> – květinářství</span></h1>
+<div class="rada">
+<header class="lista">
+<span class="znacka verzalky">Květinářství</span>
+<nav aria-label="Hlavní">
+<ul>
+<li><a aria-current="page" href="#">Kytice</a></li>
+<li><a href="#sluzby">Svatby</a></li>
+<li><a href="#sluzby">Ateliér</a></li>
+<li><a href="#kontakt">Kontakt</a></li>
+</ul>
+</nav>
+<button aria-label="Přepnout na tmavý režim" aria-pressed="false" class="tema-prepinac" data-prepnout-tema="" type="button">
+<svg class="ikona-slunce" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+<svg class="ikona-mesic" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg>
+</button>
+<button aria-controls="menu" aria-expanded="false" aria-label="Menu" class="hamburger" data-menu="" type="button"><i><span></span><span></span></i></button>
+<div class="menu-panel" hidden="" id="menu">
+<ul>
+<li><a aria-current="page" href="#">Kytice</a></li>
+<li><a href="#sluzby">Svatby</a></li>
+<li><a href="#sluzby">Ateliér</a></li>
+<li><a href="#kontakt">Kontakt</a></li>
+</ul>
+<a class="pilulka-plna" href="#kontakt">Objednat kytici <span aria-hidden="true">→</span></a>
+</div>
+</header>
+<p class="popis" data-po-nadpisu="0.1">Kytici svážeme na počkání, nebo podle toho, co nám napíšete.</p>
+<a class="cta" data-magnet="" data-po-nadpisu="0.2" href="#kontakt"><span data-magnet-vnitrek="">Objednat kytici</span><span aria-hidden="true" class="kolecko"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></span></a>
+</div>
+<div class="pas" data-pixel-scan="">
+<figure><img alt="Bílé pivoňky ve skleněné váze u okna" height="1100" src="{{ A }}img/V11-kvetiny-okno.webp" width="736"/></figure>
+<figure><img alt="Ruce floristky vážou kytici z růžiček a bílých květů" height="1100" src="{{ A }}img/V11-kvetiny-vazani.webp" width="794"/></figure>
+<figure><img alt="Broskvové zahradní růže v kytici zblízka" height="900" src="{{ A }}img/V11-kvetiny-broskvove-ruze.webp" width="830"/></figure>
+<figure><img alt="Floristka skládá kytici z bílé hortenzie a růžových růží" height="980" src="{{ A }}img/V11-kvetiny-aranzovani.webp" width="860"/></figure>
+<figure><img alt="Sytě malinové pivoňky na světlé drapérii" height="730" src="{{ A }}img/V11-kvetiny-malinove-pivonky.webp" width="920"/></figure>
+</div>
+<div class="pata verzalky" data-po-nadpisu="0.3">
+{% if address %}<p>Adresa {{ address }}</p>{% endif %}
+{% if hours_today %}<p>Otevřeno {{ hours_today }}</p>{% endif %}
+</div>
+</section>
+<section aria-labelledby="fan1-h" class="fan" id="sluzby">
+<div class="fan-scena">
+<div class="fan-hlava">
+<h2 id="fan1-h">Sezónní kytice</h2>
+<p>Vážeme z toho, co právě roste venku. Na jaře tulipány, v létě slunečnice, na podzim chryzantémy.</p>
+
+</div>
+<div class="fan-rada" data-fan="">
+<figure class="karta-fan"><span class="foto"><img alt="Rudé tulipány zabalené v hnědém papíru, převázané červenou stuhou" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-1.webp" width="900"/></span><figcaption><span class="co">Tulipány v papíru</span><span class="veta">Rudé tulipány, místo provázku stuha.</span></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Bílé chryzantémy a modrý limonium v pomačkaném hnědém papíru" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-2.webp" width="900"/></span><figcaption aria-hidden="true"></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Ruka drží kytici slunečnic před světlou stěnou" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-3.webp" width="900"/></span><figcaption><span class="co">Slunečnice</span><span class="veta">Pár stonků, svázaných volně.</span></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Růžové tulipány v bílé papírové tašce na stole" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-4.webp" width="900"/></span><figcaption aria-hidden="true"></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Ruka drží malou kytici fialových a bílých kopretin s listy" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-5.webp" width="900"/></span><figcaption><span class="co">Polní</span><span class="veta">Kopretiny a drobné květy, bez obalu.</span></figcaption></figure>
+</div>
+</div>
+</section>
+<section aria-labelledby="fan2-h" class="fan">
+<div class="fan-scena">
+<div class="fan-hlava">
+<h2 id="fan2-h">Kytice k výročí</h2>
+<p>Napište, co má ten druhý rád a jaké barvy nosí. Kytici připravíme na den a hodinu, kterou si řeknete.</p>
+
+</div>
+<div class="fan-rada" data-fan="">
+<figure class="karta-fan"><span class="foto"><img alt="Ruka drží dnem vzhůru kytici růžových karafiátů se stříbrnou brunií" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-6.webp" width="900"/></span><figcaption aria-hidden="true"></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Kytice s bílým a růžovým pryskyřníkem, oranžovými kulovitými květy a sušenou trávou" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-7.webp" width="900"/></span><figcaption><span class="co">Živé se sušenými</span><span class="veta">Pryskyřník, sušená tráva a eukalyptus.</span></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Kytice růžové gypsophily s růží v bílém papíru s růžovou stuhou" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-8.webp" width="900"/></span><figcaption aria-hidden="true"></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Broskvové zahradní růže v hnědém papíru" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-9.webp" width="900"/></span><figcaption><span class="co">Broskvové růže</span><span class="veta">Zahradní růže v hnědém papíru.</span></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Krémové růže a broskvové karafiáty s eukalyptem v krémovém papíru se stuhou" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-10.webp" width="900"/></span><figcaption aria-hidden="true"></figcaption></figure>
+</div>
+</div>
+</section>
+<section aria-labelledby="fan3-h" class="fan">
+<div class="fan-scena">
+<div class="fan-hlava">
+<h2 id="fan3-h">Pokojové rostliny</h2>
+<p>Zeleň, která vydrží déle než kytice. Řekněte nám, kolik máte světla, a vybereme rostlinu i květináč.</p>
+
+</div>
+<div class="fan-rada" data-fan="">
+<figure class="karta-fan"><span class="foto"><img alt="Fíkus s pestrými zelenobílými listy v terakotovém květináči" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-11.webp" width="900"/></span><figcaption><span class="co">Fíkus</span><span class="veta">Pestré listy, roste pomalu.</span></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Palma v oranžovém květináči u teplé omítnuté stěny s pruhy slunce" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-12.webp" width="900"/></span><figcaption aria-hidden="true"></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Ruce drží monsteru v bílém květináči" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-13.webp" width="900"/></span><figcaption><span class="co">Monstera</span><span class="veta">Velké dělené listy.</span></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Rostlina s dělenými listy v tmavém květináči, na stěně odraz okna v podvečerním slunci" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-14.webp" width="900"/></span><figcaption aria-hidden="true"></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Strelície v krémovém květináči na světlém pozadí" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-15.webp" width="900"/></span><figcaption><span class="co">Strelície</span><span class="veta">Do světlé místnosti.</span></figcaption></figure>
+</div>
+</div>
+</section>
+<section aria-labelledby="fan4-h" class="fan">
+<div class="fan-scena">
+<div class="fan-hlava">
+<h2 id="fan4-h">Květiny k oslavám</h2>
+<p>Narozeniny, promoce, výročí firmy. Napište, kolik stolů a jaké barvy, a připravíme kytice do váz i na stůl.</p>
+
+</div>
+<div class="fan-rada" data-fan="">
+<figure class="karta-fan"><span class="foto"><img alt="Oranžové růže, hledík a tulipány ve skleněné lahvi převázané provázkem" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-16.webp" width="900"/></span><figcaption aria-hidden="true"></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Oranžové gladioly, růže a eukalyptus ve vysoké skleněné váze" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-17.webp" width="900"/></span><figcaption><span class="co">Gladioly</span><span class="veta">Vysoká kytice do úzké vázy.</span></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Růžové jiřiny a chrpy v baňaté skleněné váze na prostřeném stole mezi sklenicemi" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-18.webp" width="900"/></span><figcaption aria-hidden="true"></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Barevné aranžmá s astilbí a kalami v bílé keramické váze ve tvaru tašky" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-19.webp" width="900"/></span><figcaption><span class="co">Rovnou ve váze</span><span class="veta">Nemusíte ji doma přendávat.</span></figcaption></figure>
+<figure class="karta-fan"><span class="foto"><img alt="Oranžové tulipány v krémovém džbánku vedle modrobílého hrnku" decoding="async" height="1350" loading="lazy" src="{{ A }}img/V11-kvetiny-fan-20.webp" width="900"/></span><figcaption aria-hidden="true"></figcaption></figure>
+</div>
+</div>
+</section>
+
+<section class="pz-ext" id="proc"><div class="pz-obal">
+<h2>Proč k nám</h2><p class="pz-uvod">Kytici vážeme pro konkrétního člověka a konkrétní chvíli. Stačí nám říct, pro koho je.</p><div class="pz-tri"><div><h3>Poradíme s výběrem</h3><p>Nemusíte znát názvy květin. Řekněte, pro koho kytice je a jakou má mít náladu, a vybereme spolu.</p></div><div><h3>Čerstvé a sezónní</h3><p>Pracujeme s tím, co je právě čerstvé. Když něco chybí, nahradíme to květinou ve stejném tónu.</p></div><div><h3>Na čas a na míru</h3><p>Kytici připravíme na domluvený den a hodinu, ať ji jen vyzvednete.</p></div></div></div></section>
+<section class="pz-ext" id="kontakt-formular"><div class="pz-obal pz-dva">
+<div><h2>Kontakt a objednávka</h2><p class="pz-uvod">Napište, pro koho kytice je, kdy ji potřebujete a jakou představu o ceně máte. Ozveme se a domluvíme detaily.</p>
+<dl>{% if address %}<dt>Adresa</dt><dd>{{ address }}{% if maps_url %} · <a href="{{ maps_url }}" rel="noopener" target="_blank">mapa</a>{% endif %}</dd>{% endif %}
+{% if phone %}<dt>Telefon</dt><dd><a href="tel:{{ phone_href }}">{{ phone }}</a></dd>{% endif %}
+{% if email %}<dt>E-mail</dt><dd><a href="mailto:{{ email }}">{{ email }}</a></dd>{% endif %}</dl>
+{% if hours %}<div aria-label="Otevírací doba" class="pz-hod-t">{{ hours_rows|safe }}</div>{% endif %}</div>
+<form class="pz-form" data-formular="dotaz" novalidate="">
+<label for="pz-j">Jméno a příjmení<input autocomplete="name" id="pz-j" name="jmeno" required=""/></label>
+<label for="pz-t">Telefon<input autocomplete="tel" id="pz-t" name="telefon" type="tel"/></label>
+<label for="pz-e">E-mail<input autocomplete="email" id="pz-e" name="email" required="" type="email"/></label>
+<label for="pz-z">Co si představujete<textarea id="pz-z" name="zprava" required=""></textarea></label>
+<button type="submit">Odeslat</button><p aria-live="polite" class="pz-ok" role="status"></p></form>
+<script>(function(){var f=document.currentScript.previousElementSibling;f.addEventListener('submit',function(e){e.preventDefault();var bad=null;
+f.querySelectorAll('[required]').forEach(function(el){var ok=el.value.trim()&&(el.type!=='email'||/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(el.value));el.setAttribute('aria-invalid',ok?'false':'true');if(!ok&&!bad)bad=el;});
+var m=f.querySelector('.pz-ok');if(bad){m.textContent='Vyplňte prosím označená pole.';bad.focus();return;}m.textContent='Děkujeme, ozveme se vám co nejdříve.';setTimeout(function(){f.reset();},50);});})();</script>
+</div></section>
+<section class="pz-ext" id="rady"><div class="pz-obal"><h2>Rady floristky</h2><p class="pz-uvod">Pár tipů, aby květiny vydržely a udělaly radost.</p><details><summary>Jak prodloužit život řezaných květin</summary><p>Stonky seřízněte šikmo ostrým nožem a hned je dejte do čisté vázy s vlažnou vodou. Listy, které by byly pod hladinou, odstraňte – ve vodě hnijí a zkracují život celé kytice.</p><p>Vodu měňte každý den nebo obden a vázu při tom vypláchněte. Kytici nestavte k topení, na přímé slunce ani vedle mísy s ovocem, které uvolňuje etylen a květy rychleji vadnou.</p></details><details><summary>Jak vybrat kytici k narozeninám nebo výročí</summary><p>Začněte u člověka, ne u květin: jaké barvy nosí, jaký má byt, má rád výrazné, nebo jemné věci? Pro florku je to užitečnější než přesný název květiny.</p><p>Ke kytici se hodí krátký vzkaz na kartičce. Pokud kytici předáváte až večer, řekněte nám to – vybereme květiny, které vydrží i cestu.</p></details><details><summary>Pokojové rostliny podle světla</summary><p>Do tmavších míst se hodí rostliny, které snesou polostín, třeba zamiokulkas, sansevierie nebo potos. Na jižní okna patří sukulenty a rostliny, které slunce vyhledávají.</p><p>Nejčastější chybou je přelévání. Zalévejte až ve chvíli, kdy je horní vrstva substrátu suchá, a přebytečnou vodu z misky vylijte.</p></details></div></section>{# SEKCE_PATCH_V1 #}{% include "_onas.html.j2" %}
+<section class="pz-mapa-sec" style="padding:0 0 clamp(40px,6vw,80px)">{% include "_mapa.html.j2" %}</section>
+<section aria-labelledby="hod-h" class="hodnoceni" data-hodnoceni="" hidden="">
+<div class="hod-souhrn">
+<h2 id="hod-h">Co o nás píšou</h2>
+<div class="hod-cislo">
+<span class="znamka" data-hod-znamka=""></span>
+<span aria-hidden="true" class="hvezdy" data-hod-hvezdy=""></span>
+<span class="pocet" data-hod-pocet=""></span>
+<span class="podil" data-hod-podil="" hidden=""></span>
+</div>
+</div>
+<ul class="hod-seznam" data-hod-seznam=""></ul>
+<p class="hod-zdroj">Recenze z Google. {% if show_count %}<a data-hod-odkaz="" href="#">Všechny recenze {{ rating_count }}</a>{% endif %}</p>
+</section>
+</main>
+<footer class="paticka" id="kontakt">
+<div>
+<a aria-label="{{ brand }} – úvod" class="logo" href="#">{{ brand_up }}</a>
+<p>Květinářství. Sezónní kytice, pokojové rostliny a květiny k oslavám.</p>
+</div>
+<dl><dt class="verzalky">Adresa</dt>{% if address %}<dd>{{ address }}</dd>{% endif %}</dl>
+<dl><dt class="verzalky">Otevřeno</dt>{% if hours_today %}<dd>{{ hours_today }}</dd>{% endif %}</dl>
+<dl><dt class="verzalky">E-mail</dt>{% if email %}<dd>{{ email }}</dd>{% endif %}</dl>
+
+</footer>
+<script>
+  /* menu: hamburger otevře panel s odkazy a CTA; zavře se Esc, klikem na odkaz nebo mimo panel */
+  (function () {
+    var b = document.querySelector('[data-menu]'), p = document.getElementById(b.getAttribute('aria-controls'));
+    function nastav(o) { b.setAttribute('aria-expanded', o ? 'true' : 'false'); p.hidden = !o; }
+    b.addEventListener('click', function () { nastav(p.hidden); });
+    p.addEventListener('click', function (e) { if (e.target.closest('a')) nastav(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !p.hidden) { nastav(false); b.focus(); } });
+    document.addEventListener('click', function (e) { if (!p.hidden && !p.contains(e.target) && !b.contains(e.target)) nastav(false); });
+    matchMedia('(min-width: 861px)').addEventListener('change', function (m) { if (m.matches) nastav(false); });
+  })();
+</script>
+<script defer="" src="{{ A }}zaklad.js"></script>
+<script>
+  /* Pixel Scan na fotopásu (HorizonX „pixel-scan“, mode 0 = across, bandWidth 0.2, layers 3, speed 0.75), přepsáno do čistého WebGL bez knihoven.
+     - Každá fotka se odhalí jedním průchodem pixelového pásu zleva doprava, když vstoupí do viewportu (IntersectionObserver);
+       fotky jdou postupně zleva doprava (start fotky = nejdřív start předchozí + ROZESTUP).
+     - Jeden sdílený WebGL kontext mimo DOM; do každé fotky se kreslí přes malý 2D canvas (drawImage). Kreslí se jen během průchodu,
+       po poslední fotce se kontext uvolní a canvasy zmizí.
+     - Barva buněk = barva fotky v buňce, lehce prosvětlená k tónu stránky (žádná duha). Neodhalená část = plocha stránky (--pozadi).
+     - Bez pohybu (reduced motion, ?pohyb=0) třída .ps vůbec nevznikne; bez WebGL se sundá → fotky rovnou celé. */
+  (function () {
+    var html = document.documentElement, pas = document.querySelector('[data-pixel-scan]');
+    if (!pas || !html.classList.contains('ps')) return;
+    var gl, glc = document.createElement('canvas');
+    try { gl = glc.getContext('webgl', { premultipliedAlpha: true, alpha: true, antialias: false, preserveDrawingBuffer: true }); } catch (e) {}
+    if (!gl || !window.IntersectionObserver) { html.classList.remove('ps'); return; }
+    html.classList.add('ps-bezi');
+
+    var VS = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
+    var FS = [
+      'precision highp float;',
+      'uniform sampler2D src;uniform vec2 res;uniform float t0;uniform vec3 bg;uniform vec2 uvS;uniform vec2 uvO;uniform float dim;uniform float cellPx;',
+      '#define W .2',
+      'vec2 texUV(vec2 uv){return vec2(uv.x,1.-uv.y)*uvS+uvO;}',              /* uv postavy (y nahoru) → uv fotky (cover, y dolů) */
+      'float hash(vec2 p){return fract(sin(dot(p,vec2(4859.,3985.)))*3984.);}',
+      'float sdBox(vec2 p,float r){vec2 q=abs(p)-r;return min(length(q),max(q.y,q.x));}',
+      'float toRangeT(vec2 p,float scale){return p.x/(scale*2.)+.5;}',          /* mode 0: across, zleva doprava */
+      'vec4 cell(vec2 p,vec2 pi,float scale,float t,float edge){vec2 pc=pi+.5;vec2 uvc=pc/scale;uvc.y/=res.y/res.x;uvc=uvc*.5+.5;',
+      '  if(uvc.x<0.||uvc.x>1.||uvc.y<0.||uvc.y>1.)return vec4(0);',
+      '  vec3 c=texture2D(src,texUV(uvc)).rgb*dim;c=mix(c,bg,.14);',          /* barva z fotky, jemně k tónu stránky; ne duha */
+      '  float x=toRangeT(pi,scale);float n=hash(pi);float anim=smoothstep(W*2.,0.,abs(x+n*W-t));',
+      '  float e=edge*pow(anim,10.)*clamp(.3/abs(sdBox(p-pc,.5)),0.,3.);return vec4(min(c*(1.+.12*e),vec3(1.))*anim,anim);}',
+      'vec4 cellsColor(vec2 p,float scale,float t){vec2 pi=floor(p);vec2 d=vec2(0,1);vec4 cc=vec4(0);',
+      '  cc+=cell(p,pi,scale,t,.2)*4.;cc+=cell(p,pi+d.xy,scale,t,.9);cc+=cell(p,pi-d.xy,scale,t,.9);cc+=cell(p,pi+d.yx,scale,t,.9);cc+=cell(p,pi-d.yx,scale,t,.9);return cc/8.;}',
+      'void main(){vec2 uv=gl_FragCoord.xy/res;vec2 p=uv*2.-1.;p.y*=res.y/res.x;',
+      '  float t=t0*(1.+W*4.)-W*2.;float rev=0.;vec4 g=vec4(0);',
+      '  for(int i=0;i<3;i++){float fi=float(i);float scale=res.x*.5/(cellPx*(1.+.42*fi));',  /* 3 mřížky, jemné buňky */
+      '    vec2 pi=floor(p*scale);float n=hash(pi);rev+=smoothstep(t,t-W,toRangeT(pi,scale)+n*W);g+=cellsColor(p*scale,scale,t)*1.5;}',
+      '  rev/=3.;g/=3.;float cov=1.-rev;',
+      '  float ga=clamp(g.a,0.,1.);vec3 col=g.rgb/max(g.a,1e-3);',            /* krytí a průměrná barva buněk */
+      '  float a=ga+cov*(1.-ga);vec3 rgb=col*ga+bg*cov*(1.-ga);',              /* premultiplied: buňky přes plochu / přes fotku */
+      '  gl_FragColor=vec4(rgb,a)*smoothstep(-.001,0.,t0)+vec4(bg,1.)*(1.-smoothstep(-.001,0.,t0));}'
+    ].join('\n');
+    function sh(typ, kod) { var s = gl.createShader(typ); gl.shaderSource(s, kod); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+    var pr;
+    try {
+      pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(pr);
+      if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
+    } catch (e) { html.classList.remove('ps', 'ps-bezi'); return; }
+    gl.useProgram(pr);
+    var buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    var la = gl.getAttribLocation(pr, 'a'); gl.enableVertexAttribArray(la); gl.vertexAttribPointer(la, 2, gl.FLOAT, false, 0, 0);
+    var U = {}; ['src', 'res', 't0', 'bg', 'uvS', 'uvO', 'dim', 'cellPx'].forEach(function (n) { U[n] = gl.getUniformLocation(pr, n); });
+    gl.uniform1i(U.src, 0);
+
+    var POMALU = +new URLSearchParams(location.search).get('ps-pomalu') || 1;   /* jen pro kontrolní snímky: ?ps-pomalu=10 zpomalí průchod 10× */
+    var TRVANI = POMALU / 0.75, ROZESTUP = 0.32 * POMALU, UVOD = 0.55 * POMALU;   /* s; úvod = počkat, až se složí wordmark */
+    var DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+    var figs = Array.prototype.slice.call(pas.querySelectorAll('figure')).map(function (f, i) {
+      var cv = document.createElement('canvas'); cv.className = 'ps-platno'; cv.setAttribute('aria-hidden', 'true'); f.appendChild(cv);
+      return { f: f, img: f.querySelector('img'), cv: cv, ctx: cv.getContext('2d'), i: i, start: -1, hotovo: false, tex: null };
+    });
+    var t0 = performance.now() / 1000, posledniStart = t0 + UVOD - ROZESTUP, bezi = false;
+
+    function barvaPozadi() {
+      var m = getComputedStyle(document.body).backgroundColor.match(/[\d.]+/g) || [239, 233, 224];
+      return [m[0] / 255, m[1] / 255, m[2] / 255];
+    }
+    function velikost(o) {
+      var r = o.f.getBoundingClientRect(), w = Math.max(1, Math.round(r.width * DPR)), h = Math.max(1, Math.round(r.height * DPR));
+      if (o.cv.width !== w || o.cv.height !== h) { o.cv.width = w; o.cv.height = h; }
+      return [w, h, r.width, r.height];
+    }
+    /* první snímek = plocha stránky, aby fotka nebyla vidět před průchodem */
+    function zakryj(o) { var v = velikost(o), b = barvaPozadi(); o.ctx.fillStyle = 'rgb(' + b.map(function (x) { return Math.round(x * 255); }) + ')'; o.ctx.fillRect(0, 0, v[0], v[1]); }
+    figs.forEach(zakryj);
+
+    function priprav(o) {
+      o.tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, o.tex);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+      try { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, o.img); }
+      catch (e) {   /* fotka z jiného původu (např. file://): buňky v tónu mezi plochou stránky a akcentem */
+        var ak = (getComputedStyle(html).getPropertyValue('--akcent').trim().match(/[0-9a-f]{2}/gi) || ['b4', '47', '2a']).map(function (x) { return parseInt(x, 16); });
+        var bg = barvaPozadi().map(function (x) { return x * 255; });
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 1, 2].map(function (k) { return Math.round(bg[k] * .45 + ak[k] * .55); }).concat([255])));
+      }
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    }
+    function kresli(o, t) {
+      var v = velikost(o), w = v[0], h = v[1];
+      if (glc.width < w || glc.height < h) { glc.width = Math.max(glc.width, w); glc.height = Math.max(glc.height, h); }
+      /* cover + object-position fotky → mapování uv */
+      var iw = o.img.naturalWidth, ih = o.img.naturalHeight, s = Math.max(v[2] / iw, v[3] / ih), rw = iw * s, rh = ih * s;
+      var op = getComputedStyle(o.img).objectPosition.split(' ').map(function (x) { return parseFloat(x) / 100; });
+      var ox = (v[2] - rw) * (isNaN(op[0]) ? .5 : op[0]), oy = (v[3] - rh) * (isNaN(op[1]) ? .5 : op[1]);
+      gl.viewport(0, 0, w, h);
+      gl.bindTexture(gl.TEXTURE_2D, o.tex);
+      gl.uniform2f(U.res, w, h); gl.uniform1f(U.t0, t);
+      var b = barvaPozadi(); gl.uniform3f(U.bg, b[0], b[1], b[2]);
+      gl.uniform2f(U.uvS, v[2] / rw, v[3] / rh); gl.uniform2f(U.uvO, -ox / rw, -oy / rh);
+      gl.uniform1f(U.dim, html.dataset.tema === 'tmava' ? .72 : 1);
+      gl.uniform1f(U.cellPx, Math.max(7, Math.min(11, v[2] / 26)) * DPR);
+      gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      o.ctx.clearRect(0, 0, w, h);
+      o.ctx.drawImage(glc, 0, glc.height - h, w, h, 0, 0, w, h);
+    }
+    function dokonci(o) {
+      o.hotovo = true; o.f.classList.remove('ps-jede'); o.f.classList.add('ps-hotovo');
+      o.cv.remove(); if (o.tex) gl.deleteTexture(o.tex); o.tex = null;
+      if (figs.every(function (x) { return x.hotovo; })) {
+        var lc = gl.getExtension('WEBGL_lose_context'); if (lc) lc.loseContext();
+        window.removeEventListener('resize', prekresli);
+      }
+    }
+    function snimek() {
+      var ted = performance.now() / 1000, aktivni = false;
+      figs.forEach(function (o) {
+        if (o.hotovo || o.start < 0) return;
+        if (!o.tex) { if (!o.img.complete || !o.img.naturalWidth) { aktivni = true; return; } priprav(o); o.f.classList.add('ps-jede'); }
+        var t = (ted - o.start) / TRVANI;
+        if (t < 0) { aktivni = true; return; }
+        if (t >= 1) { dokonci(o); return; }
+        kresli(o, t); aktivni = true;
+      });
+      bezi = aktivni; if (aktivni) requestAnimationFrame(snimek);
+    }
+    function spust(o) {
+      if (o.start >= 0) return;
+      var ted = performance.now() / 1000;
+      o.start = Math.max(ted, posledniStart + ROZESTUP); posledniStart = o.start;
+      if (!bezi) { bezi = true; requestAnimationFrame(snimek); }
+    }
+    /* vstup do viewportu: fotky ve stejném okamžiku se seřadí zleva doprava */
+    var io = new IntersectionObserver(function (zaznamy) {
+      zaznamy.filter(function (z) { return z.isIntersecting; })
+        .sort(function (a, b) { return a.boundingClientRect.left - b.boundingClientRect.left; })
+        .forEach(function (z) { var o = figs.filter(function (x) { return x.f === z.target; })[0]; io.unobserve(z.target); spust(o); });
+    }, { threshold: 0.35 });
+    figs.forEach(function (o) { io.observe(o.f); });
+    function prekresli() { figs.forEach(function (o) { if (!o.hotovo && o.start < 0) zakryj(o); }); }
+    window.addEventListener('resize', prekresli);
+    document.addEventListener('zmena-tematu', prekresli);
+    gl.canvas.addEventListener('webglcontextlost', function (e) {   /* ztráta kontextu uprostřed: fotky rovnou celé */
+      if (figs.every(function (x) { return x.hotovo; })) return;
+      figs.forEach(function (o) { if (!o.hotovo) { o.hotovo = true; o.cv.remove(); o.f.classList.add('ps-hotovo'); } });
+    });
+  })();
+</script>
+<script>
+  /* Hodnocení Google (převzato z V08). Blok se ukáže jen při víc než 45 recenzích (pocet 45 a méně = blok zůstane skrytý).
+     Od 50 recenzí se navíc ukáže podíl spokojených (ROZHODNUTI_MAJITELE). U klienta se mění jen tahle data.
+     ukazka: true = demo: místo čísel se ukáže [doplnit], texty recenzí jsou zřetelné šablonové výplně (žádné vymyšlené recenze). */
+  var RECENZE = {
+    pocet: {{ rating_count_js }},            /* demo hodnota, aby byl blok vidět; pod 46 se blok skryje */
+    znamka: {{ rating_js }},         /* např. 4.9 – doplnit z Google */
+    podilSpokojenych: null,
+    odkaz: '{{ maps_url_js }}',
+    ukazka: false,
+    vybrane: {{ reviews_js|safe }}
+  };
+  (function () {
+    var blok = document.querySelector('[data-hodnoceni]');
+    if (!blok || !(RECENZE.znamka > 0)) return;
+    var hv = '<svg viewBox="0 0 16 16"><path fill="currentColor" d="M8 1.2l2 4.3 4.7.5-3.5 3.2 1 4.6L8 11.5l-4.2 2.3 1-4.6L1.3 6l4.7-.5z"/></svg>';
+    function hvezdy(n) { var h = ''; for (var i = 0; i < 5; i++) h += i < n ? hv : hv.replace('currentColor', 'none" stroke="currentColor'); return h; }
+    function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    var zn = blok.querySelector('[data-hod-znamka]');
+    if (RECENZE.ukazka || RECENZE.znamka == null) { zn.textContent = '[doplnit známku]'; zn.classList.add('doplnit'); }
+    else zn.textContent = RECENZE.znamka.toLocaleString('cs-CZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    blok.querySelector('[data-hod-hvezdy]').innerHTML = hvezdy(Math.round(RECENZE.znamka || 5));
+    blok.querySelector('[data-hod-pocet]').innerHTML = RECENZE.ukazka ? 'Počet recenzí na Google <span class="doplnit">[doplnit]</span>' : (RECENZE.pocet >= 50 ? esc(RECENZE.pocet) + ' recenzí na Googlu' : 'Hodnocení na Googlu');
+    if (RECENZE.podilSpokojenych != null) {
+      var pd = blok.querySelector('[data-hod-podil]'); pd.hidden = false;
+      pd.innerHTML = RECENZE.ukazka || RECENZE.podilSpokojenych == null ? 'Spokojených <span class="doplnit">[doplnit]</span>' : esc(RECENZE.podilSpokojenych) + ' % spokojených';
+    }
+    blok.querySelector('[data-hod-seznam]').innerHTML = RECENZE.vybrane.slice(0, 5).map(function (r) {
+      return '<li><span class="hvezdy" role="img" aria-label="' + r.hvezdy + ' z 5 hvězd">' + hvezdy(r.hvezdy) + '</span>' +
+        '<blockquote>' + esc(r.text) + '</blockquote><span class="kdo">' + esc(r.jmeno) + ' · Google</span></li>';
+    }).join('');
+    blok.querySelector('[data-hod-odkaz]').href = RECENZE.odkaz;
+    blok.hidden = false;
+  })();
+</script>
+<script>
+  /* Vějíř fotek (HorizonX „gallery-fan“ ve vanilla JS, převzato z V08 beze změny logiky).
+     Sekce .fan je scroll range, .fan-scena je sticky. Postup p (0–1) řídí pro každou kartu vlastní úsek (stagger):
+       1) „rozházeno“ zprava: karta přijede zprava s natočením a výškovým posunem,
+       2) vějíř: natočení (2 − i)·3° kolem horního středu (transform-origin 50 % 0 %),
+       3) složená řada: natočení 0, posun 0; popisek vyjede zdola (translateY 100 % → 0, opacity 0 → 1).
+     Desktop: karty se skládají zprava doleva (nejdřív pravá krajní). Mobil: celá řada jede zprava doleva přes obrazovku
+     a karty se skládají v pořadí, jak vjíždějí. Jen transform/opacity, requestAnimationFrame, kreslí se jen při změně.
+     Bez pohybu (reduced motion, ?pohyb=0) nebo na oknech nižších než 560 px: rovnou složený stav, žádné inline styly. */
+  (function () {
+    var html = document.documentElement;
+    if (!html.classList.contains('pohyb')) return;
+    var vyska = matchMedia('(min-height: 560px)');
+    var ROZ = [[-9, 46], [6, -34], [-4, 58], [11, -22], [-7, 36]];   /* rozházeno: [natočení °, posun y px] */
+    var STAG = 0.1, KONEC = 0.86;                                     /* úsek karty = (p − k·STAG) / (KONEC − 4·STAG) */
+    function o(t) { return 1 - Math.pow(1 - t, 3); }
+    function vh(t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+    function cl(t) { return t < 0 ? 0 : t > 1 ? 1 : t; }
+    var fany = Array.prototype.map.call(document.querySelectorAll('.fan'), function (el) {
+      var rada = el.querySelector('[data-fan]');
+      return { el: el, scena: el.querySelector('.fan-scena'), rada: rada,
+        karty: Array.prototype.map.call(rada.children, function (f) { return { foto: f.querySelector('.foto'), cap: f.querySelectorAll('figcaption span'), x: 0 }; }),
+        start: 0, delka: 1, posun: 0, mobil: false, posl: -1 };
+    });
+    function mer() {
+      var vw = window.innerWidth;
+      fany.forEach(function (f) {
+        f.rada.style.transform = ''; f.karty.forEach(function (k) { k.foto.style.transform = ''; });
+        /* timeline začne už při vjezdu sekce (horní hrana v 55 % okna), ať řada není při přišpendlení prázdná */
+        var nabeh = window.innerHeight * 0.45;
+        f.start = f.el.getBoundingClientRect().top + window.scrollY - nabeh;
+        f.delka = Math.max(1, f.el.offsetHeight - f.scena.offsetHeight + nabeh);
+        f.mobil = vw <= 760;
+        var r = f.rada.getBoundingClientRect(), pad = parseFloat(getComputedStyle(f.scena).paddingLeft) || 0;
+        var sirka = f.rada.scrollWidth;
+        f.posun = f.mobil ? Math.max(0, sirka - (vw - 2 * pad)) : 0;   /* o kolik musí řada na mobilu odjet doleva */
+        f.karty.forEach(function (k) { k.x = k.foto.getBoundingClientRect().left; k.w = k.foto.offsetWidth; });
+        f.posl = -1;
+      });
+    }
+    var ceka = false;
+    function pozadej() { if (!ceka) { ceka = true; requestAnimationFrame(kresli); } }
+    function kresli() {
+      ceka = false;
+      if (!vyska.matches) return;
+      var sy = window.scrollY, vw = window.innerWidth;
+      fany.forEach(function (f) {
+        var p = cl((sy - f.start) / f.delka);
+        if (sy + window.innerHeight < f.start - 50 && f.posl === 0) return;
+        if (Math.abs(p - f.posl) < 0.0004) return;
+        f.posl = p;
+        /* mobil: řada vjede zprava (začíná o 55 % šířky okna vpravo) a dojede tak, aby byla vidět pravá krajní karta */
+        var rx = 0;
+        if (f.mobil) { rx = (1 - vh(cl(p / 0.92))) * vw * 0.55 - f.posun * vh(cl((p - 0.08) / 0.84)); f.rada.style.transform = 'translate3d(' + rx.toFixed(1) + 'px,0,0)'; }
+        var dur = KONEC - 4 * STAG;
+        f.karty.forEach(function (k, i) {
+          var poradi = f.mobil ? i : 4 - i;                       /* desktop zprava doleva */
+          var t = cl((p - poradi * STAG) / dur);
+          var a = o(cl(t / 0.62)), b = vh(cl((t - 0.5) / 0.5)), c = o(cl((t - 0.68) / 0.32));
+          /* odkud karta přijíždí: desktop těsně za pravým okrajem okna, mobil kousek zprava (řadu veze posun celé řady) */
+          var x0 = f.mobil ? 70 + i * 24 : (vw - k.x) + 40 + (4 - i) * 30;
+          var fanR = (2 - i) * 3, fanY = Math.abs(i - 2) * 14;
+          var x = x0 * (1 - a);
+          var r = ROZ[i][0] + (fanR - ROZ[i][0]) * a; r = r * (1 - b);
+          var y = ROZ[i][1] + (fanY - ROZ[i][1]) * a; y = y * (1 - b);
+          var sc = 0.92 + 0.08 * a;
+          k.foto.style.transform = 'translate3d(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px,0) rotate(' + r.toFixed(2) + 'deg) scale(' + sc.toFixed(3) + ')';
+          k.foto.style.opacity = cl(a * 2.2).toFixed(3);
+          for (var j = 0; j < k.cap.length; j++) {
+            var cj = o(cl((t - 0.68 - j * 0.06) / 0.3));
+            k.cap[j].style.transform = 'translate3d(0,' + ((1 - cj) * 100).toFixed(1) + '%,0)';
+            k.cap[j].style.opacity = cj.toFixed(3);
+          }
+        });
+      });
+    }
+    function znovu() { mer(); pozadej(); }
+    mer();
+    window.addEventListener('scroll', pozadej, { passive: true });
+    window.addEventListener('resize', znovu);
+    window.addEventListener('load', znovu);
+    vyska.addEventListener('change', function () {
+      if (!vyska.matches) fany.forEach(function (f) { f.rada.style.transform = ''; f.karty.forEach(function (k) { k.foto.style.cssText = ''; for (var j = 0; j < k.cap.length; j++) k.cap[j].style.cssText = ''; }); });
+      znovu();
+    });
+    pozadej();
+  })();
+</script>
+<p class="pz-credit">Návrh webu: <a href="{{ owner_site }}" rel="noopener">{{ owner_name }}</a> · Fotografie: Unsplash</p>
+{% if show_banner %}<div class="pz-pv" id="pz-pv" role="note"><span>Nezávazný návrh nového webu pro <strong>{{ name }}</strong> · připravil {{ owner_name }}</span>
+<a class="pz-cta" href="{{ want_url }}">Chci tento web</a>{% if wa_url %}<a class="pz-cta" href="{{ wa_url }}" rel="noopener" target="_blank">WhatsApp</a>{% endif %}
+<button data-pz-skryt="" type="button">Skrýt</button></div>{% endif %}
+<script id="pz-js">(function(){
+var pv=document.getElementById('pz-pv');if(pv){var x=pv.querySelector('[data-pz-skryt]');x&&x.addEventListener('click',function(){pv.classList.add('pz-skryt');});}
+var HOOK="{{ form_webhook_url }}",LEAD="{{ lead_id }}";
+function lab(f,el){var l=el.id&&f.querySelector('label[for="'+el.id+'"]');if(!l)l=el.closest('label');var s=(l?l.textContent:'')||el.name||'';return s.replace(/\s+/g,' ').replace(/\*/g,'').trim();}
+document.addEventListener('submit',function(e){var f=e.target;if(!f||f.tagName!=='FORM'||f.hasAttribute('data-pz-ignore')||!HOOK)return;
+  var d={lead_id:LEAD,source:'preview',name:'',email:'',phone:'',message:''},rest=[],seen={};
+  Array.prototype.forEach.call(f.elements,function(el){ if(!el.name||el.type==='submit'||el.type==='button')return; if((el.type==='checkbox'||el.type==='radio')&&!el.checked)return;
+   var v=(el.value||'').trim(); if(!v)return; var n=el.name.toLowerCase();
+   if(/^(jmeno|name|jmeno_prijmeni)$/.test(n))d.name=v; else if(/^(email|e-mail)$/.test(n))d.email=v; else if(/^(telefon|phone|tel)$/.test(n))d.phone=v;
+   else {var k=lab(f,el)||el.name; if(seen[k]){seen[k].push(v);}else{seen[k]=[v];rest.push(k);}} });
+  d.message=rest.map(function(k){return k+': '+seen[k].join(', ');}).join('\n');
+  setTimeout(function(){ if(f.querySelector('[aria-invalid="true"],.chyba,.is-invalid'))return; if(!f.hasAttribute('novalidate')&&!f.checkValidity())return; if(!d.name&&!d.email&&!d.phone)return;
+   try{fetch(HOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch(err){}
+  },0);
+},true);
+})();</script></body>
+</html>

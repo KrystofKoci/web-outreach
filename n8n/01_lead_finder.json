@@ -1,0 +1,1125 @@
+{
+  "id": "weboutreachwf001",
+  "name": "01 Lead finder – denní plán a hledání firem",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 01 · Lead finder\n**Co dělá:** každý den 06:30 (OWNER_TZ) přečte list `queue` (kde hledat) a `weights` (co se minulý týden osvědčilo), nechá pipeline `/plan_day` rozdělit denní cíl `DAILY_PREVIEW_TARGET` do konkrétních hledání, pro každé zavolá `/search`, odfiltruje blokované země (vždy CR), odstraní duplicity (Place ID + doména webu proti celému CRM) a zapíše nové řádky se stavem `new`. Když nic nového nenajde, pošle ti e-mail (doplň města/kategorie do `queue`).\n\n**Nastav:** env `SHEET_ID`, `API_TOKEN`, `DAILY_PREVIEW_TARGET`, `BLOCKED_COUNTRIES`, `OUTREACH_ENABLED=true`; credential Google Sheets.\n\n**Test:** vypni všechny řádky v `queue` kromě jednoho (enabled=FALSE), spusť ručně „Execute workflow“, zkontroluj, že v `leads` přibyly řádky `new`.",
+        "height": 330,
+        "width": 420,
+        "color": 1
+      },
+      "id": "f5cb8ec2-e100-4e03-8da7-aa3bdb1b2f08",
+      "name": "Poznámka 1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Zkontrolovat po importu\n1. Uzly Google Sheets: otevři každý, znovu vyber dokument (`{{ $env.SHEET_ID }}` v režimu *By ID*) a list podle názvu – načtou se sloupce.\n2. HTTP uzly mají hlavičku `Authorization: Bearer {{ $env.API_TOKEN }}` – pokud chceš, nahraď credentialem „Header Auth“.\n3. Trigger používá časovou zónu instance (`GENERIC_TIMEZONE=OWNER_TZ`).",
+        "height": 220,
+        "width": 420,
+        "color": 3
+      },
+      "id": "4ee7a0ca-b855-4090-92c3-cda7ff3c041e",
+      "name": "Poznámka 2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "22105806-8579-41dc-a798-d8798fea4c46",
+      "name": "Každý den 06:30",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2ef12c62-7cdc-457e-b324-be0d34865a05",
+              "leftValue": "={{ $env.OUTREACH_ENABLED }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "80a4b7f3-964a-4605-8186-471d81d405c3",
+      "name": "Zapnuto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "queue"
+        },
+        "options": {}
+      },
+      "id": "d8af283e-6835-4a8e-95e0-6bbaa01bd007",
+      "name": "Fronta (queue)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        460,
+        200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "87e10e78-32b7-44a2-89fc-3251327ea885",
+      "name": "Agregace fronty",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        680,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "weights"
+        },
+        "options": {}
+      },
+      "id": "6b6c97c3-4f5b-4870-8bc4-233cd1a5cb67",
+      "name": "Váhy (weights)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        900,
+        200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\nconst blocked = blockedCountries();\nconst isOn = (v) => !['false', '0', 'no', 'ne', ''].includes(String(v ?? '').trim().toLowerCase());\nconst queue = clean($('Fronta (queue)').all())\n  .filter(r => isOn(r.enabled) && r.country && !blocked.has(String(r.country).toUpperCase()))\n  .map(r => ({ country: String(r.country).toUpperCase(), city: String(r.city || ''), category: String(r.category || ''),\n               lang: String(r.lang || 'en'), market: String(r.market || (r.lang === 'cs' ? 'cz' : 'en')), enabled: true,\n               weight: Number(r.weight) || 1 }));\nconst weights = clean($input.all()).map(r => ({ segment: String(r.segment || ''), weight: Number(r.weight) || 1,\n  reply_rate: Number(r.reply_rate) || 0, win_rate: Number(r.win_rate) || 0, n: Number(r.n) || 0 }));\nif (!queue.length) throw new Error('List queue je prázdný, vše vypnuté (enabled=FALSE) nebo jen blokované země.');\nreturn [{ json: { queue, weights, target: Number(env('DAILY_PREVIEW_TARGET', '30')) || 30 } }];"
+      },
+      "id": "98739408-1e3c-4c2b-8df6-345278eaf62d",
+      "name": "Sestavit /plan_day",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.PIPELINE_URL || 'http://pipeline:8077') }}/plan_day",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 120000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ queue: $json.queue, weights: $json.weights, target: $json.target }) }}"
+      },
+      "id": "0ca8f656-857b-4e01-8654-e32c0086384f",
+      "name": "Pipeline /plan_day",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pipeline-api",
+          "name": "Pipeline API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\nconst blocked = blockedCountries();\nconst res = $input.first().json || {};\nconst searches = Array.isArray(res.plan) ? res.plan : (Array.isArray(res.searches) ? res.searches : []);\nconst out = searches\n  .filter(s => s && s.country && s.city && s.category && !blocked.has(String(s.country).toUpperCase()))\n  .map(s => ({ json: { country: String(s.country).toUpperCase(), city: String(s.city), category: String(s.category),\n                       lang: String(s.lang || 'en'), market: String(s.market || 'en'), limit: Math.min(Number(s.limit) || 5, 20) } }));\nif (!out.length) throw new Error('/plan_day nevrátil žádná hledání: ' + JSON.stringify(res).slice(0, 300));\nreturn out;"
+      },
+      "id": "36fc0136-4404-48d3-99bd-29d67961bfbe",
+      "name": "Rozdělit hledání",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "8bcff0a3-34c2-4c8e-bf96-da9e57f029ab",
+      "name": "Smyčka hledání",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1780,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.PIPELINE_URL || 'http://pipeline:8077') }}/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 180000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ country: $json.country, city: $json.city, category: $json.category, limit: $json.limit, market: $json.market, lang: $json.lang }) }}"
+      },
+      "id": "1df97061-d50d-4354-9896-9f3cbd98d04c",
+      "name": "Pipeline /search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        320
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pipeline-api",
+          "name": "Pipeline API"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\n// odpověď /search → jeden item na firmu (chyby jen zalogujeme, smyčka pokračuje)\nconst r = $input.first().json || {};\nif (r.error) { console.log('/search chyba: ' + JSON.stringify(r.error).slice(0, 300)); return []; }\nconst leads = Array.isArray(r.leads) ? r.leads : [];\nreturn leads.filter(l => l && l.id && l.name).map(l => ({ json: l }));"
+      },
+      "id": "bae36ee7-7eb5-43f9-b417-dbc531eac193",
+      "name": "Rozbalit leady",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "30ce5dc0-693a-4b64-8ecc-b6ad0feece49",
+      "name": "Agregace nálezů",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "options": {}
+      },
+      "id": "9463360b-0920-44bd-a791-bf8375e784e3",
+      "name": "Existující leady",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2220,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\nconst blocked = blockedCountries();\nconst found = ($('Agregace nálezů').first().json.data || []).filter(l => l && l.id);\nconst existing = clean($input.all());\nconst ids = new Set(existing.map(e => String(e.id)));\nconst doms = new Set(existing.map(e => domainOfUrl(e.website)).filter(Boolean));\nconst now = DateTime.now().toISO();\nconst COLS = [\"id\", \"created_at\", \"market\", \"lang\", \"country\", \"tz\", \"legal_regime\", \"name\", \"category\", \"primary_type\", \"city\", \"address\", \"phone\", \"email\", \"whatsapp\", \"whatsapp_opt_in\", \"website\", \"has_website\", \"maps_url\", \"rating\", \"rating_count\", \"industry\", \"branch\", \"score\", \"reasons\", \"reasons_cs\", \"preview_url\", \"compare_png_url\", \"og_png_url\", \"status\", \"batch_id\", \"notified_at\", \"approved_at\", \"custom_intro\", \"custom_subject\", \"subject_variant\", \"sent_1_at\", \"sent_2_at\", \"sent_3_at\", \"thread_id\", \"last_message_id\", \"last_reply_at\", \"last_channel\", \"auto_reply_count\", \"manual_takeover\", \"price_quoted\", \"notes\", \"next_action\"];\nconst seen = new Set();\nconst out = [];\nlet dupId = 0, dupDom = 0, blk = 0;\nfor (const l of found) {\n  const id = String(l.id);\n  const country = String(l.country || '').toUpperCase();\n  const dom = domainOfUrl(l.website);\n  if (blocked.has(country)) { blk++; continue; }\n  if (ids.has(id) || seen.has(id)) { dupId++; continue; }\n  if (dom && (doms.has(dom) || seen.has('d:' + dom))) { dupDom++; continue; }\n  seen.add(id); if (dom) seen.add('d:' + dom);\n  const row = {}; for (const c of COLS) row[c] = '';\n  Object.assign(row, {\n    id, created_at: now, market: l.market || (l.lang === 'cs' ? 'cz' : 'en'), lang: l.lang || 'en', country,\n    tz: l.tz || '', legal_regime: l.legal_regime || '', name: l.name, category: l.category || '', primary_type: l.primary_type || '',\n    city: l.city || '', address: l.address || '', phone: l.phone || l.phone_intl || '', email: '', website: l.website || '',\n    has_website: !!(l.has_website || l.website), maps_url: l.maps_url || '', rating: l.rating ?? '', rating_count: l.rating_count ?? '',\n    status: 'new', auto_reply_count: 0, manual_takeover: false,\n  });\n  out.push({ json: row });\n}\nconsole.log(`nalezeno ${found.length}, nových ${out.length}, duplicitní ID ${dupId}, duplicitní doména ${dupDom}, blokované ${blk}`);\nif (!out.length) return [{ json: { _none: true, found: found.length, dupId, dupDom, blk } }];\nreturn out;"
+      },
+      "id": "e26d6b43-1d58-49f6-9d34-eb99585dd5b9",
+      "name": "Dedup a příprava řádků",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b5a3e0fc-efb3-46c9-b52e-3464f6168743",
+              "leftValue": "={{ $json._none }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "d483fb5d-1fac-4cb8-8413-517cc4682699",
+      "name": "Něco nového?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2660,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "market",
+              "displayName": "market",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lang",
+              "displayName": "lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tz",
+              "displayName": "tz",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "legal_regime",
+              "displayName": "legal_regime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "primary_type",
+              "displayName": "primary_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp",
+              "displayName": "whatsapp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp_opt_in",
+              "displayName": "whatsapp_opt_in",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "has_website",
+              "displayName": "has_website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "maps_url",
+              "displayName": "maps_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating",
+              "displayName": "rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating_count",
+              "displayName": "rating_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "branch",
+              "displayName": "branch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons",
+              "displayName": "reasons",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons_cs",
+              "displayName": "reasons_cs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "preview_url",
+              "displayName": "preview_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "compare_png_url",
+              "displayName": "compare_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "og_png_url",
+              "displayName": "og_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "batch_id",
+              "displayName": "batch_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notified_at",
+              "displayName": "notified_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_intro",
+              "displayName": "custom_intro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_subject",
+              "displayName": "custom_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "subject_variant",
+              "displayName": "subject_variant",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_1_at",
+              "displayName": "sent_1_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_2_at",
+              "displayName": "sent_2_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_3_at",
+              "displayName": "sent_3_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_message_id",
+              "displayName": "last_message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_reply_at",
+              "displayName": "last_reply_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_channel",
+              "displayName": "last_channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "auto_reply_count",
+              "displayName": "auto_reply_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "manual_takeover",
+              "displayName": "manual_takeover",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "price_quoted",
+              "displayName": "price_quoted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "next_action",
+              "displayName": "next_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "772b6b6d-031d-45f2-b028-93e8fe2965fe",
+      "name": "Zapsat nové leady",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2880,
+        180
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.OWNER_EMAIL }}",
+        "subject": "=Lead finder: dnes nic nového",
+        "emailType": "html",
+        "message": "=<p>Lead finder dnes nenašel nic nového (nalezeno {{ $json.found }}, duplicitní ID {{ $json.dupId }}, duplicitní doména {{ $json.dupDom }}, blokované {{ $json.blk }}).</p><p>Zvaž přidání měst nebo kategorií do listu <b>queue</b>.</p>",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Outreach systém"
+        }
+      },
+      "id": "57514537-97c6-43ca-9384-58a5229d3d01",
+      "name": "E-mail: nic nového",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2880,
+        -20
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-kontakt",
+          "name": "Gmail – kontakt@krystofkoci.com"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Každý den 06:30": {
+      "main": [
+        [
+          {
+            "node": "Zapnuto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zapnuto?": {
+      "main": [
+        [
+          {
+            "node": "Fronta (queue)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fronta (queue)": {
+      "main": [
+        [
+          {
+            "node": "Agregace fronty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agregace fronty": {
+      "main": [
+        [
+          {
+            "node": "Váhy (weights)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Váhy (weights)": {
+      "main": [
+        [
+          {
+            "node": "Sestavit /plan_day",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sestavit /plan_day": {
+      "main": [
+        [
+          {
+            "node": "Pipeline /plan_day",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pipeline /plan_day": {
+      "main": [
+        [
+          {
+            "node": "Rozdělit hledání",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rozdělit hledání": {
+      "main": [
+        [
+          {
+            "node": "Smyčka hledání",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smyčka hledání": {
+      "main": [
+        [
+          {
+            "node": "Agregace nálezů",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pipeline /search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pipeline /search": {
+      "main": [
+        [
+          {
+            "node": "Rozbalit leady",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rozbalit leady": {
+      "main": [
+        [
+          {
+            "node": "Smyčka hledání",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agregace nálezů": {
+      "main": [
+        [
+          {
+            "node": "Existující leady",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existující leady": {
+      "main": [
+        [
+          {
+            "node": "Dedup a příprava řádků",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dedup a příprava řádků": {
+      "main": [
+        [
+          {
+            "node": "Něco nového?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Něco nového?": {
+      "main": [
+        [
+          {
+            "node": "E-mail: nic nového",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Zapsat nové leady",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "active": false,
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

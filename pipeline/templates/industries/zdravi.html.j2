@@ -1,0 +1,20 @@
+{% extends 'base.html.j2' %}
+{#- Health: white calm hero, mint organic shape behind the photo, rounded everything. -#}
+{% block extra_css %}
+:root{--radius:18px}
+.hero--calm{background:#fff}
+.hero--calm h1{font-weight:800;letter-spacing:-.02em}
+.hero--calm .hero-art::before{content:"";position:absolute;inset:-6% -8% 6% 10%;background:var(--soft);border-radius:58% 42% 55% 45%/48% 55% 45% 52%;z-index:0}
+.hero--calm .photo,.hero--calm .ph{position:relative;z-index:1;border-radius:28px}
+.hero--calm .ph{background:#fff;border-color:var(--brand)}
+.hero--calm .btn-ghost{border-color:var(--brand);color:var(--brand)}
+.hero--calm .btn-ghost:hover{background:var(--brand);color:#fff}
+.top .mark{border-radius:50%}
+.top-cta{background:var(--brand)}
+.svc{border-radius:22px;border-color:transparent;background:#fff}
+.svc .ico-wrap{border-radius:50%;background:var(--soft);color:var(--brand)}
+.why .tick{border-radius:50%}
+.btn{border-radius:999px}
+input,textarea{border-radius:12px}
+form{background:#fff;border-radius:22px}
+{% endblock %}

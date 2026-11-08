@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+
+<html data-bg="esp" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>{{ page_title }}</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&amp;family=Source+Sans+3:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#1F2A14;--bg2:#18210F;--soft:#2A3720;--ink:#F4ECDD;--muted:#C2BAA8;--line:rgba(244,236,221,.14);--blush:#F2A33A;--accent:#F2A33A;--accent-ink:#22140C;--glow:255,140,30;
+  --serif:"Bodoni Moda",Didot,"Times New Roman",serif;--sans:"Source Sans 3",system-ui,sans-serif}
+html[data-bg="esp"]{--bg:#2B1A10;--bg2:#22140C;--soft:#3A261A;--muted:#CBBBA9}
+html{color-scheme:dark}
+*{box-sizing:border-box;margin:0;padding:0}
+html.lenis,html.lenis body{height:auto}.lenis.lenis-smooth{scroll-behavior:auto!important}
+body{transition:background .5s;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6;overflow-x:hidden}
+h1,h2,h3{font-family:var(--serif);font-weight:400;line-height:1.02;letter-spacing:-.01em;font-optical-sizing:none;font-variation-settings:'opsz' 18}
+a{color:inherit}
+.k{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--blush);font-weight:600}
+.wrap{padding:0 5vw}
+
+/* NAV jako ve FLEURÉA: logo vlevo, menu uprostřed, tmavé tlačítko vpravo */
+.bar{background:var(--bg2);color:var(--ink);font-size:12px;letter-spacing:.08em;text-align:center;padding:7px 12px}
+.hdr{position:fixed;inset:0 0 auto;z-index:60}
+.nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:16px 5vw;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.logo{font-family:var(--serif);font-size:26px;letter-spacing:.18em;text-transform:uppercase}
+.nav ul{display:flex;gap:30px;list-style:none;font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+.nav ul a{text-decoration:none;opacity:.75}.nav ul a:hover{opacity:1}
+.nav .right{justify-self:end;display:flex;align-items:center;gap:14px}
+.btn-dark{background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:12px;letter-spacing:.16em;text-transform:uppercase;padding:11px 20px;text-decoration:none;border:0;cursor:pointer;font-family:var(--sans)}
+.btn-line{display:inline-block;border:1px solid var(--ink);font-size:12px;letter-spacing:.18em;text-transform:uppercase;padding:13px 24px;text-decoration:none;transition:background .3s,color .3s}
+.btn-line:hover{background:var(--ink);color:var(--bg)}
+.burger{display:none;width:40px;height:40px;border:1px solid var(--line);background:transparent;cursor:pointer;position:relative}.burger span{position:absolute;left:10px;right:10px;height:1.5px;background:var(--ink)}.burger span:first-child{top:15px}.burger span:last-child{top:23px}
+@media(max-width:860px){.nav{grid-template-columns:1fr auto}.nav ul{display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg);flex-direction:column;gap:0;padding:8px 5vw 16px;border-bottom:1px solid var(--line)}.nav ul.open{display:flex}.nav ul li a{display:block;padding:12px 0}.burger{display:block}.nav .btn-dark{padding:10px 14px}}
+
+/* HERO: měsíček vlevo, světlo podle HorizonX Amber Sphere sleduje kurzor */
+.hero{position:relative;min-height:100svh;display:grid;grid-template-columns:1fr 1fr;align-items:center;overflow:hidden;padding-top:var(--hdr,108px)}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(42vmax 42vmax at var(--gx,30%) var(--gy,55%),rgba(var(--glow),calc(.05 + .09*var(--ge,.4))),transparent 70%)}
+.flower{position:relative;height:calc(100svh - var(--hdr,108px));padding:2vh 1vw 2vh 3vw;display:grid;place-items:center}
+.stage{position:relative;width:min(100%,calc(100svh - var(--hdr,108px) - 6vh));aspect-ratio:1;touch-action:pan-y;cursor:crosshair}
+.stage canvas,.stage img{position:absolute;inset:0;width:100%;height:100%;display:block}
+.stage img{object-fit:contain;padding:9%}
+.hint{position:absolute;left:50%;bottom:1.2vh;transform:translateX(-50%);white-space:nowrap;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);opacity:.8;transition:opacity .6s}
+.hint.off{opacity:0}
+.copy{position:relative;padding:0 7vw 0 3vw}
+.copy h1{font-size:clamp(44px,5.6vw,96px);text-transform:uppercase;font-weight:500}
+.copy h1 .w{display:inline-block;opacity:0;transform:translateY(30%)}
+.copy .sub{margin-top:26px;font-size:13px;letter-spacing:.2em;text-transform:uppercase;font-weight:600}
+.copy p{margin-top:14px;max-width:40ch;color:var(--muted)}
+.copy .row{display:flex;flex-wrap:wrap;align-items:center;gap:26px;margin-top:30px}
+.social{display:flex;gap:10px;list-style:none}
+.social a{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:17px;text-decoration:none;transition:transform .25s}
+.social a:hover{transform:translateY(-3px)}
+.social .fb{background:#0866FF}
+.social .ig{border-radius:10px;background:radial-gradient(circle at 30% 107%,#fdf497 0%,#fdf497 5%,#fd5949 45%,#d6249f 60%,#285AEB 90%)}
+.social .web{background:var(--ink);color:var(--bg)}
+.social .fb-t,.social .ig-t,.social .web-t{font:600 12px var(--sans)}
+@media(max-width:860px){
+  .hero{grid-template-columns:44% 56%;align-items:center}
+  .flower{height:calc(100svh - var(--hdr,108px));padding:2vh 0 2vh 2vw}
+  .stage{width:100%}
+  .hint{font-size:9px;letter-spacing:.14em;bottom:3vh}
+  .copy{padding:0 5vw 0 3vw}
+  .copy .k{font-size:11px}
+  .copy h1{font-size:clamp(24px,7.2vw,46px)}
+  .copy .sub{margin-top:12px;font-size:11px}
+  .copy p{font-size:14px;margin-top:8px;line-height:1.5}
+  .copy .row{margin-top:14px;gap:12px;flex-direction:column;align-items:flex-start}
+  .btn-line{padding:11px 18px}
+}
+/* náhledový přepínač barvy pozadí */
+.theme{position:fixed;right:14px;bottom:14px;z-index:70;display:flex;align-items:center;gap:4px;padding:5px;border-radius:30px;background:rgba(10,8,5,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--line);font-size:12px}
+.theme span{padding:0 8px 0 6px;color:var(--muted);letter-spacing:.06em}
+.theme button{font:600 12px var(--sans);color:var(--ink);background:transparent;border:0;border-radius:20px;padding:6px 12px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.theme button i{width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,.4)}
+.theme button[aria-pressed="true"]{background:var(--ink);color:#1a140e}
+
+/* HorizonX · Grid Bloom – 20 květin */
+.gallery{padding:16vh 0 6vh;border-top:1px solid var(--line)}
+.gallery .head{display:flex;justify-content:space-between;align-items:end;gap:24px;flex-wrap:wrap}
+.gallery h2{font-size:clamp(40px,5.4vw,84px)}
+.gallery h2 em{font-style:italic}
+.g3d-grid{display:grid;place-items:center;padding:8vh 5vw 4vh;perspective:2500px}
+.g3d-wrap{width:min(1180px,100%);display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(18px,4.4vw,64px);transform-style:preserve-3d}
+.g3d-item{position:relative;aspect-ratio:1;width:100%;overflow:hidden;border-radius:12px;background:var(--soft)}
+.g3d-item img{display:block;width:100%;height:100%;object-fit:cover}
+.g3d-item figcaption{position:absolute;left:6px;bottom:6px;max-width:calc(100% - 12px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(18,14,9,.78);color:var(--ink);font-size:12px;letter-spacing:.04em;padding:3px 8px;border-radius:20px;backface-visibility:hidden}
+.intro{max-width:760px;margin:4vh auto 0;text-align:center;padding:0 6vw}
+.intro p{font-family:var(--serif);font-size:clamp(22px,2.4vw,32px);line-height:1.35}
+@media(max-width:860px){.g3d-wrap{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:520px){.g3d-wrap{grid-template-columns:repeat(3,1fr)}.g3d-item figcaption{font-size:10px;padding:2px 6px}}
+
+/* sekce */
+section.s{scroll-margin-top:110px;padding:14vh 5vw;border-top:1px solid var(--line)}
+.s h2{font-size:clamp(36px,4.6vw,68px);margin-top:14px}
+.why{display:grid;grid-template-columns:repeat(4,1fr);gap:36px;margin-top:48px}
+.why h3{font-size:24px}.why p{color:var(--muted);margin-top:10px;font-size:16px}
+@media(max-width:960px){.why{grid-template-columns:1fr 1fr}}@media(max-width:560px){.why{grid-template-columns:1fr}}
+.svc{margin-top:40px;border-top:1px solid var(--line)}
+.svc .r{display:grid;grid-template-columns:32% 1fr 190px;gap:28px;align-items:baseline;padding:26px 0;border-bottom:1px solid var(--line)}
+.svc h3{font-size:clamp(24px,2.4vw,34px)}
+.svc p{color:var(--muted)}
+.svc a{font-size:12px;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;justify-self:end}
+@media(max-width:860px){.svc .r{grid-template-columns:1fr;gap:8px}}
+@supports (animation-timeline: view()){
+  .svc .r,.why>div{animation:rise linear both;animation-timeline:view();animation-range:entry 0% cover 25%}
+  @keyframes rise{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+}
+.order{display:grid;grid-template-columns:1fr 1fr;gap:6vw;margin-top:40px}
+.steps{list-style:none;counter-reset:s}
+.steps li{counter-increment:s;padding:18px 0 18px 56px;border-bottom:1px solid var(--line);position:relative}
+.steps li::before{content:counter(s);position:absolute;left:0;top:12px;font-family:var(--serif);font-size:34px;line-height:1}
+.facts{display:grid;gap:14px}
+.facts div{display:grid;grid-template-columns:150px 1fr;gap:16px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.facts b{font-weight:600}.facts span{color:var(--muted)}
+@media(max-width:860px){.order{grid-template-columns:1fr}.facts div{grid-template-columns:1fr;gap:2px}}
+.contact{display:grid;grid-template-columns:1fr 1.1fr;gap:6vw;margin-top:40px}
+.hours div{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);color:var(--muted)}
+.hours b{color:var(--ink);font-weight:600}
+form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+form label{display:grid;gap:6px;font-size:13px;letter-spacing:.04em;color:var(--muted)}
+form .full{grid-column:1/-1}
+input,select,textarea{font:inherit;color:var(--ink);border:1px solid var(--line);background:var(--bg2);padding:12px;border-radius:0}
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.7}
+select option{background:var(--bg2);color:var(--ink)}
+textarea{min-height:110px;resize:vertical}
+.formnote{font-size:13px;color:var(--muted)}
+@media(max-width:860px){.contact{grid-template-columns:1fr}form{grid-template-columns:1fr}}
+.reviews{display:grid;grid-template-columns:auto 1fr;gap:5vw;align-items:center;margin-top:36px}
+.score{font-family:var(--serif);font-size:clamp(60px,7vw,110px);line-height:1}
+.score small{display:block;font-family:var(--sans);font-size:14px;color:var(--muted);margin-top:8px}
+.quotes{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.quotes div{border:1px dashed var(--line);padding:18px;color:var(--muted);font-size:14px}
+@media(max-width:860px){.reviews{grid-template-columns:1fr}.quotes{grid-template-columns:1fr}}
+footer{border-top:1px solid var(--line);padding:40px 5vw;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted)}
+footer details{max-width:720px}footer summary{cursor:pointer}
+footer .credits{margin-top:8px;columns:2;font-size:12px}
+@media (prefers-reduced-motion: reduce){.copy h1 .w{opacity:1;transform:none}}
+</style>
+<style id="pz-css">
+.pz-hod{padding:clamp(56px,9vw,104px) 24px;text-align:center;color:inherit;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-hod .pz-in{max-width:560px;margin:0 auto}
+.pz-hod .pz-cislo{font-size:clamp(44px,7vw,72px);line-height:1;margin:0;font-weight:500;letter-spacing:-.02em}
+.pz-hod .pz-cislo span{font-size:.32em;opacity:.7;letter-spacing:0;margin-left:.3em}
+.pz-hod .pz-hv{position:relative;display:inline-block;font-size:22px;letter-spacing:4px;margin:14px 0 8px;color:color-mix(in srgb,currentColor 22%,transparent)}
+.pz-hod .pz-hv b{position:absolute;inset:0 auto 0 0;overflow:hidden;white-space:nowrap;color:var(--akcent,var(--accent,#E3A008));font-weight:400}
+.pz-hod .pz-pod{margin:0 0 14px;opacity:.78}
+.pz-hod a{color:inherit}
+.pz-pata{padding:28px 24px 34px;text-align:center;font-size:14px;opacity:.85;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-pata p{margin:4px 0}.pz-pata a{color:inherit}
+.pz-credit{font-size:12px;opacity:.7;text-align:center;padding:0 24px 22px}
+.pz-credit a{color:inherit}
+.pz-pv{position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;background:#111827;color:#fff;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;
+ padding:10px 14px;border-radius:14px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.pz-pv a{color:#fff}.pz-pv .pz-cta{background:#fff;color:#111827;text-decoration:none;font-weight:700;padding:.4em .85em;border-radius:999px}
+.pz-pv button{background:none;border:0;color:#fff;opacity:.8;cursor:pointer;font:inherit;text-decoration:underline}
+.pz-pv.pz-skryt{display:none}
+@media print{.pz-pv{display:none}}
+</style></head>
+<body>
+<header class="hdr" id="hdr"><div class="bar">Bespoke bouquets, hand-tied{% if city %} · {{ city }}{% endif %}</div>
+<nav class="nav">
+<div class="logo">{{ brand }}</div>
+<ul><li><a href="#kvete">In bloom</a></li><li><a href="#sluzby">Services</a></li><li><a href="#doruceni">Order</a></li><li><a href="#kontakt">Contact</a></li></ul>
+<div class="right"><a class="btn-dark" href="#kontakt">Book</a><button aria-expanded="false" aria-label="Menu" class="burger" id="burger"><span></span><span></span></button></div>
+</nav></header>
+<section class="hero" id="top">
+<div class="flower">
+<div aria-label="An orange marigold flower that lights up under the cursor" class="stage" id="stage" role="img">
+<img alt="" height="1054" id="flowerImg" src="{{ A }}mesicek.webp" width="1136"/>
+</div>
+<span class="hint" id="hint">Move your mouse over the flower</span>
+</div>
+<div class="copy">
+<div class="k">{{ brand }} florist</div>
+<h1 id="title">Flowers<br/>that brighten<br/>your day.</h1>
+<div class="sub">Seasonal flowers, hand-tied</div>
+<p>We only tie a bouquet once we know who it’s for and why. We make it from whatever is in bloom right now.</p>
+<div class="row">
+<a class="btn-line" href="#kontakt">Choose a bouquet</a>
+
+</div>
+</div>
+</section>
+<div aria-label="Background colour – preview" class="theme" role="group">
+<span>Background</span>
+<button aria-pressed="false" data-t="olive" type="button"><i style="background:#1F2A14"></i>Olive</button>
+<button aria-pressed="true" data-t="esp" type="button"><i style="background:#2B1A10"></i>Espresso</button>
+</div>
+
+<section class="gallery" id="kvete">
+<div class="head wrap"><div><div class="k">What’s in bloom</div><h2>Twenty flowers <em>we tie bouquets from</em></h2></div></div>
+<div class="intro"><p>We tie each bouquet by hand once we know who it’s for and why, using whatever is in bloom. Come and choose in our shop.</p></div>
+<div class="g3d-grid"><div class="g3d-wrap" id="g3d"></div></div>
+</section>
+<section class="s" id="proc">
+<div class="k">Why {{ brand }}</div>
+<h2>Bouquets made for you, not from a catalogue</h2>
+<div class="why">
+<div><h3>Made to measure</h3><p>Just tell us who it’s for and what you’d like to spend. We’ll choose the colours and size together – you don’t need to know any flower names.</p></div>
+<div><h3>Seasonal</h3><p>What we offer changes with what’s fresh. If a flower isn’t available, we’ll swap it for a similar one in the same tone.</p></div>
+<div><h3>Made to last</h3><p>Every bouquet comes with a short guide to keeping it fresh for as long as possible.</p></div>
+<div><h3>You talk to a real person</h3><p>Messages are answered by the florist who will tie your bouquet.</p></div>
+</div>
+</section>
+<section class="s" id="sluzby">
+<div class="k">Services</div>
+<h2>How we can help</h2>
+<div class="svc">
+<div class="r"><h3>Everyday bouquets</h3><p>Birthdays, thank-yous, apologies or just because. We’ll tie it while you wait, or for a specific day to order.</p><a href="#kontakt">Order a bouquet</a></div>
+<div class="r"><h3>Weddings</h3><p>Bridal bouquets, corsages, ceremony and table flowers. We start with a no-obligation consultation to go through colours, date and budget.</p><a href="#kontakt">Book a consultation</a></div>
+<div class="r"><h3>Funeral flowers</h3><p>Wreaths, sympathy bouquets and ribbons with a message. We’ll help you choose calmly and have everything ready in time.</p><a href="#kontakt">Enquire</a></div>
+<div class="r"><h3>Business and regular flowers</h3><p>Flowers for receptions, offices or restaurants, refreshed on a schedule that suits you.</p><a href="#kontakt">Enquire for business</a></div>
+<div class="r"><h3>Flower boxes and gifts</h3><p>Flowers in a box that need no vase, with a card or a small gift.</p><a href="#kontakt">Choose a box</a></div>
+</div>
+</section>
+<section class="s" id="doruceni">
+<div class="k">Order</div>
+<h2>How it works</h2>
+<div class="order">
+<ol class="steps">
+<li>Send us the form: the occasion, the date and a rough budget.</li>
+<li>We’ll confirm with a price and payment options.</li>
+<li>We’ll tie the bouquet for the agreed day and you collect it from the shop.</li>
+</ol>
+<div class="facts">
+<div><b>Holidays</b><span>For Valentine’s Day and Mother’s Day, please order ahead.</span></div>
+<div><b>Message</b><span>A card with your message is free.</span></div>
+<div><b>Prices</b><span>The price depends on size and flowers – we’re happy to quote in advance.</span></div>
+</div>
+</div>
+</section>
+{# SEKCE_PATCH_V1 #}{% include "_onas.html.j2" %}
+<section class="s" id="kontakt">
+<div class="k">Where to find us</div>
+<h2>Drop in and we’ll choose together</h2>
+<div class="contact">
+<div>
+<p style="color:var(--muted);max-width:40ch">If you know what you want, message us and we’ll have the bouquet ready on time.</p>
+<p style="margin-top:18px">{{ name }}{% if address %}<br/>{{ address }}{% endif %}{% if phone %}<br/><a href="tel:{{ phone_href }}">{{ phone }}</a>{% endif %}{% if email %}<br/><a href="mailto:{{ email }}">{{ email }}</a>{% endif %}</p>
+      {% if hours %}<div class="hours" style="margin-top:22px">{{ hours_rows_mesicek|safe }}</div>{% endif %}
+    </div>
+<form id="f">
+<label>Name<input autocomplete="name" name="jmeno"/></label>
+<label>E-mail<input autocomplete="email" name="email" type="email"/></label>
+<label>Occasion<select name="prilezitost"><option>Birthday / anniversary</option><option>Wedding</option><option>Funeral flowers</option><option>For business</option><option>Just because</option></select></label>
+<label>Appointment<input name="termin" type="date"/></label>
+<label class="full">Budget (optional)<input name="rozpocet" placeholder="e.g. 60"/></label>
+<label class="full">Message<textarea name="zprava"></textarea></label>
+<div class="full" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><button class="btn-dark" type="submit">Send enquiry</button><span class="formnote" id="fnote">We’ll reply as soon as we can.</span></div>
+</form>
+</div>
+{% include "_mapa.html.j2" %}
+</section>
+
+{% include "_recenze.html.j2" %}
+{% if rating %}<section aria-label="Rating on Google" class="pz-hod"><div class="pz-in">
+<p class="pz-cislo">{{ rating_txt }}<span>out of 5</span></p>
+<p aria-hidden="true" class="pz-hv">★★★★★<b style="width:{{ rating_pct }}%">★★★★★</b></p>
+<p class="pz-pod">Rating on Google{% if show_count %} · {{ rating_count }} reviews{% endif %}</p>
+{% if maps_url %}<p><a href="{{ maps_url }}" rel="noopener" target="_blank">View on Google Maps</a></p>{% endif %}
+</div></section>{% endif %}<footer>
+<div class="logo" style="font-size:20px">{{ brand }}</div>
+
+<details><summary>Photo credits</summary><div class="credits" id="credits"></div></details>
+</footer>
+<script src="{{ A }}lib/gsap.min.js"></script>
+<script src="{{ A }}lib/ScrollTrigger.min.js"></script>
+<script src="{{ A }}lib/lenis.min.js"></script>
+<script>
+/* Měsíček: květ se rozsvěcí tam, kde je kurzor, a lístky se při přejetí lehce pohnou.
+   Model světla je převzatý z HorizonX Amber Sphere (jádro + široké světlo + dvě stopy za světlem,
+   barvy #ff6c18 / #ffa441, třpytky), jen bez koule – aplikovaný na fotku květu. */
+function marigold(stage, reduce){
+  const img = stage.querySelector('img');
+  const hint = document.getElementById('hint');
+  const hero = stage.closest('.hero');
+  const touch = matchMedia('(hover: none)').matches;
+  if (touch && hint) hint.textContent = 'Touch the flower';
+  const cv = document.createElement('canvas');
+  const gl = cv.getContext('webgl', {premultipliedAlpha: true, alpha: true, antialias: false});
+  if (!gl) return; // zůstane obyčejná fotka
+  const C = [0.50, 0.475];        // střed květu v textuře
+  const VS = 'attribute vec2 p;varying vec2 v;void main(){v=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}';
+  const FS = `precision highp float;
+varying vec2 v;
+uniform sampler2D T;
+uniform float uT,uE;
+uniform vec2 uL,uW1,uW2,uC;
+uniform vec4 uS[6];
+uniform vec3 uAmber,uGold;
+float h(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float soft(float x){return x<.82?x:.82+.18*(1.-exp(-(x-.82)/.18));}
+void main(){
+  vec2 q=v, d=q-uC; float r=length(d);
+  /* lístky: lokální natočení kolem středu květu tam, kde přejela myš */
+  float rot=0.;
+  for(int i=0;i<6;i++){vec4 s=uS[i];vec2 e=q-s.xy;rot+=s.z*exp(-dot(e,e)/(s.w*s.w));}
+  float ang=atan(d.y,d.x);
+  rot*=smoothstep(.07,.16,r)*(.78+.22*sin(ang*21.+r*9.));
+  float c=cos(rot),s=sin(rot);
+  vec2 uv=uC+mat2(c,s,-s,c)*d*(1.-abs(rot)*.12);
+  vec4 tx=texture2D(T,uv);
+  float al=tx.a; vec3 base=tx.rgb/max(al,1e-3);
+  /* světlo jako v Amber Sphere: jádro, široká záře a dvě stopy */
+  vec2 l=q-uL,w1=q-uW1,w2=q-uW2;
+  float dl=dot(l,l);
+  float core=exp(-dl/.0045);
+  float light=(3.6*core+1.05*exp(-dl/.03)+.85*exp(-dot(w1,w1)/.018)+.38*exp(-dot(w2,w2)/.03))*uE;
+  vec3 col=base*(.84+.34*light)+mix(uAmber,uGold,.45)*light*.16+vec3(1.,.58,.16)*core*.26*uE;
+  /* třpytky v místě světla */
+  vec2 g=q*95.;vec2 id=floor(g);vec2 f=fract(g)-.5;float sd=h(id);
+  vec2 o=(vec2(h(id+3.1),h(id+7.7))-.5)*.6;
+  float sp=step(.955,sd)*exp(-dot(f-o,f-o)*55.)*pow(max(0.,sin(uT*1.6+sd*70.)),10.)*min(light,2.2);
+  col+=vec3(1.,.85,.55)*sp*.9;
+  col=vec3(soft(col.r),soft(col.g),soft(col.b));
+  /* záře kolem okvětí (rozmazaná alfa z mipmap) */
+  float ab=texture2D(T,q,4.5).a;
+  float halo=ab*(.85*exp(-dl/.05)+.30*exp(-dot(w1,w1)/.04))*uE+ab*.07;
+  vec3 hc=mix(uAmber,uGold,.35)*halo;
+  /* jiskry kolem květu, kde je světlo */
+  float sp2=step(.975,h(id+1.7))*exp(-dot(f-o,f-o)*70.)*pow(max(0.,sin(uT*1.1+sd*40.)),8.)*smoothstep(.02,.25,ab)*exp(-dl/.06)*uE;
+  hc+=uGold*sp2*.8;
+  float ha=clamp(max(hc.r,max(hc.g,hc.b)),0.,1.);
+  vec3 rgb=col*al+hc*(1.-al);
+  float A=al+(1.-al)*ha;
+  gl_FragColor=vec4(min(rgb,vec3(A)),A);
+}`;
+  const sh = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+  let pr;
+  try { pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(pr);
+    if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr)); }
+  catch (e) { console.warn('WebGL unavailable, keeping the photo', e); return; }
+  gl.useProgram(pr);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const ap = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(ap); gl.vertexAttribPointer(ap, 2, gl.FLOAT, false, 0, 0);
+  const U = n => gl.getUniformLocation(pr, n);
+  const u = {T:U('T'),t:U('uT'),E:U('uE'),L:U('uL'),W1:U('uW1'),W2:U('uW2'),C:U('uC'),S:U('uS'),A:U('uAmber'),G:U('uGold')};
+  gl.uniform2f(u.C, C[0], C[1]); gl.uniform3f(u.A, 1, 108/255, 24/255); gl.uniform3f(u.G, 1, 164/255, 65/255); gl.uniform1i(u.T, 0);
+
+  const tex = new Image(); tex.decoding = 'async'; tex.src = '{{ A }}mesicek_tex.webp';
+  let ready = false;
+  tex.onload = () => {
+    const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tex);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    ready = true; stage.appendChild(cv); img.style.visibility = 'hidden'; kick();
+  };
+
+  /* stav */
+  const L = [0.66, 0.30], W1 = [0.66, 0.30], W2 = [0.66, 0.30], tgt = [0.66, 0.30];
+  let energy = 0.55, lastMove = -1e9, time = 0, prev = 0, frame = 0, inView = true, hidden = false;
+  const S = Array.from({length: 6}, () => ({x: -9, y: -9, sw: 0, vel: 0, born: 0}));
+  const sArr = new Float32Array(24);
+  let last = null;
+
+  function toUV(e){ const r = stage.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height, r]; }
+  function onMove(e){
+    const [x, y] = toUV(e); const now = performance.now();
+    tgt[0] = Math.max(-0.15, Math.min(1.15, x)); tgt[1] = Math.max(-0.15, Math.min(1.15, y));
+    if (last){
+      const dt = Math.max(8, now - last.t) / 1000, vx = (x - last.x) / dt, vy = (y - last.y) / dt, sp = Math.hypot(vx, vy);
+      energy = Math.min(1.55, energy + sp * 0.035);
+      const dx = x - C[0], dy = y - C[1], r = Math.hypot(dx, dy);
+      if (r > 0.08 && r < 0.46 && sp > 0.08){
+        const vt = (dx * vy - dy * vx) / r;              // tangenciální rychlost = „pohladí“ lístky do strany
+        let s = S.find(o => Math.hypot(o.x - x, o.y - y) < 0.07);
+        if (!s){ s = S.reduce((a, b) => a.born < b.born ? a : b); Object.assign(s, {x, y, sw: 0, vel: 0}); }
+        s.born = now; s.vel += Math.max(-1.2, Math.min(1.2, vt)) * 0.55;
+      }
+    }
+    last = {x, y, t: now}; lastMove = now;
+    if (hint) hint.classList.add('off');
+    kick();
+  }
+  hero.addEventListener('pointermove', onMove, {passive: true});
+  hero.addEventListener('pointerdown', onMove, {passive: true});
+  hero.addEventListener('pointerleave', () => { last = null; });
+
+  function size(){
+    const r = stage.getBoundingClientRect(); const dpr = Math.min(devicePixelRatio || 1, 2);
+    const w = Math.max(1, Math.min(1600, Math.round(r.width * dpr)));
+    if (cv.width !== w){ cv.width = cv.height = w; gl.viewport(0, 0, w, w); }
+  }
+  const ease = (a, b, k) => { a[0] += (b[0] - a[0]) * k; a[1] += (b[1] - a[1]) * k; };
+  function draw(now){
+    frame = 0; if (!ready || hidden || !inView) return;
+    const dt = prev ? Math.min(0.05, (now - prev) / 1000) : 0.016; prev = now; time += dt;
+    const idle = now - lastMove > 2600;
+    if (idle && !reduce){
+      // bez myši světlo samo obíhá po osmičce jako v Amber Sphere (samovolná animace → při „omezit animace“ vypnuto)
+      const ph = time * 0.36;
+      tgt[0] = 0.5 + 0.30 * Math.sin(ph); tgt[1] = 0.47 + 0.20 * Math.sin(ph * 2 + 0.3);
+      energy += (0.62 - energy) * (1 - Math.exp(-dt * 0.8));
+    } else energy += (0.70 - energy) * (1 - Math.exp(-dt * 0.9));
+    ease(L, tgt, 1 - Math.exp(-dt * (idle ? 2.2 : 10)));
+    ease(W1, L, 1 - Math.exp(-dt * 3.2)); ease(W2, W1, 1 - Math.exp(-dt * 1.7));
+    S.forEach((s, i) => { // tlumená pružina – lístek se vychýlí a dokmitá
+      s.vel += (-70 * s.sw - 5.5 * s.vel) * dt; s.sw += s.vel * dt; s.sw = Math.max(-0.085, Math.min(0.085, s.sw));
+      sArr.set([s.x, s.y, s.sw, 0.10], i * 4);
+    });
+    size();
+    gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.uniform1f(u.t, time); gl.uniform1f(u.E, energy);
+    gl.uniform2f(u.L, L[0], L[1]); gl.uniform2f(u.W1, W1[0], W1[1]); gl.uniform2f(u.W2, W2[0], W2[1]);
+    gl.uniform4fv(u.S, sArr);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    // velká měkká záře v pozadí hero sekce jde za světlem
+    const r = stage.getBoundingClientRect(), hr = hero.getBoundingClientRect();
+    hero.style.setProperty('--gx', ((r.left - hr.left + L[0] * r.width) / hr.width * 100).toFixed(1) + '%');
+    hero.style.setProperty('--gy', ((r.top - hr.top + L[1] * r.height) / hr.height * 100).toFixed(1) + '%');
+    hero.style.setProperty('--ge', Math.min(1, energy / 1.4).toFixed(2));
+    // při omezených animacích kreslit jen dokud něco doznívá (pohyb myši, kmitání lístků)
+    const busy = !reduce || now - lastMove < 2500 || S.some(s => Math.abs(s.sw) > 1e-4 || Math.abs(s.vel) > 1e-3);
+    if (busy) kick();
+  }
+  function kick(){ if (!frame) frame = requestAnimationFrame(draw); }
+  new IntersectionObserver(es => { inView = es[0].isIntersecting; prev = 0; kick(); }).observe(stage);
+  document.addEventListener('visibilitychange', () => { hidden = document.hidden; prev = 0; kick(); });
+  addEventListener('resize', kick);
+  cv.addEventListener('webglcontextlost', e => { e.preventDefault(); ready = false; img.style.visibility = ''; cv.remove(); });
+}
+</script>
+<script>
+(function(){
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clamp01=v=>v<0?0:v>1?1:v;
+const hdr=document.getElementById('hdr');const setH=()=>document.documentElement.style.setProperty('--hdr',hdr.offsetHeight+'px');setH();addEventListener('resize',setH);
+
+/* ikony: když se Font Awesome nenačte, zůstane textová záloha */
+const faOk=!!(window.FontAwesome);
+document.querySelectorAll('.fa-fallback').forEach(s=>s.style.display=faOk?'none':'inline');
+
+/* ===== 20 květin (Unsplash License) ===== */
+const FLOWERS=[
+ ['Rose','00_ruze','Amelia Cui','a-vase-filled-with-pink-roses-on-a-table-LcD5aZ0Nt2U'],
+ ['Tulip','01_tulipan','Uljana Borodina','pink-petaled-flower-centerpiece-in-clear-glass-vase-NFj6pEUdmpY'],
+ ['Peony','02_pivonka','Farrinni','a-beautiful-bouquet-of-pink-peonies-in-a-vase-LHdXTexv1rw'],
+ ['Hydrangea','03_hortenzie','Stephanie Klepacki','a-bunch-of-purple-and-blue-flowers-in-a-garden-xyXyha8Mh1g'],
+ ['Gerbera','04_gerbera','mits hak','pink-flower-on-green-stem-y0GSPX3Z3g4'],
+ ['Chrysanthemum','05_chryzantema','Amy Humphries','white-chrysanthemum-flowers-in-sunlight-S5wUMrXdq1M'],
+ ['Lily','06_lilie','Leo Chane','a-group-of-white-flowers-against-a-blue-sky-utdTLZ_s4bA'],
+ ['Carnation','07_karafiat','pietro caspani','two-delicate-pink-carnations-with-buds-sDZP0su-vCM'],
+ ['Freesia','08_frezie','Xavier S.','a-single-white-flower-in-a-glass-vase-nUE7xUd6nGc'],
+ ['Orchid','09_orchidej','Alfonso Alberto Ramírez Alvarez','purple-moth-orchids-in-close-up-photography-FP2Kf5DsSo8'],
+ ['Sunflower','10_slunecnice','OhTilly','four-yellow-sunflowers-in-clear-glass-vase-pt-okrL7nLA'],
+ ['Lisianthus','11_eustoma','Natalie Kinnear','a-bunch-of-pink-and-white-flowers-with-a-pink-ribbon-MYIod48sQCw'],
+ ['Alstroemeria','12_alstroemerie','Farrinni','a-close-up-of-a-flower-on-a-table-SdzpZVtKUV8'],
+ ['Gypsophila','13_gypsophila','Fiona Murray-deGraaff','white-flowers-with-green-leaves-cCNR7TAkOs0'],
+ ['Statice','14_limonium','Susan Wilkinson','red-and-green-plant-on-white-textile-fZkqLm4PDZw'],
+ ['Ranunculus','15_pryskyrnik','micheile henderson','three-pink-flowers-with-water-droplets-on-them-5uyx42VZ4AI'],
+ ['Anemone','16_sasanka','Zoe Richardson','white-and-pink-flowers-in-macro-shot-Sbcv2zS6GRY'],
+ ['Calla lily','17_kala','Don Ricardo','a-close-up-of-a-flower-rQzwBbj6byw'],
+ ['Dahlia','18_jirina','Anita Austvika','vibrant-bouquet-of-orange-and-red-dahlias-in-a-vase-ap17s1gMR7k'],
+ ['Meadow bouquet','19_kopretina','Helen Oreshchenko','white-flowers-in-clear-glass-vase-7Z1xbz_OpYg']
+];
+const g3d=document.getElementById('g3d');
+FLOWERS.forEach(([n,f])=>{const el=document.createElement('figure');el.className='g3d-item';el.innerHTML=`<img src="{{ A }}flowers/${f}.jpg" alt="${n}" loading="lazy" decoding="async"><figcaption>${n}</figcaption>`;g3d.appendChild(el)});
+document.getElementById('credits').innerHTML=FLOWERS.map(([n,,a,s])=>`<div>${n}: <a href="https://unsplash.com/photos/${s}" target="_blank" rel="noopener">${a}</a></div>`).join('')+'<div>Měsíček v úvodu: <a href="https://www.pexels.com/cs-cz/foto/leto-zahrada-list-kytka-28279006/" target="_blank" rel="noopener">Usama Ilyas, Pexels</a></div><div>Světlo v úvodu: podle <a href="https://horizonx.so/tools/amber-sphere" target="_blank" rel="noopener">HorizonX Amber Sphere</a></div>';
+
+const burger=document.getElementById('burger'),menu=document.querySelector('.nav ul');
+burger.addEventListener('click',()=>{const o=menu.classList.toggle('open');burger.setAttribute('aria-expanded',o)});
+menu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{menu.classList.remove('open');burger.setAttribute('aria-expanded','false')}));
+/* formulář je jen náhled */
+document.getElementById('f').addEventListener('submit',e=>{e.preventDefault();document.getElementById('fnote').textContent='Thank you, we’ll get back to you soon.'});
+
+/* nadpis po slovech */
+const h1=document.getElementById('title');
+h1.innerHTML=h1.innerHTML.split(/(<br>)/).map(p=>p==='<br>'?p:p.split(' ').map(w=>w?`<span class="w">${w}</span>`:'').join(' ')).join('');
+
+/* ===== přepínač pozadí (náhled) ===== */
+const root=document.documentElement;
+const setBg=t=>{root.dataset.bg=t;document.querySelectorAll('.theme button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===t));try{localStorage.setItem('poupe-bg',t)}catch(e){}};
+try{const t=localStorage.getItem('poupe-bg');if(t==='esp'||t==='olive')setBg(t)}catch(e){}
+document.querySelectorAll('.theme button').forEach(b=>b.addEventListener('click',()=>setBg(b.dataset.t)));
+
+/* ===== HERO: měsíček + světlo (model světla z HorizonX Amber Sphere) ===== */
+marigold(document.getElementById('stage'),reduce);
+if(typeof gsap==='undefined'){document.querySelectorAll('.w').forEach(w=>{w.style.opacity=1;w.style.transform='none'});return}
+gsap.registerPlugin(ScrollTrigger);
+if(window.Lenis){const lenis=new Lenis({lerp:.085});lenis.on('scroll',ScrollTrigger.update);gsap.ticker.add(t=>lenis.raf(t*1000));gsap.ticker.lagSmoothing(0);
+  document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{const h=a.getAttribute('href');const q=h.length>1&&document.querySelector(h);if(q){e.preventDefault();lenis.scrollTo(q,{offset:-hdr.offsetHeight})}}))}
+
+if(reduce)gsap.set('.w',{opacity:1,y:0});else gsap.to('.w',{opacity:1,y:0,duration:1.1,ease:'power3.out',stagger:.08,delay:.15});
+
+/* ===== HorizonX · Grid Bloom (varianta bloom z exportu, navázáno na scroll stránky) ===== */
+(function(){
+  const items=[...g3d.querySelectorAll('.g3d-item')],spread=1000,spin=360;
+  const tl=gsap.timeline({defaults:{ease:'none'}});
+  tl.fromTo(items,{transformOrigin:'50% 200%',rotationX:0,yPercent:spread*.4},{yPercent:0,rotationY:spin,scale:.8,stagger:.03});
+  const composed=tl.duration();tl.to(items,{opacity:.2,duration:composed*.35},composed);
+  ScrollTrigger.create({trigger:g3d,start:'top bottom+=5%',end:'bottom top-=5%',scrub:true,animation:tl});
+})();
+})();
+</script>
+<p class="pz-credit">Website draft by: <a href="{{ owner_site }}" rel="noopener">{{ owner_name }}</a> · Photos: Unsplash</p>
+{% if show_banner %}<div class="pz-pv" id="pz-pv" role="note"><span>Non-binding draft of a new website for <strong>{{ name }}</strong> · prepared by {{ owner_name }}</span>
+<a class="pz-cta" href="{{ want_url }}">I want this website</a>{% if wa_url %}<a class="pz-cta" href="{{ wa_url }}" rel="noopener" target="_blank">WhatsApp</a>{% endif %}
+<button data-pz-skryt="" type="button">Hide</button></div>{% endif %}
+<script id="pz-js">(function(){
+var pv=document.getElementById('pz-pv');if(pv){var x=pv.querySelector('[data-pz-skryt]');x&&x.addEventListener('click',function(){pv.classList.add('pz-skryt');});}
+var HOOK="{{ form_webhook_url }}",LEAD="{{ lead_id }}";
+function lab(f,el){var l=el.id&&f.querySelector('label[for="'+el.id+'"]');if(!l)l=el.closest('label');var s=(l?l.textContent:'')||el.name||'';return s.replace(/\s+/g,' ').replace(/\*/g,'').trim();}
+document.addEventListener('submit',function(e){var f=e.target;if(!f||f.tagName!=='FORM'||f.hasAttribute('data-pz-ignore')||!HOOK)return;
+  var d={lead_id:LEAD,source:'preview',name:'',email:'',phone:'',message:''},rest=[],seen={};
+  Array.prototype.forEach.call(f.elements,function(el){ if(!el.name||el.type==='submit'||el.type==='button')return; if((el.type==='checkbox'||el.type==='radio')&&!el.checked)return;
+   var v=(el.value||'').trim(); if(!v)return; var n=el.name.toLowerCase();
+   if(/^(jmeno|name|jmeno_prijmeni)$/.test(n))d.name=v; else if(/^(email|e-mail)$/.test(n))d.email=v; else if(/^(telefon|phone|tel)$/.test(n))d.phone=v;
+   else {var k=lab(f,el)||el.name; if(seen[k]){seen[k].push(v);}else{seen[k]=[v];rest.push(k);}} });
+  d.message=rest.map(function(k){return k+': '+seen[k].join(', ');}).join('\n');
+  setTimeout(function(){ if(f.querySelector('[aria-invalid="true"],.chyba,.is-invalid'))return; if(!f.hasAttribute('novalidate')&&!f.checkValidity())return; if(!d.name&&!d.email&&!d.phone)return;
+   try{fetch(HOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch(err){}
+  },0);
+},true);
+})();</script></body>
+</html>

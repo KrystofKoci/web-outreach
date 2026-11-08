@@ -1,0 +1,14 @@
+{{greeting}},
+
+před pár dny jsem vám posílal ukázku nové webové stránky pro {{name}}. Vím, že takový e-mail snadno zapadne, tak jen krátce připomínám:
+
+{{preview_url}}
+
+Největší rozdíl je vidět na mobilu: zákazník má telefon, otevírací dobu a poptávkové tlačítko hned na první obrazovce – bez hledání a přibližování.
+
+Pořád jde o nezávaznou ukázku; texty i fotky jsou pracovní verze. Pokud se vám směr líbí, dotáhnu ji podle vašich podkladů. Pokud ne, stačí napsat a víc vás nebudu rušit.
+
+Kdybyste měli jakýkoli dotaz, stačí odpovědět na tento e-mail – ozvu se obratem.
+
+{{owner_name}}
+{{owner_site}}

@@ -1,0 +1,10 @@
+# nikdy necommitovat tajemství ani lokální stav
+.env
+.env.*
+!.env.example
+backups/
+*.sql.gz
+*.tar.gz
+caddy_data/
+.n8n_imported
+.n8n_google_creds

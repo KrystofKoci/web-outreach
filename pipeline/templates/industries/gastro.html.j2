@@ -1,0 +1,27 @@
+{% extends 'base.html.j2' %}
+{#- Gastro: warm sand hero, soft serif headline, arched photo like a menu board. -#}
+{% block extra_css %}
+:root{--radius:14px}
+.hero--editorial{background:var(--bg)}
+.hero--editorial h1{font-weight:700;font-size:clamp(2.6rem,9vw,5rem);letter-spacing:-.02em;color:var(--brand)}
+.hero--editorial .hero-cat{color:var(--brand)}
+.hero--editorial .hero-cat::before{background:var(--accent);height:3px}
+.hero--editorial .photo,.hero--editorial .ph{border-radius:200px 200px 18px 18px;min-height:340px}
+.hero--editorial .ph{background:linear-gradient(180deg,var(--soft),var(--bg));border-color:var(--brand)}
+.hero--editorial .btn-ghost{border-color:var(--brand);color:var(--brand)}
+.hero--editorial .btn-ghost:hover{background:var(--brand);color:#fff}
+.top .mark{border-radius:50%}
+h2{color:var(--brand)}
+.alt{background:var(--brand);color:#fff;--ink:#fff;--muted:rgba(255,255,255,.78);--line:rgba(255,255,255,.22)}
+.alt .svc{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.18)}
+.alt .svc .ico-wrap{background:var(--accent);color:var(--accent-ink)}
+.alt h2{color:#fff}
+.alt form{background:rgba(255,255,255,.08)}
+.alt input,.alt textarea{border-color:transparent}
+.alt .c-item .ico-wrap{background:rgba(255,255,255,.12);color:#fff}
+.alt .form-msg.err{color:#FFD4CF}
+.reviews.alt{background:var(--soft);color:var(--ink);--ink:#22332A;--muted:#5A6A5F;--line:#DECFB4}
+.why .tick{background:var(--accent);color:var(--accent-ink)}
+.hours li.today{color:var(--accent);filter:brightness(.8)}
+footer{background:#172B1F}
+{% endblock %}

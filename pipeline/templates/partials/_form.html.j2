@@ -1,0 +1,10 @@
+{%- import 'partials/_icons.html.j2' as ic -%}
+<form id="kf" method="post" action="{{ form_webhook_url or ('mailto:' ~ (email or owner_email)) }}"
+      data-webhook="{{ form_webhook_url }}" data-lead="{{ lead_id }}" data-ok="{{ t.form_ok }}" data-err="{{ t.form_err }}">
+  <label>{{ t.form_name }}<input type="text" name="name" autocomplete="name" required maxlength="120"></label>
+  <label>{{ t.form_email }}<input type="email" name="email" autocomplete="email" required maxlength="160"></label>
+  <label>{{ t.form_message }}<textarea name="message" required maxlength="2000" placeholder="{{ t.form_placeholder }}"></textarea></label>
+  <button class="btn btn-accent" type="submit">{{ ic.icon('mail') }}{{ t.form_send }}</button>
+  <p class="form-msg" aria-live="polite"></p>
+  <p class="form-note">{{ t.form_note }}</p>
+</form>

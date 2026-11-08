@@ -1,0 +1,5 @@
+--
+{{owner_name}} · {{owner_address}} · {{sender_email}} · {{owner_site}}
+This is a one-time, individually prepared business offer sent to a publicly listed business contact. Sender: {{owner_name}}, sole proprietor (Czech Republic).
+Not interested? Unsubscribe here: {{unsubscribe_url}} – or reply "NO THANKS" and you will never hear from me again.
+Privacy: https://krystofkoci.com/ochrana-udaju

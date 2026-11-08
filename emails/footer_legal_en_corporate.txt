@@ -1,0 +1,5 @@
+--
+Sent by {{owner_name}}, sole trader registered in the Czech Republic (ID no. {{owner_ico}}), {{owner_address}} · {{sender_email}} · {{owner_site}}
+A one-off, individually prepared business proposal addressed to your company at its published business contact. No mailing list involved.
+To opt out of any further message: {{unsubscribe_url}} – or reply "NO THANKS". Opt-outs are processed immediately.
+Privacy: https://krystofkoci.com/ochrana-udaju

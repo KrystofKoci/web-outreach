@@ -1,0 +1,12 @@
+{{greeting}},
+
+this is my last e-mail – I do not want to clutter your inbox.
+
+I will keep the draft for {{name}} available at {{preview_url}} for a few more weeks, then I will take it down.
+
+{{mail3_offer}}
+
+If you get in touch, I will be glad to help. If not, I wish you plenty of happy customers and apologise for the interruption.
+
+{{owner_name}}
+{{owner_site}}

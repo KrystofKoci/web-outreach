@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>{{ page_title }}</title>
+<script>
+  (function(){var q=new URLSearchParams(location.search),h=document.documentElement;
+  h.dataset.tema=(q.get('tema')==='tmava'||location.hash==='#tmava')?'tmava':'svetla';
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&q.get('pohyb')!=='0')h.classList.add('pohyb');})();
+</script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="{{ A }}zaklad.css" rel="stylesheet"/>
+<style>
+  /* V12 Galerie s tvarem – barber Ostří
+     Předlohy: marcelo_DfKk3DpR2_3_7 (Yohaku: regular grotesk na střed, 2. část nadpisu šedě, tunel karet pod textem, počítadlo vpravo dole),
+     marcelo_DfRDD1dRlsR_1 (tunel přes celou šířku, popisky v rozích), uxui_DY1Jw2qooH3_1 (galerie střihů jako hlavní prvek). */
+  :root {
+    --pozadi:#EAE9E4; --text:#141413; --tlumeny:#62605B; --linka:rgba(20,20,19,.14);
+    --akcent:#C8421C; --na-akcentu:#FFF8F3; --stopa:#B4B1AA; --karta:#D9D7D1; --ubeznik:transparent;
+  }
+  html[data-tema="tmava"] {
+    --pozadi:#0F0F0E; --text:#EDEBE6; --tlumeny:#8E8C87; --linka:rgba(237,235,230,.14);
+    --akcent:#E8582C; --na-akcentu:#120F0D; --stopa:#3C3B38; --karta:#1C1C1A; --ubeznik:rgba(232,88,44,.16);
+  }
+  body { background: var(--pozadi); color: var(--text); font-family: "Inter Tight", system-ui, sans-serif; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: .02em; }
+
+  /* ---------- lišta N2 ---------- */
+  .lista { position: absolute; inset: 0 0 auto 0; z-index: 20; height: 76px; padding: 0 2.6vw;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; font-size: 14px; }
+  .znacka { display: inline-flex; align-items: center; gap: 10px; font-weight: 500; font-size: 17px; letter-spacing: -.02em; }
+  .znacka i { width: 18px; height: 18px; border-radius: 50%; background: var(--text); }
+  .odkazy { display: flex; gap: 34px; }
+  .odkazy a:hover { color: var(--tlumeny); }
+  .vpravo { justify-self: end; display: flex; align-items: center; gap: 10px; }
+  .pilulka-lista { height: 40px; padding: 0 18px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--linka); }
+  .hamburger { display: none; width: 40px; height: 40px; align-content: center; gap: 6px; }
+  .hamburger i { display: block; height: 1.5px; width: 20px; background: currentColor; }
+  .menu-panel { display: none; }
+  .lista.otevreno .menu-panel { display: grid; position: absolute; top: 62px; right: 20px; gap: 14px; padding: 20px 24px;
+    background: var(--pozadi); border: 1px solid var(--linka); border-radius: 18px; font-size: 15px; }
+
+  /* ---------- hero ---------- */
+  .hero { min-height: max(100svh, 640px); position: relative; overflow: hidden; }
+  .text { position: relative; z-index: 3; padding-top: max(15vh, 112px); text-align: center; }
+  h1 { font-weight: 500; font-size: clamp(2.75rem, 6vw, 7rem); line-height: 1.04; letter-spacing: -.038em; padding: 0 4vw; }
+  h1 .ton { color: var(--tlumeny); }
+  h1 .spoj { white-space: nowrap; }
+  .podtext { margin: 20px auto 0; max-width: 44ch; font-size: 16px; line-height: 1.5; color: var(--tlumeny); }
+  .cta-obal { margin-top: 28px; }
+  .cta { height: 46px; padding: 0 8px 0 22px; border-radius: 999px; display: inline-flex; align-items: center;
+    background: var(--akcent); color: var(--na-akcentu); font-size: 14px; font-weight: 500; }
+  .cta span { align-items: center; gap: 14px; }
+  .cta b { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 400;
+    background: color-mix(in srgb, var(--na-akcentu) 18%, transparent); }
+
+  /* tunel karet */
+  .tunel { position: absolute; z-index: 1; left: 0; right: 0; top: 47%; bottom: 0; perspective: 820px;
+    perspective-origin: calc(50% + var(--px-mys-x, 0px)) calc(42% + var(--px-mys-y, 0px)); }
+  .scena { position: absolute; left: 50%; top: 42%; width: 0; height: 0; transform-style: preserve-3d;
+    /* při scrollu tunel „ujíždí“ k divákovi (data-parallax nastavuje --px-scroll) */
+    transform: translate3d(0, 0, calc(var(--px-scroll, 0px) * var(--jizda, 1))); }
+  /* teplé světlo v úběžníku (jen tmavá verze) */
+  .svetlo { position: absolute; left: 50%; top: 42%; width: 62vw; height: 46vw; transform: translate(-50%, -50%); pointer-events: none;
+    background: radial-gradient(closest-side, var(--ubeznik), color-mix(in srgb, var(--ubeznik) 72%, transparent) 22%,
+      color-mix(in srgb, var(--ubeznik) 42%, transparent) 46%, color-mix(in srgb, var(--ubeznik) 16%, transparent) 72%, transparent); }
+  .karta { position: absolute; width: var(--kw); height: calc(var(--kw) * 1.333); left: calc(var(--kw) / -2); top: calc(var(--kw) * -0.666);
+    border-radius: 4px; overflow: hidden; background: var(--karta); backface-visibility: hidden;
+    transform: translate3d(calc(var(--strana) * var(--x0)), 0, calc(var(--krok) * var(--z, calc(1 - var(--i))))) rotateY(calc(var(--strana) * -66deg)); }
+  .karta:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+  .karta img { width: 100%; height: 100%; object-fit: cover; }
+  .l { --strana: -1; } .p { --strana: 1; }
+  .tunel { --kw: 14vw; --x0: 31vw; --krok: 14.5vw; }
+  /* 861–1439 px: tunel větší (na 1024 px 17vw / 34vw / 16vw), plynule do hodnot pro 1440 px, bez skoku */
+  @media (min-width: 861px) and (max-width: 1439px) { .tunel { --kw: calc(105px + 6.73vw); --x0: calc(107px + 23.56vw); --krok: calc(53px + 10.8vw); } }
+  .mlha { position: absolute; z-index: 2; inset: 0; pointer-events: none;
+    background: linear-gradient(to bottom, var(--pozadi) 0%, transparent 16%); }
+
+  /* ---------- kolo 4: tunel plyne sám ----------
+     Karty jedou k divákovi v nekonečné smyčce (hloubka --z nastavovaná skriptem), vpředu zmizí za okrajem a vzadu se doplní.
+     Scroll smyčku zrychlí; najetí myší nebo focus na fotku ji zastaví a ukáže název střihu. Bez pohybu zůstává statický tunel. */
+  html.pohyb .tunel.smycka .scena { transform: none; }   /* posun při scrollu nahrazuje zrychlení smyčky */
+  html.pohyb .tunel.smycka .karta { will-change: transform, opacity; }
+  .popisek-strihu { position: absolute; z-index: 4; left: 0; top: 0; padding: 7px 12px; border-radius: 999px; white-space: nowrap; pointer-events: none;
+    background: color-mix(in srgb, var(--pozadi) 90%, transparent); color: var(--text); border: 1px solid var(--linka);
+    opacity: 0; transition: opacity .25s ease; }
+  .popisek-strihu.videt { opacity: 1; }
+
+  .roh { position: absolute; z-index: 3; bottom: 22px; color: var(--tlumeny); }
+  .roh-l { left: 2.6vw; }
+
+  /* ---------- služby ---------- */
+  .sluzby { position: relative; z-index: 3; background: var(--pozadi); padding: 120px 4vw 140px; }
+  .sluzby h2 { font-weight: 500; font-size: clamp(2rem, 3.2vw, 3rem); letter-spacing: -.04em; margin-bottom: 48px; }
+  .sluzby ul { border-top: 1px solid var(--linka); }
+  .sluzby li { display: grid; grid-template-columns: 1.1fr 2fr auto; gap: 4vw; align-items: baseline; padding: 30px 0; border-bottom: 1px solid var(--linka); }
+  .sluzby h3 { font-weight: 500; font-size: clamp(1.25rem, 1.8vw, 1.6rem); letter-spacing: -.03em; }
+  .sluzby p { color: var(--tlumeny); font-size: 16px; line-height: 1.55; max-width: 52ch; }
+  .sluzby .cena { font-size: 14px; color: var(--tlumeny); }
+
+  @media (max-width: 860px) {
+    .lista { height: 64px; padding: 0 20px; grid-template-columns: auto 1fr; }
+    .odkazy, .pilulka-lista { display: none; }
+    .hamburger { display: inline-grid; }
+    .text { position: static; padding-top: 100px; }
+    h1 { font-size: clamp(2.4rem, 12vw, 3.6rem); padding: 0 20px; }
+    .podtext { font-size: 15px; padding: 0 28px; }
+    .tunel { top: 33%; bottom: 96px; perspective: 460px; --kw: 34vw; --x0: 37vw; --krok: 32vw; --jizda: .55; }
+    .svetlo { width: 120vw; height: 90vw; }
+    .scena { top: 50%; }
+    .cta-obal { position: absolute; z-index: 4; left: 0; right: 0; bottom: 56px; }
+    .roh { bottom: 20px; }
+    .sluzby { padding: 80px 20px 100px; }
+    .sluzby li { grid-template-columns: 1fr auto; gap: 8px 16px; }
+    .sluzby li p { grid-column: 1 / -1; grid-row: 2; }
+  }
+</style>
+<style id="pz-css">
+.pz-hod{padding:clamp(56px,9vw,104px) 24px;text-align:center;color:inherit;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-hod .pz-in{max-width:560px;margin:0 auto}
+.pz-hod .pz-cislo{font-size:clamp(44px,7vw,72px);line-height:1;margin:0;font-weight:500;letter-spacing:-.02em}
+.pz-hod .pz-cislo span{font-size:.32em;opacity:.7;letter-spacing:0;margin-left:.3em}
+.pz-hod .pz-hv{position:relative;display:inline-block;font-size:22px;letter-spacing:4px;margin:14px 0 8px;color:color-mix(in srgb,currentColor 22%,transparent)}
+.pz-hod .pz-hv b{position:absolute;inset:0 auto 0 0;overflow:hidden;white-space:nowrap;color:var(--akcent,var(--accent,#E3A008));font-weight:400}
+.pz-hod .pz-pod{margin:0 0 14px;opacity:.78}
+.pz-hod a{color:inherit}
+.pz-pata{padding:28px 24px 34px;text-align:center;font-size:14px;opacity:.85;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-pata p{margin:4px 0}.pz-pata a{color:inherit}
+.pz-credit{font-size:12px;opacity:.7;text-align:center;padding:0 24px 22px}
+.pz-credit a{color:inherit}
+.pz-pv{position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;background:#111827;color:#fff;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;
+ padding:10px 14px;border-radius:14px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.pz-pv a{color:#fff}.pz-pv .pz-cta{background:#fff;color:#111827;text-decoration:none;font-weight:700;padding:.4em .85em;border-radius:999px}
+.pz-pv button{background:none;border:0;color:#fff;opacity:.8;cursor:pointer;font:inherit;text-decoration:underline}
+.pz-pv.pz-skryt{display:none}
+@media print{.pz-pv{display:none}}
+</style><style id="pz-ext-css">
+.pz-ext{color:var(--text,inherit);border-top:1px solid var(--linka,color-mix(in srgb,currentColor 14%,transparent))}
+.pz-ext .pz-obal{max-width:1180px;margin:0 auto;padding:clamp(64px,9vw,120px) clamp(20px,5vw,56px)}
+.pz-ext h2{font-family:var(--pz-h,inherit);font-size:clamp(30px,4.2vw,52px);line-height:1.05;margin:0 0 18px;font-weight:500;letter-spacing:-.01em}
+.pz-ext .pz-uvod{max-width:620px;color:var(--tlumeny,inherit);opacity:.95;margin:0 0 40px;font-size:18px;line-height:1.55}
+.pz-ext .pz-tri{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.pz-ext .pz-tri h3{font-size:20px;margin:0 0 8px;font-weight:600}
+.pz-ext .pz-tri p{margin:0;color:var(--tlumeny,inherit);line-height:1.55}
+.pz-ext .pz-tri div{padding-top:18px;border-top:2px solid var(--akcent,currentColor)}
+.pz-ext .pz-dva{display:grid;grid-template-columns:1fr 1.2fr;gap:clamp(28px,5vw,72px);align-items:start}
+.pz-ext dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:10px 18px}
+.pz-ext dt{color:var(--tlumeny,inherit)}.pz-ext dd{margin:0}
+.pz-ext a{color:inherit}
+.pz-ext .pz-hod-t{margin-top:26px;display:grid;grid-template-columns:auto 1fr;gap:6px 18px;font-variant-numeric:tabular-nums}
+.pz-ext .pz-hod-t .dnes{font-weight:700}
+.pz-ext form{display:grid;gap:14px}
+.pz-ext label{display:grid;gap:6px;font-size:14px;color:var(--tlumeny,inherit)}
+.pz-ext input,.pz-ext textarea{font:inherit;font-size:16px;color:var(--text,inherit);background:transparent;border:1px solid var(--linka,color-mix(in srgb,currentColor 25%,transparent));border-radius:12px;padding:12px 14px}
+.pz-ext textarea{min-height:120px;resize:vertical}
+.pz-ext input:focus,.pz-ext textarea:focus{outline:2px solid var(--akcent,currentColor);outline-offset:1px}
+.pz-ext button{justify-self:start;font:inherit;font-weight:600;background:var(--akcent,currentColor);color:var(--na-akcentu,#fff);border:0;border-radius:999px;padding:13px 24px;cursor:pointer}
+.pz-ext .pz-ok{min-height:1.4em;margin:0;font-size:15px}
+.pz-ext details{border-top:1px solid var(--linka,color-mix(in srgb,currentColor 18%,transparent));padding:18px 0}
+.pz-ext details:last-of-type{border-bottom:1px solid var(--linka,color-mix(in srgb,currentColor 18%,transparent))}
+.pz-ext summary{cursor:pointer;font-size:clamp(19px,2vw,23px);font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:16px}
+.pz-ext summary::after{content:"+";font-weight:400}.pz-ext details[open] summary::after{content:"–"}
+.pz-ext summary::-webkit-details-marker{display:none}
+.pz-ext details p{max-width:760px;line-height:1.65;color:var(--tlumeny,inherit);margin:12px 0 0}
+@media (max-width:820px){.pz-ext .pz-tri,.pz-ext .pz-dva{grid-template-columns:1fr}}
+</style></head>
+<body>
+<header class="lista">
+<a class="znacka" href="#"><i aria-hidden="true"></i>{{ brand }}</a>
+<nav aria-label="Main navigation" class="odkazy">
+<a href="#sluzby">Services</a><a href="#sluzby">Prices</a><a href="#">Gallery</a><a href="#kontakt">Contact</a>
+</nav>
+<div class="menu-panel"><a href="#sluzby">Services</a><a href="#sluzby">Prices</a><a href="#">Gallery</a><a href="#kontakt">Contact</a></div>
+<div class="vpravo">
+<button aria-label="Switch to dark mode" aria-pressed="false" class="tema-prepinac" data-prepnout-tema="" type="button">
+<svg class="ikona-slunce" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+<svg class="ikona-mesic" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg>
+</button>
+<a class="pilulka-lista" href="#kontakt">Book</a>
+<button aria-expanded="false" aria-label="Menu" class="hamburger" data-menu="" data-menu-zaklad="" type="button"><i></i><i></i></button>
+</div>
+</header>
+<main>
+<section class="hero">
+<div class="text">
+<h1 data-slozit="">{{ brand }} {% if 'barber' not in (brand|lower) %}<span class="ton">barbershop</span>{% endif %}</h1>
+<p class="podtext" data-po-nadpisu="">Men’s cuts, beards and shaves. See what people leave our chairs with.</p>
+<div class="cta-obal" data-po-nadpisu="0.1"><a class="cta" data-magnet="" href="#kontakt"><span data-magnet-vnitrek="">Pick a time <b aria-hidden="true">↗</b></span></a></div>
+</div>
+<div aria-label="Haircut gallery" class="tunel" data-parallax-mys="14" role="group">
+<div aria-hidden="true" class="svetlo"></div>
+<div class="scena" data-parallax="0.32">
+<figure class="karta l" style="--i:0"><img alt="A short textured cut with a shaved line, profile" height="880" src="{{ A }}img/V12-barber-strih-1.webp" width="660"/></figure>
+<figure class="karta l" style="--i:1"><img alt="Slicked-back hair, faded sides and a trimmed beard" height="880" src="{{ A }}img/V12-barber-strih-2.webp" width="660"/></figure>
+<figure class="karta l" style="--i:2"><img alt="Hair swept up, short sides and a beard" height="880" src="{{ A }}img/V12-barber-strih-3.webp" width="660"/></figure>
+<figure class="karta l" style="--i:3"><img alt="A shaved head and a full beard" height="880" src="{{ A }}img/V12-barber-strih-4.webp" width="660"/></figure>
+<figure class="karta l" style="--i:4"><img alt="A skin fade with volume on top, rear profile" height="880" src="{{ A }}img/V12-barber-strih-5.webp" width="660"/></figure>
+<figure class="karta l" style="--i:5"><img alt="Faded sides and a long full beard, profile" height="880" src="{{ A }}img/V12-barber-strih-6.webp" width="660"/></figure>
+<figure class="karta l" style="--i:6"><img alt="Long curly hair" height="880" src="{{ A }}img/V12-barber-strih-7.webp" width="660"/></figure>
+<figure class="karta l" style="--i:7"><img alt="A short cut in hard side light" height="880" src="{{ A }}img/V12-barber-strih-8.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta l" style="--i:8"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-2.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta l" style="--i:9"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-5.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta l" style="--i:10"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-1.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta l" style="--i:11"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-7.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta p" style="--i:0"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-6.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta p" style="--i:1"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-4.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta p" style="--i:2"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-8.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta p" style="--i:3"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-1.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta p" style="--i:4"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-3.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta p" style="--i:5"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-7.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta p" style="--i:6"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-2.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta p" style="--i:7"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-5.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta p" style="--i:8"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-3.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta p" style="--i:9"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-8.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta p" style="--i:10"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-6.webp" width="660"/></figure>
+<figure aria-hidden="true" class="karta p" style="--i:11"><img alt="" height="880" src="{{ A }}img/V12-barber-strih-4.webp" width="660"/></figure>
+</div>
+</div>
+<div aria-hidden="true" class="mlha"></div>
+<p aria-hidden="true" class="popisek-strihu mono"></p>
+<p class="roh roh-l mono" data-po-nadpisu="0.3">Haircut gallery</p>
+</section>
+<section class="sluzby" id="sluzby">
+<h2>Services</h2>
+<ul data-odhalit="deti">
+<li><h3>Haircut</h3><p>First we talk about how you wear your hair. Then scissors, clippers or both.</p></li>
+<li><h3>Beard trim</h3><p>Shape, outline and a clean line on the cheeks and neck.</p></li>
+<li><h3>Straight-razor shave</h3><p>A classic wet shave. Unhurried, with a sharp blade.</p></li>
+<li><h3>Cut and beard</h3><p>Both in one appointment, so they match.</p></li>
+</ul>
+</section><section class="pz-ext" id="proc"><div class="pz-obal">
+<h2>Why us</h2><p class="pz-uvod">We take our time with every cut and beard, so it still looks right three weeks later.</p><div class="pz-tri"><div><h3>We talk first</h3><p>Before we start, we talk about how you wear your hair and how much time you spend on it at home.</p></div><div><h3>Craft, not a conveyor belt</h3><p>We leave enough time for every client. No rushing between appointments.</p></div><div><h3>Tips for home</h3><p>We’ll show you how to style your hair or beard at home and what to keep it in shape with.</p></div></div></div></section>
+{# SEKCE_PATCH_V1 #}{% include "_onas.html.j2" %}
+<section class="pz-ext" id="kontakt-formular"><div class="pz-obal pz-dva">
+<div><h2>Contact and booking</h2><p class="pz-uvod">Tell us which service you’re interested in and when suits you. We’ll get back to you to confirm the time.</p>
+<dl>{% if address %}<dt>Address</dt><dd>{{ address }}{% if maps_url %} · <a href="{{ maps_url }}" rel="noopener" target="_blank">map</a>{% endif %}</dd>{% endif %}
+{% if phone %}<dt>Phone</dt><dd><a href="tel:{{ phone_href }}">{{ phone }}</a></dd>{% endif %}
+{% if email %}<dt>E-mail</dt><dd><a href="mailto:{{ email }}">{{ email }}</a></dd>{% endif %}</dl>
+{% if hours %}<div aria-label="Opening hours" class="pz-hod-t">{{ hours_rows|safe }}</div>{% endif %}</div>
+<form class="pz-form" data-formular="dotaz" novalidate="">
+<label for="pz-j">Full name<input autocomplete="name" id="pz-j" name="jmeno" required=""/></label>
+<label for="pz-t">Phone<input autocomplete="tel" id="pz-t" name="telefon" type="tel"/></label>
+<label for="pz-e">E-mail<input autocomplete="email" id="pz-e" name="email" required="" type="email"/></label>
+<label for="pz-z">Service and preferred time<textarea id="pz-z" name="zprava" required=""></textarea></label>
+<button type="submit">Send</button><p aria-live="polite" class="pz-ok" role="status"></p></form>
+<script>(function(){var f=document.currentScript.previousElementSibling;f.addEventListener('submit',function(e){e.preventDefault();var bad=null;
+f.querySelectorAll('[required]').forEach(function(el){var ok=el.value.trim()&&(el.type!=='email'||/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(el.value));el.setAttribute('aria-invalid',ok?'false':'true');if(!ok&&!bad)bad=el;});
+var m=f.querySelector('.pz-ok');if(bad){m.textContent='Please fill in the highlighted fields.';bad.focus();return;}m.textContent='Thank you, we’ll confirm your appointment.';setTimeout(function(){f.reset();},50);});})();</script>
+</div>{% include "_mapa.html.j2" %}
+</section>
+<section class="pz-ext" id="rady"><div class="pz-obal"><h2>Tips from the chair</h2><p class="pz-uvod">Short tips for your hair and beard between visits.</p><details><summary>How often to get a haircut</summary><p>Short fades keep their shape for about two to three weeks, longer men’s styles for four to six. Book your next appointment as you leave and your cut will never “grow out”.</p><p>If you are growing your hair, keep coming anyway – tidying the ends and outlines keeps the shape while the length grows.</p></details><details><summary>Beard care at home</summary><p>Wash your beard with a mild shampoo or beard soap two or three times a week; water is enough on other days. Work oil or balm into a damp beard – it softens the hair and soothes the skin underneath.</p><p>Only lightly tidy the lines on your cheeks and neck with a trimmer. Bigger changes in shape are best left to your barber.</p></details><details><summary>Getting ready for a straight-razor shave</summary><p>Don’t exfoliate the day before, and if you let your stubble grow for a few days the shave will be gentler. If you have sensitive skin or redness, let us know in advance.</p><p>A cooling, alcohol-free aftershave helps afterwards. Give your skin a rest from harsh products the next day.</p></details></div></section>
+</main>
+{% include "_recenze.html.j2" %}
+{% if rating %}<section aria-label="Rating on Google" class="pz-hod"><div class="pz-in">
+<p class="pz-cislo">{{ rating_txt }}<span>out of 5</span></p>
+<p aria-hidden="true" class="pz-hv">★★★★★<b style="width:{{ rating_pct }}%">★★★★★</b></p>
+<p class="pz-pod">Rating on Google{% if show_count %} · {{ rating_count }} reviews{% endif %}</p>
+{% if maps_url %}<p><a href="{{ maps_url }}" rel="noopener" target="_blank">View on Google Maps</a></p>{% endif %}
+</div></section>{% endif %}<footer class="pz-pata"><p><strong>{{ name }}</strong></p>
+{% if address %}<p>{{ address }}</p>{% endif %}
+<p>{% if phone %}<a href="tel:{{ phone_href }}">{{ phone }}</a>{% endif %}{% if phone and email %} · {% endif %}{% if email %}<a href="mailto:{{ email }}">{{ email }}</a>{% endif %}</p></footer><script>
+  document.querySelectorAll('[data-menu]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var l = b.closest('.lista'), o = l.classList.toggle('otevreno');
+      b.setAttribute('aria-expanded', o ? 'true' : 'false');
+    });
+  });
+</script>
+<script defer="" src="{{ A }}zaklad.js"></script>
+<script>
+  /* Kolo 4: tunel střihů V12 – nekonečná smyčka v requestAnimationFrame (jen transform a opacity), zastavení a popisek. */
+  (function () {
+    var html = document.documentElement, hero = document.querySelector('.hero'), tunel = hero.querySelector('.tunel');
+    var popisek = hero.querySelector('.popisek-strihu');
+    var nazvy = { 1: 'Textured cut with a line', 2: 'Slicked back with a fade', 3: 'Swept up, short sides', 4: 'Shaved head and full beard',
+      5: 'Skin fade', 6: 'Fade and long beard', 7: 'Long curly hair', 8: 'Short cut' };
+    var karty = Array.prototype.slice.call(tunel.querySelectorAll('.karta'));
+    karty.forEach(function (k) {
+      var m = k.querySelector('img').getAttribute('src').match(/strih-(\d+)/); k.dataset.nazev = nazvy[m ? m[1] : 0] || '';
+      if (!k.hasAttribute('aria-hidden')) k.tabIndex = 0;   /* fotky s alt textem jdou vybrat klávesnicí */
+    });
+    var pohyb = html.classList.contains('pohyb'), dotyk = !matchMedia('(hover: hover) and (pointer: fine)').matches;
+    var mys = null, fokus = null;
+
+    function umistiPopisek(k) {
+      var r = k.getBoundingClientRect(), h = hero.getBoundingClientRect();
+      var l = Math.max(r.left, 0), p = Math.min(r.right, window.innerWidth);
+      var x = (l + p) / 2 - h.left, y = Math.min(r.bottom + 10, h.bottom - 64) - h.top;
+      var sirka = popisek.offsetWidth; x = Math.max(12 + sirka / 2, Math.min(h.width - 12 - sirka / 2, x));
+      popisek.style.transform = 'translate3d(' + (x - sirka / 2).toFixed(1) + 'px,' + y.toFixed(1) + 'px,0)';
+    }
+    function ukaz() {
+      var k = fokus || mys;
+      if (k) { popisek.textContent = k.dataset.nazev; umistiPopisek(k); popisek.classList.add('videt'); }
+      else popisek.classList.remove('videt');
+      if (pohyb) pozadej();
+    }
+    karty.forEach(function (k) {
+      k.addEventListener('pointerenter', function (e) { if (e.pointerType === 'touch') return; mys = k; ukaz(); });
+      k.addEventListener('pointerleave', function (e) { if (mys === k) { mys = null; ukaz(); } });
+      k.addEventListener('pointerdown', function (e) { if (e.pointerType === 'touch') k.dataset.tap = String(Date.now()); });
+      k.addEventListener('focus', function () {
+        fokus = k; ukaz();
+        /* na dotyku nic nevisí pod prstem: po ťuknutí se název ukáže na chvíli a smyčka pak sama pokračuje */
+        if (Date.now() - (+k.dataset.tap || 0) < 800) setTimeout(function () { if (fokus === k) k.blur(); }, 2500);
+      });
+      k.addEventListener('blur', function () { if (fokus === k) { fokus = null; ukaz(); } });
+    });
+    if (!pohyb) return;   /* reduced motion nebo ?pohyb=0: statický tunel, popisek bez pohybu */
+
+    tunel.classList.add('smycka');
+    var N = 12, PREDEK = 2.5;          /* v hloubce 2,5 kroku je karta celá za okrajem obrazu (změřeno na 390–1440 px) */
+    var ZAKLAD = dotyk ? 0.16 : 0.28;   /* kroků za sekundu; na dotyku pomaleji */
+    var cilS = null;   /* při focusu klávesnicí tunel dojede tak, aby zaměřená karta byla ve střední hloubce (d = 3,5) */
+    var s = -1, rychlost = ZAKLAD, scrollV = 0, poslY = window.scrollY, poslT = performance.now(), cas = 0, bezi = false, viditelne = true;
+    function pozice() {
+      karty.forEach(function (k) {
+        var i = +k.style.getPropertyValue('--i');
+        var d = ((i - s) % N + N) % N;            /* 0 = vpředu u diváka, N = úplně vzadu */
+        var z = PREDEK - d;
+        var o = Math.min(1, d / 0.4, (N - d) / 1.6);   /* vpředu se ztlumí před přeskokem, vzadu se roztmí */
+        k.style.setProperty('--z', z.toFixed(4));
+        k.style.opacity = o.toFixed(3);
+      });
+    }
+    function krok(t) {
+      bezi = false;
+      var dt = cas ? Math.min(0.05, (t - cas) / 1000) : 0.016; cas = t;
+      scrollV *= Math.pow(0.04, dt);                                     /* rychlost scrollu doznívá */
+      var stop = !!(mys || fokus);
+      var cil = stop ? 0 : ZAKLAD + Math.min(3.2, Math.abs(scrollV) / 380);
+      rychlost += (cil - rychlost) * Math.min(1, dt * (stop ? 9 : 2.6));
+      if (stop && rychlost < 0.002) rychlost = 0;
+      s += rychlost * dt;
+      if (fokus && cilS !== null) { s += (cilS - s) * Math.min(1, dt * 3.2); if (Math.abs(cilS - s) < 0.0005) s = cilS; }
+      if (s > 1e6) s -= N * 1e5;
+      pozice();
+      var k = fokus || mys; if (k) umistiPopisek(k);
+      if (viditelne && !document.hidden && (rychlost > 0 || !stop || (fokus && cilS !== null && s !== cilS))) pozadej(); else cas = 0;
+    }
+    function pozadej() { if (!bezi && viditelne && !document.hidden) { bezi = true; requestAnimationFrame(krok); } }
+    karty.forEach(function (k) {
+      k.addEventListener('focus', function () {
+        var i = +k.style.getPropertyValue('--i'); cilS = s + ((((i - s - 3.5) % N) + N) % N); pozadej();
+      });
+      k.addEventListener('blur', function () { cilS = null; });
+    });
+    window.addEventListener('scroll', function () {
+      var t = performance.now(), y = window.scrollY, dt = Math.max(8, t - poslT);
+      scrollV = scrollV * 0.5 + ((y - poslY) / dt * 1000) * 0.5; poslY = y; poslT = t; pozadej();
+    }, { passive: true });
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (z) {
+      viditelne = z[0].isIntersecting; if (viditelne) { cas = 0; pozadej(); }
+    }).observe(hero);
+    document.addEventListener('visibilitychange', function () { cas = 0; pozadej(); });
+    window.V12 = { stav: function () { return { s: s, rychlost: rychlost }; } };
+    pozice(); pozadej();
+  })();
+</script>
+<p class="pz-credit">Website draft by: <a href="{{ owner_site }}" rel="noopener">{{ owner_name }}</a> · Photos: Unsplash</p>
+{% if show_banner %}<div class="pz-pv" id="pz-pv" role="note"><span>Non-binding draft of a new website for <strong>{{ name }}</strong> · prepared by {{ owner_name }}</span>
+<a class="pz-cta" href="{{ want_url }}">I want this website</a>{% if wa_url %}<a class="pz-cta" href="{{ wa_url }}" rel="noopener" target="_blank">WhatsApp</a>{% endif %}
+<button data-pz-skryt="" type="button">Hide</button></div>{% endif %}
+<script id="pz-js">(function(){
+var pv=document.getElementById('pz-pv');if(pv){var x=pv.querySelector('[data-pz-skryt]');x&&x.addEventListener('click',function(){pv.classList.add('pz-skryt');});}
+var HOOK="{{ form_webhook_url }}",LEAD="{{ lead_id }}";
+function lab(f,el){var l=el.id&&f.querySelector('label[for="'+el.id+'"]');if(!l)l=el.closest('label');var s=(l?l.textContent:'')||el.name||'';return s.replace(/\s+/g,' ').replace(/\*/g,'').trim();}
+document.addEventListener('submit',function(e){var f=e.target;if(!f||f.tagName!=='FORM'||f.hasAttribute('data-pz-ignore')||!HOOK)return;
+  var d={lead_id:LEAD,source:'preview',name:'',email:'',phone:'',message:''},rest=[],seen={};
+  Array.prototype.forEach.call(f.elements,function(el){ if(!el.name||el.type==='submit'||el.type==='button')return; if((el.type==='checkbox'||el.type==='radio')&&!el.checked)return;
+   var v=(el.value||'').trim(); if(!v)return; var n=el.name.toLowerCase();
+   if(/^(jmeno|name|jmeno_prijmeni)$/.test(n))d.name=v; else if(/^(email|e-mail)$/.test(n))d.email=v; else if(/^(telefon|phone|tel)$/.test(n))d.phone=v;
+   else {var k=lab(f,el)||el.name; if(seen[k]){seen[k].push(v);}else{seen[k]=[v];rest.push(k);}} });
+  d.message=rest.map(function(k){return k+': '+seen[k].join(', ');}).join('\n');
+  setTimeout(function(){ if(f.querySelector('[aria-invalid="true"],.chyba,.is-invalid'))return; if(!f.hasAttribute('novalidate')&&!f.checkValidity())return; if(!d.name&&!d.email&&!d.phone)return;
+   try{fetch(HOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch(err){}
+  },0);
+},true);
+})();</script></body>
+</html>

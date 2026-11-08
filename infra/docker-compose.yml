@@ -1,0 +1,214 @@
+# web-outreach – kompletní běhové prostředí na jednom VPS (Hetzner CX22 stačí)
+#
+#   postgres  – databáze pro n8n (db `n8n`) a LiteLLM (db `litellm`)
+#   n8n       – automatizace (workflowy z ../n8n), veřejně jako https://n8n.krystofkoci.com
+#   litellm   – brána pro LLM (rozpočet, log, aliasy modelů), jen vnitřní síť :4000
+#   pipeline  – Python API (../pipeline), jen vnitřní síť :8077, zapisuje náhledy do /srv/nahled
+#   caddy     – HTTPS reverzní proxy + statické náhledy https://nahled.krystofkoci.com
+#
+# Spuštění:  cp .env.example .env  →  vyplnit  →  docker compose up -d
+# Všechny proměnné bere compose z ./.env (viz .env.example).
+
+name: web-outreach
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-outreach}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD chybí v .env}
+      POSTGRES_DB: n8n
+      # init skript vytvoří navíc databázi `litellm` (jen při prvním startu prázdného volume)
+      POSTGRES_MULTIPLE_DATABASES: litellm
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/10-init-multiple-dbs.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-outreach} -d n8n"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # --- síť / URL ---
+      N8N_HOST: ${N8N_HOST:-n8n.krystofkoci.com}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: https
+      N8N_EDITOR_BASE_URL: https://${N8N_HOST:-n8n.krystofkoci.com}/
+      WEBHOOK_URL: https://${N8N_HOST:-n8n.krystofkoci.com}/
+      N8N_PROXY_HOPS: 1
+      # --- čas ---
+      GENERIC_TIMEZONE: ${OWNER_TZ:-Europe/Prague}
+      TZ: ${OWNER_TZ:-Europe/Prague}
+      # --- bezpečnost / šifrování credentials ---
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY chybí v .env}
+      N8N_SECURE_COOKIE: "true"
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"          # workflowy čtou $env.*
+      NODE_FUNCTION_ALLOW_BUILTIN: "crypto,buffer"    # Code uzly: HMAC odhlášení, MIME e-mailů
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      N8N_TEMPLATES_ENABLED: "false"
+      # --- databáze ---
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: ${POSTGRES_USER:-outreach}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      # --- úklid exekucí ---
+      EXECUTIONS_DATA_PRUNE: "true"
+      EXECUTIONS_DATA_MAX_AGE: 336          # hodin = 14 dní
+      EXECUTIONS_DATA_PRUNE_MAX_COUNT: 20000
+      EXECUTIONS_DATA_SAVE_ON_SUCCESS: all
+      EXECUTIONS_DATA_SAVE_ON_ERROR: all
+      # --- konfigurace workflowů ($env.X v uzlech) ---
+      SHEET_ID: ${SHEET_ID}
+      OWNER_EMAIL: ${OWNER_EMAIL}
+      OWNER_NAME: ${OWNER_NAME:-Kryštof Kočí}
+      OWNER_SITE: ${OWNER_SITE:-https://krystofkoci.com}
+      OWNER_ICO: ${OWNER_ICO}
+      OWNER_ADDRESS: ${OWNER_ADDRESS}
+      SENDER_EMAIL: ${SENDER_EMAIL:-kontakt@krystofkoci.com}
+      OWNER_TZ: ${OWNER_TZ:-Europe/Prague}
+      OWNER_APPROVAL_TIMES: ${OWNER_APPROVAL_TIMES:-08:00,11:00,14:00}
+      APPROVAL_BATCH: ${APPROVAL_BATCH:-10}
+      APPROVAL_SECRET: ${APPROVAL_SECRET}
+      DAILY_PREVIEW_TARGET: ${DAILY_PREVIEW_TARGET:-30}
+      DAILY_CAP: ${DAILY_CAP:-30}
+      SEND_PER_RUN: ${SEND_PER_RUN:-4}
+      PREVIEW_BASE_URL: ${PREVIEW_BASE_URL:-https://nahled.krystofkoci.com}
+      PIPELINE_URL: http://pipeline:8077
+      API_TOKEN: ${API_TOKEN}
+      UNSUB_SECRET: ${UNSUB_SECRET}
+      TEST_MODE: ${TEST_MODE:-true}
+      LIVE_SINCE: ${LIVE_SINCE:-}
+      OUTREACH_ENABLED: ${OUTREACH_ENABLED:-false}
+      MCP_TOKEN_READ: ${MCP_TOKEN_READ}
+      MCP_TOKEN_ADMIN: ${MCP_TOKEN_ADMIN}
+      BLOCKED_COUNTRIES: ${BLOCKED_COUNTRIES:-CR}
+      # --- WhatsApp Business Cloud API (Meta) ---
+      WHATSAPP_TOKEN: ${WHATSAPP_TOKEN}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID}
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET}
+      WHATSAPP_GRAPH_VERSION: ${WHATSAPP_GRAPH_VERSION:-v21.0}
+      WHATSAPP_TEMPLATE_LANG: ${WHATSAPP_TEMPLATE_LANG:-cs}
+      WHATSAPP_TEMPLATE_BATCH: ${WHATSAPP_TEMPLATE_BATCH:-batch_ready}
+      WHATSAPP_TEMPLATE_ESCALATION: ${WHATSAPP_TEMPLATE_ESCALATION:-escalation}
+      WHATSAPP_TEMPLATE_REPORT: ${WHATSAPP_TEMPLATE_REPORT:-weekly_report}
+      OWNER_WHATSAPP: ${OWNER_WHATSAPP}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ../n8n:/workflows:ro          # workflowy pro `n8n import:workflow` (install.sh)
+    expose: ["5678"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5678/healthz >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks: [internal]
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?LITELLM_MASTER_KEY chybí v .env}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY chybí v .env}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-outreach}:${POSTGRES_PASSWORD}@postgres:5432/litellm
+      LLM_MONTHLY_BUDGET_USD: ${LLM_MONTHLY_BUDGET_USD:-20}
+      STORE_MODEL_IN_DB: "false"
+      LITELLM_LOG: INFO
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml:ro
+    expose: ["4000"]
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request;urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness',timeout=5)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks: [internal]
+
+  pipeline:
+    build:
+      context: ..
+      dockerfile: pipeline/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      litellm:
+        condition: service_started
+    env_file: .env
+    environment:
+      PREVIEW_DIR: /srv/nahled
+      API_HOST: 0.0.0.0
+      API_PORT: 8077
+      LLM_BASE_URL: http://litellm:4000/v1
+      LLM_API_KEY: ${LLM_API_KEY:-${LITELLM_MASTER_KEY}}
+      FORM_WEBHOOK_URL: https://${N8N_HOST:-n8n.krystofkoci.com}/webhook/form
+    volumes:
+      - previews:/srv/nahled
+      - pipeline_state:/app/_state
+    expose: ["8077"]
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8077/health', timeout=5).status==200 else 1)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks: [internal]
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [n8n]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      N8N_HOST: ${N8N_HOST:-n8n.krystofkoci.com}
+      PREVIEW_HOST: ${PREVIEW_HOST:-nahled.krystofkoci.com}
+      ACME_EMAIL: ${ACME_EMAIL:-kontakt@krystofkoci.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - previews:/srv/nahled:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [internal]
+
+  # Automatické aktualizace obrazů – zapni až po prvních týdnech provozu,
+  # jinak ti n8n může přes noc skočit o verzi a změnit chování uzlů.
+  # watchtower:
+  #   image: containrrr/watchtower
+  #   restart: unless-stopped
+  #   command: --schedule "0 0 4 * * 1" --cleanup n8n litellm caddy
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   networks: [internal]
+
+volumes:
+  postgres_data:
+  n8n_data:
+  previews:
+  pipeline_state:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:
+    driver: bridge

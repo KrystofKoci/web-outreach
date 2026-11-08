@@ -1,0 +1,81 @@
+# Caddy – HTTPS (Let's Encrypt automaticky) pro n8n a statické náhledy.
+# Proměnné N8N_HOST / PREVIEW_HOST / ACME_EMAIL přicházejí z docker-compose (ze souboru .env).
+#
+# Doména krystofkoci.com (apex + www) NENÍ tady – tvůj vlastní web běží na Webildu,
+# DNS pro @ a www míří na Webild. Tenhle server obsluhuje jen subdomény níže.
+
+{
+	email {$ACME_EMAIL}
+}
+
+# --- n8n (editor, webhooky, MCP) ---
+{$N8N_HOST} {
+	encode gzip zstd
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+	reverse_proxy n8n:5678 {
+		flush_interval -1
+	}
+}
+
+# --- náhledy webů: https://nahled.krystofkoci.com/<slug>/ ---
+{$PREVIEW_HOST} {
+	root * /srv/nahled
+	encode gzip zstd
+	header {
+		X-Robots-Tag "noindex, nofollow, noarchive"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		Cache-Control "public, max-age=600"
+		-Server
+	}
+	# kořen domény nic nevypisuje (žádný výpis adresářů)
+	@root path /
+	respond @root "Kryštof Kočí – náhledy webů. Odkaz na konkrétní návrh dostanete e-mailem." 200
+	file_server {
+		hide .* meta.json
+	}
+	handle_errors {
+		@404 expression {http.error.status_code} == 404
+		respond @404 "Náhled nenalezen / Preview not found" 404
+		respond "Chyba {http.error.status_code}" {http.error.status_code}
+	}
+}
+
+# --- volitelně: LiteLLM UI/API zvenku (NEdoporučeno; když už, tak jen s basic auth) ---
+# llm.krystofkoci.com {
+# 	basicauth {
+# 		kryspin <hash z `docker compose exec caddy caddy hash-password`>
+# 	}
+# 	reverse_proxy litellm:4000
+# }
+
+# krystofkoci.com website
+krystofkoci.com {
+	root * /srv/krystofkoci.com
+	encode zstd gzip
+	file_server
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=604800"
+	@pages path / /*.html
+	header @pages Cache-Control "no-cache"
+}
+
+www.krystofkoci.com {
+	redir https://krystofkoci.com{uri} permanent
+}
+
+stats.krystofkoci.com {
+	reverse_proxy umami:3000
+}

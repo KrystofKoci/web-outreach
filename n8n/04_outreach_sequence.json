@@ -1,0 +1,1767 @@
+{
+  "updatedAt": "2026-11-07T02:43:50.799Z",
+  "createdAt": "2026-10-25T18:39:04.148Z",
+  "id": "weboutreachwf004",
+  "name": "04 Outreach sekvence – 3 e-maily v okně příjemce",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 04 · Outreach sekvence\n**Co dělá:** každých 15 minut projde CRM a pošle: 1. e-mail leadům `approved`, 2. e-mail (+3 pracovní dny po 1.) a 3. e-mail (+4 pracovní dny po 2.) – vždy jen po–pá 08:30–11:30 a 13:30–16:00 **v časové zóně příjemce** (`tz`), max `DAILY_CAP` prvních e-mailů denně a max `SEND_PER_RUN` e-mailů na jeden běh (30 s rozestup). Před každým odesláním: blocklist, stavy do_not_contact/unsubscribed/bounced, stejná firemní doména za posledních 90 dní, `legal_regime=blocked`, ruční převzetí vlákna, odpověď.\n\n**Texty:** šablony cz/en + předměty A/B/C (nebo `custom_subject` ze schvalovací stránky) + právní patičky jsou vložené v uzlu „Vybrat a vyrenderovat“ jako kopie souborů ve složce `emails/`. Při změně textu uprav obojí.\n\n**TEST_MODE=true:** všechny e-maily jdou na `OWNER_EMAIL` s prefixem [TEST]; po 2–3 testech přepni na false.\n**Kill switch:** `OUTREACH_ENABLED=false` → nic se neodešle.",
+        "height": 400,
+        "width": 440,
+        "color": 1
+      },
+      "id": "244ddf52-8a38-4eba-9780-00557d016e2f",
+      "name": "Poznámka 1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        -60
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Zkontrolovat po importu\n- Uzel „Gmail: 1. e-mail“ – credential Gmail (kontakt@). 2. a 3. e-mail posílá HTTP uzel přes Gmail API se **stejným** credentialem (Gmail uzel neumí spolehlivě odpovědět do vlastního odeslaného vlákna) – vyber ho v poli *Credential for Gmail OAuth2*.\n- Code uzly používají `require('crypto')` a `Buffer` → v docker-compose je `NODE_FUNCTION_ALLOW_BUILTIN=crypto,buffer`.\n- `WEBHOOK_URL` (env n8n) tvoří odkaz pro odhlášení: `<WEBHOOK_URL>webhook/odhlasit?id=…&t=…`.\n- První test: 1 lead `approved`, TEST_MODE=true, spusť ručně mimo okno → uvidíš ve výstupu „outside_window“; v okně přijde e-mail tobě.",
+        "height": 260,
+        "width": 440,
+        "color": 3
+      },
+      "id": "015b1976-92f1-4253-969b-66dc04536dd1",
+      "name": "Poznámka 2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "9f3c47af-26f6-47f5-96d8-70f0a394b97f",
+      "name": "Každých 15 minut",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4c6f4112-500b-454b-bed0-c51cb3f4427a",
+              "leftValue": "={{ $env.OUTREACH_ENABLED }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "d7f0702a-31a4-4a10-a2fe-9df82f764cf7",
+      "name": "Zapnuto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "options": {}
+      },
+      "id": "ad461598-c3ed-410e-ad1d-7f94a6d6b107",
+      "name": "Všechny leady",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        460,
+        200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "f0785ab6-2f2c-4b61-b047-31074b194fc3",
+      "name": "Agregace leadů",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        680,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "blocklist"
+        },
+        "options": {}
+      },
+      "id": "5e0cdd35-f65d-405d-801f-e00b0d556a2f",
+      "name": "Blocklist",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        900,
+        200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\n// ---- předmět 1. e-mailu (stejná logika ve 03 i 04) ----\nconst SUBJECTS = {\"cs\": {\"A\": \"Nový web pro {{name}} – ukázka už je hotová\", \"B\": \"Nový web pro {{name}} – ukázka už je hotová\", \"C\": \"Nový web pro {{name}} – ukázka už je hotová\"}, \"en\": {\"A\": \"A new website for {{name}} – the draft is ready\", \"B\": \"A new website for {{name}} – the draft is ready\", \"C\": \"A new website for {{name}} – the draft is ready\"}};\nconst hashId = (s) => { let h = 7; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };\nconst variantFor = (l) => ['A', 'B', 'C'].includes(String(l.subject_variant)) ? String(l.subject_variant) : ['A', 'B', 'C'][hashId(l.id) % 3];\nconst subjectFor = (l) => {\n  if (String(l.custom_subject || '').trim()) return String(l.custom_subject).trim().slice(0, 120);\n  const lang = l.lang === 'cs' ? 'cs' : 'en';\n  let s = SUBJECTS[lang][variantFor(l)].replace(/\\{\\{(\\w+)\\}\\}/g, (_, k) => String(l[k] ?? ''));\n  return s.length > 78 ? s.slice(0, 75) + '…' : s;\n};\n\n// ===================== ŠABLONY (kopie souborů emails/) =====================\nconst TEMPLATES = {\"cs\": {\"1\": {\"text\": \"{{greeting}},\\n\\njmenuji se Kryštof Kočí a dělám webové stránky pro menší firmy. Při prohlížení webu {{name}} mě napadlo, že by mohl dostat modernější podobu a lépe fungovat na mobilu, přes který dnes lidé hledají služby nejčastěji. Připravil jsem proto nezávaznou ukázku, abyste si mohli rovnou porovnat, jak by vaše firma mohla působit:\\n\\n{{custom_intro}}\\n\\n{{preview_url}}\\n\\nJe plně funkční, ideálně si ji proklikejte i na mobilu. Texty a fotky jsou zatím pracovní, finální podobu bychom přizpůsobili vašemu obsahu a představám.\\n\\nKromě webu umím pomoct i s tím, aby vám web přinášel nové poptávky. Lidé v okolí vás snáz najdou na Googlu a Mapách, rovnou vám zavolají nebo napíšou a stávající zákazníci se k vám budou vracet. O všechno technické se postarám já a spolupracujete přímo se mnou, bez agentury a prostředníků.\\n\\nDávalo by vám smysl se na ukázku podívat a krátce probrat, jestli by něco podobného fungovalo i pro vás?\\n\\nS pozdravem\\n{{owner_name}}\\ndesign meets visibility\\n{{sender_email}}  |  +420 607 778 711  |  krystofkoci.com\\n\", \"html\": \"<!doctype html>\\n<html lang=\\\"cs\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\">\\n<title>Nezávazná ukázka webové stránky</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f4f4f2;\\\">\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"background:#f4f4f2;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:16px;\\\">\\n  <table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"max-width:560px;background:#ffffff;border-radius:8px;overflow:hidden;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;color:#1f1f1f;\\\">\\n    <tr><td style=\\\"padding:0;\\\">\\n      <a href=\\\"{{preview_url}}\\\" style=\\\"display:block;\\\"><img src=\\\"{{compare_png_url}}\\\" alt=\\\"Dnešní web vs. návrh\\\" width=\\\"560\\\" style=\\\"display:block;width:100%;height:auto;border:0;\\\"></a>\\n    </td></tr>\\n    <tr><td style=\\\"padding:24px 24px 8px 24px;\\\">\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{greeting}},</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">jmenuji se Kryštof Kočí a dělám webové stránky pro menší firmy. Při prohlížení webu {{name}} mě napadlo, že by mohl dostat modernější podobu a lépe fungovat na mobilu, přes který dnes lidé hledají služby nejčastěji. Připravil jsem proto nezávaznou ukázku, abyste si mohli rovnou porovnat, jak by vaše firma mohla působit:</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{custom_intro}}</p>\\n      <p style=\\\"margin:20px 0 24px 0;text-align:center;\\\">\\n        <a href=\\\"{{preview_url}}\\\" style=\\\"display:inline-block;background:#1f1f1f;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-weight:600;\\\">Zobrazit ukázku</a>\\n      </p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Je plně funkční, ideálně si ji proklikejte i na mobilu. Texty a fotky jsou zatím pracovní, finální podobu bychom přizpůsobili vašemu obsahu a představám.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Kromě webu umím pomoct i s tím, aby vám web přinášel nové poptávky. Lidé v okolí vás snáz najdou na Googlu a Mapách, rovnou vám zavolají nebo napíšou a stávající zákazníci se k vám budou vracet. O všechno technické se postarám já a spolupracujete přímo se mnou, bez agentury a prostředníků.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Dávalo by vám smysl se na ukázku podívat a krátce probrat, jestli by něco podobného fungovalo i pro vás?</p>\\n      <p style=\\\"margin:20px 0 0 0;\\\">S pozdravem</p>\\n      <table cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" role=\\\"presentation\\\" style=\\\"margin:12px 0 10px 0;\\\"><tr><td width=\\\"22\\\" height=\\\"3\\\" style=\\\"width:22px;height:3px;background:#D9364A;font-size:0;line-height:0;\\\">&nbsp;</td><td width=\\\"22\\\" height=\\\"3\\\" style=\\\"width:22px;height:3px;background:#3E6BE8;font-size:0;line-height:0;\\\">&nbsp;</td></tr></table>\\n      <p style=\\\"margin:0 0 4px 0;font-size:15px;color:#14161B;\\\">{{owner_name}}</p>\\n      <p style=\\\"margin:0 0 8px 0;font-size:11px;letter-spacing:2px;color:#6E6F76;\\\">design meets visibility</p>\\n      <p style=\\\"margin:0 0 4px 0;font-size:12px;color:#14161B;\\\"><a href=\\\"mailto:{{sender_email}}\\\" style=\\\"color:#14161B;text-decoration:none;\\\">{{sender_email}}</a>&nbsp;&nbsp;|&nbsp;&nbsp;+420&nbsp;607&nbsp;778&nbsp;711&nbsp;&nbsp;|&nbsp;&nbsp;<a href=\\\"{{owner_site}}\\\" style=\\\"color:#14161B;text-decoration:none;\\\">krystofkoci.com</a></p>\\n    </td></tr>\\n    <tr><td style=\\\"padding:12px 24px 20px 24px;font-size:12px;line-height:1.45;color:#6b6b6b;border-top:1px solid #ececec;\\\">\\n      {{footer_html}}\\n    </td></tr>\\n  </table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\"}, \"1_noweb\": {\"text\": \"{{greeting}},\\n\\njmenuji se Kryštof Kočí a dělám webové stránky pro menší firmy. Narazil jsem na {{name}} na Google Mapách{{maps_detail}} a všiml jsem si, že zatím nemáte vlastní web. Připravil jsem proto nezávaznou ukázku, jak by mohl vypadat:\\n\\n{{custom_intro}}\\n\\n{{preview_url}}\\n\\nJe plně funkční, můžete si ho proklikat na mobilu i na počítači. Texty a fotky jsou zatím pracovní, finální podobu bychom upravili podle vás.\\n\\nKromě webu umím pomoct i s tím, aby vám web přinášel nové poptávky. Lidé v okolí vás snáz najdou na Googlu a Mapách, rovnou vám zavolají nebo napíšou a stávající zákazníci se k vám budou vracet. O všechno technické se postarám já a spolupracujete přímo se mnou, bez agentury a prostředníků.\\n\\nDávalo by vám smysl se na ukázku podívat a krátce probrat, jestli by něco podobného fungovalo i pro vás?\\n\\nS pozdravem\\n{{owner_name}}\\ndesign meets visibility\\n{{sender_email}}  |  +420 607 778 711  |  krystofkoci.com\\n\", \"html\": \"<!doctype html>\\n<html lang=\\\"cs\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\">\\n<title>Nezávazná ukázka webové stránky</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f4f4f2;\\\">\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"background:#f4f4f2;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:16px;\\\">\\n  <table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"max-width:560px;background:#ffffff;border-radius:8px;overflow:hidden;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;color:#1f1f1f;\\\">\\n    <tr><td style=\\\"padding:0;\\\">\\n      <a href=\\\"{{preview_url}}\\\" style=\\\"display:block;\\\"><img src=\\\"{{compare_png_url}}\\\" alt=\\\"Náhled nové stránky\\\" width=\\\"560\\\" style=\\\"display:block;width:100%;height:auto;border:0;\\\"></a>\\n    </td></tr>\\n    <tr><td style=\\\"padding:24px 24px 8px 24px;\\\">\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{greeting}},</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">jmenuji se Kryštof Kočí a dělám webové stránky pro menší firmy. Narazil jsem na {{name}} na Google Mapách{{maps_detail}} a všiml jsem si, že zatím nemáte vlastní web. Připravil jsem proto nezávaznou ukázku, jak by mohl vypadat:</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{custom_intro}}</p>\\n      <p style=\\\"margin:20px 0 24px 0;text-align:center;\\\">\\n        <a href=\\\"{{preview_url}}\\\" style=\\\"display:inline-block;background:#1f1f1f;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-weight:600;\\\">Zobrazit ukázku</a>\\n      </p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Je plně funkční, můžete si ho proklikat na mobilu i na počítači. Texty a fotky jsou zatím pracovní, finální podobu bychom upravili podle vás.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Kromě webu umím pomoct i s tím, aby vám web přinášel nové poptávky. Lidé v okolí vás snáz najdou na Googlu a Mapách, rovnou vám zavolají nebo napíšou a stávající zákazníci se k vám budou vracet. O všechno technické se postarám já a spolupracujete přímo se mnou, bez agentury a prostředníků.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Dávalo by vám smysl se na ukázku podívat a krátce probrat, jestli by něco podobného fungovalo i pro vás?</p>\\n      <p style=\\\"margin:20px 0 0 0;\\\">S pozdravem</p>\\n      <table cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" role=\\\"presentation\\\" style=\\\"margin:12px 0 10px 0;\\\"><tr><td width=\\\"22\\\" height=\\\"3\\\" style=\\\"width:22px;height:3px;background:#D9364A;font-size:0;line-height:0;\\\">&nbsp;</td><td width=\\\"22\\\" height=\\\"3\\\" style=\\\"width:22px;height:3px;background:#3E6BE8;font-size:0;line-height:0;\\\">&nbsp;</td></tr></table>\\n      <p style=\\\"margin:0 0 4px 0;font-size:15px;color:#14161B;\\\">{{owner_name}}</p>\\n      <p style=\\\"margin:0 0 8px 0;font-size:11px;letter-spacing:2px;color:#6E6F76;\\\">design meets visibility</p>\\n      <p style=\\\"margin:0 0 4px 0;font-size:12px;color:#14161B;\\\"><a href=\\\"mailto:{{sender_email}}\\\" style=\\\"color:#14161B;text-decoration:none;\\\">{{sender_email}}</a>&nbsp;&nbsp;|&nbsp;&nbsp;+420&nbsp;607&nbsp;778&nbsp;711&nbsp;&nbsp;|&nbsp;&nbsp;<a href=\\\"{{owner_site}}\\\" style=\\\"color:#14161B;text-decoration:none;\\\">krystofkoci.com</a></p>\\n    </td></tr>\\n    <tr><td style=\\\"padding:12px 24px 20px 24px;font-size:12px;line-height:1.45;color:#6b6b6b;border-top:1px solid #ececec;\\\">\\n      {{footer_html}}\\n    </td></tr>\\n  </table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\"}, \"2\": {\"text\": \"{{greeting}},\\n\\npřed pár dny jsem vám posílal ukázku nové webové stránky pro {{name}}. Vím, že takový e-mail snadno zapadne, tak jen krátce připomínám:\\n\\n{{preview_url}}\\n\\nNejvětší rozdíl je vidět na mobilu: zákazník má telefon, otevírací dobu a poptávkové tlačítko hned na první obrazovce – bez hledání a přibližování.\\n\\nPořád jde o nezávaznou ukázku; texty i fotky jsou pracovní verze. Pokud se vám směr líbí, dotáhnu ji podle vašich podkladů. Pokud ne, stačí napsat a víc vás nebudu rušit.\\n\\nKdybyste měli jakýkoli dotaz, stačí odpovědět na tento e-mail – ozvu se obratem.\\n\\n{{owner_name}}\\n{{owner_site}}\\n\", \"html\": \"<!doctype html>\\n<html lang=\\\"cs\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\">\\n<title>Připomenutí ukázky</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f4f4f2;\\\">\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"background:#f4f4f2;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:16px;\\\">\\n  <table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"max-width:560px;background:#ffffff;border-radius:8px;overflow:hidden;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;color:#1f1f1f;\\\">\\n    <tr><td style=\\\"padding:0;\\\">\\n      <a href=\\\"{{preview_url}}\\\" style=\\\"display:block;\\\"><img src=\\\"{{compare_png_url}}\\\" alt=\\\"Dnešní web vs. návrh\\\" width=\\\"560\\\" style=\\\"display:block;width:100%;height:auto;border:0;\\\"></a>\\n    </td></tr>\\n    <tr><td style=\\\"padding:24px 24px 8px 24px;\\\">\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{greeting}},</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">před pár dny jsem vám posílal ukázku nové webové stránky pro {{name}}. Vím, že takový e-mail snadno zapadne, tak jen krátce připomínám:</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Největší rozdíl je vidět na mobilu: zákazník má telefon, otevírací dobu a poptávkové tlačítko hned na první obrazovce – bez hledání a přibližování.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Pořád jde o nezávaznou ukázku; texty i fotky jsou pracovní verze. Pokud se vám směr líbí, dotáhnu ji podle vašich podkladů. Pokud ne, stačí napsat a víc vás nebudu rušit.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Kdybyste měli jakýkoli dotaz, stačí odpovědět na tento e-mail – ozvu se obratem.</p>\\n      <p style=\\\"margin:20px 0 24px 0;text-align:center;\\\">\\n        <a href=\\\"{{preview_url}}\\\" style=\\\"display:inline-block;background:#1f1f1f;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-weight:600;\\\">Zobrazit ukázku</a>\\n      </p>\\n      <p style=\\\"margin:0 0 4px 0;\\\">{{owner_name}}<br><a href=\\\"{{owner_site}}\\\" style=\\\"color:#1f1f1f;\\\">{{owner_site}}</a></p>\\n    </td></tr>\\n    <tr><td style=\\\"padding:12px 24px 20px 24px;font-size:12px;line-height:1.45;color:#6b6b6b;border-top:1px solid #ececec;\\\">\\n      {{footer_html}}\\n    </td></tr>\\n  </table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\"}, \"3\": {\"text\": \"{{greeting}},\\n\\npíšu naposledy – nechci vám plnit schránku.\\n\\nUkázku pro {{name}} nechám ještě pár týdnů dostupnou na {{preview_url}}, pak ji smažu.\\n\\n{{mail3_offer}}\\n\\nPokud se ozvete, rád pomůžu. Pokud ne, přeju hodně spokojených zákazníků a omlouvám se za vyrušení.\\n\\n{{owner_name}}\\n{{owner_site}}\\n\", \"html\": \"<!doctype html>\\n<html lang=\\\"cs\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\">\\n<title>Poslední e-mail</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f4f4f2;\\\">\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"background:#f4f4f2;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:16px;\\\">\\n  <table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"max-width:560px;background:#ffffff;border-radius:8px;overflow:hidden;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;color:#1f1f1f;\\\">\\n    <tr><td style=\\\"padding:0;\\\">\\n      <a href=\\\"{{preview_url}}\\\" style=\\\"display:block;\\\"><img src=\\\"{{compare_png_url}}\\\" alt=\\\"Náhled\\\" width=\\\"560\\\" style=\\\"display:block;width:100%;height:auto;border:0;\\\"></a>\\n    </td></tr>\\n    <tr><td style=\\\"padding:24px 24px 8px 24px;\\\">\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{greeting}},</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">píšu naposledy – nechci vám plnit schránku.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Ukázku pro {{name}} nechám ještě pár týdnů dostupnou na {{preview_url}}, pak ji smažu.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{mail3_offer}}</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Pokud se ozvete, rád pomůžu. Pokud ne, přeju hodně spokojených zákazníků a omlouvám se za vyrušení.</p>\\n      <p style=\\\"margin:20px 0 24px 0;text-align:center;\\\">\\n        <a href=\\\"{{preview_url}}\\\" style=\\\"display:inline-block;background:#1f1f1f;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-weight:600;\\\">Zobrazit ukázku</a>\\n      </p>\\n      <p style=\\\"margin:0 0 4px 0;\\\">{{owner_name}}<br><a href=\\\"{{owner_site}}\\\" style=\\\"color:#1f1f1f;\\\">{{owner_site}}</a></p>\\n    </td></tr>\\n    <tr><td style=\\\"padding:12px 24px 20px 24px;font-size:12px;line-height:1.45;color:#6b6b6b;border-top:1px solid #ececec;\\\">\\n      {{footer_html}}\\n    </td></tr>\\n  </table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\"}}, \"en\": {\"1\": {\"text\": \"{{greeting}},\\n\\nmy name is Kryštof Kočí and I build websites for small businesses. While looking at the website of {{name}}, it occurred to me that it could get a more modern look and work better on mobile, which is how most people search for services today. So I prepared a no-obligation draft, so you can compare right away how your business could come across:\\n\\n{{custom_intro}}\\n\\n{{preview_url}}\\n\\nIt is fully working – ideally, click through it on your phone as well. The texts and photos are placeholders for now; we would adapt the final version to your content and ideas.\\n\\nBesides the website, I can also help make sure it brings you new enquiries. People nearby will find you more easily on Google and Maps, call or message you directly, and your existing customers will keep coming back. I take care of everything technical, and you work directly with me – no agency, no middlemen.\\n\\nWould it make sense to take a look at the draft and briefly talk about whether something similar could work for you?\\n\\nBest regards,\\n{{owner_name}}\\ndesign meets visibility\\n{{sender_email}}  |  +420 607 778 711  |  krystofkoci.com\\n\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\">\\n<title>A no-obligation website draft</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f4f4f2;\\\">\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"background:#f4f4f2;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:16px;\\\">\\n  <table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"max-width:560px;background:#ffffff;border-radius:8px;overflow:hidden;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;color:#1f1f1f;\\\">\\n    <tr><td style=\\\"padding:0;\\\">\\n      <a href=\\\"{{preview_url}}\\\" style=\\\"display:block;\\\"><img src=\\\"{{compare_png_url}}\\\" alt=\\\"Current site vs. draft\\\" width=\\\"560\\\" style=\\\"display:block;width:100%;height:auto;border:0;\\\"></a>\\n    </td></tr>\\n    <tr><td style=\\\"padding:24px 24px 8px 24px;\\\">\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{greeting}},</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">my name is Kryštof Kočí and I build websites for small businesses. While looking at the website of {{name}}, it occurred to me that it could get a more modern look and work better on mobile, which is how most people search for services today. So I prepared a no-obligation draft, so you can compare right away how your business could come across:</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{custom_intro}}</p>\\n      <p style=\\\"margin:20px 0 24px 0;text-align:center;\\\">\\n        <a href=\\\"{{preview_url}}\\\" style=\\\"display:inline-block;background:#1f1f1f;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-weight:600;\\\">View the draft</a>\\n      </p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">It is fully working – ideally, click through it on your phone as well. The texts and photos are placeholders for now; we would adapt the final version to your content and ideas.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Besides the website, I can also help make sure it brings you new enquiries. People nearby will find you more easily on Google and Maps, call or message you directly, and your existing customers will keep coming back. I take care of everything technical, and you work directly with me – no agency, no middlemen.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Would it make sense to take a look at the draft and briefly talk about whether something similar could work for you?</p>\\n      <p style=\\\"margin:20px 0 0 0;\\\">Best regards,</p>\\n      <table cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" role=\\\"presentation\\\" style=\\\"margin:12px 0 10px 0;\\\"><tr><td width=\\\"22\\\" height=\\\"3\\\" style=\\\"width:22px;height:3px;background:#D9364A;font-size:0;line-height:0;\\\">&nbsp;</td><td width=\\\"22\\\" height=\\\"3\\\" style=\\\"width:22px;height:3px;background:#3E6BE8;font-size:0;line-height:0;\\\">&nbsp;</td></tr></table>\\n      <p style=\\\"margin:0 0 4px 0;font-size:15px;color:#14161B;\\\">{{owner_name}}</p>\\n      <p style=\\\"margin:0 0 8px 0;font-size:11px;letter-spacing:2px;color:#6E6F76;\\\">design meets visibility</p>\\n      <p style=\\\"margin:0 0 4px 0;font-size:12px;color:#14161B;\\\"><a href=\\\"mailto:{{sender_email}}\\\" style=\\\"color:#14161B;text-decoration:none;\\\">{{sender_email}}</a>&nbsp;&nbsp;|&nbsp;&nbsp;+420&nbsp;607&nbsp;778&nbsp;711&nbsp;&nbsp;|&nbsp;&nbsp;<a href=\\\"{{owner_site}}\\\" style=\\\"color:#14161B;text-decoration:none;\\\">krystofkoci.com</a></p>\\n    </td></tr>\\n    <tr><td style=\\\"padding:12px 24px 20px 24px;font-size:12px;line-height:1.45;color:#6b6b6b;border-top:1px solid #ececec;\\\">\\n      {{footer_html}}\\n    </td></tr>\\n  </table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\"}, \"1_noweb\": {\"text\": \"{{greeting}},\\n\\nmy name is Kryštof Kočí and I build websites for small businesses. I came across {{name}} on Google Maps{{maps_detail}} and noticed that you don't have a website of your own yet. So I prepared a no-obligation draft of what it could look like:\\n\\n{{custom_intro}}\\n\\n{{preview_url}}\\n\\nIt is fully working – you can click through it on your phone or computer. The texts and photos are placeholders for now; we would adjust the final version to suit you.\\n\\nBesides the website, I can also help make sure it brings you new enquiries. People nearby will find you more easily on Google and Maps, call or message you directly, and your existing customers will keep coming back. I take care of everything technical, and you work directly with me – no agency, no middlemen.\\n\\nWould it make sense to take a look at the draft and briefly talk about whether something similar could work for you?\\n\\nBest regards,\\n{{owner_name}}\\ndesign meets visibility\\n{{sender_email}}  |  +420 607 778 711  |  krystofkoci.com\\n\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\">\\n<title>A no-obligation website draft</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f4f4f2;\\\">\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"background:#f4f4f2;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:16px;\\\">\\n  <table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"max-width:560px;background:#ffffff;border-radius:8px;overflow:hidden;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;color:#1f1f1f;\\\">\\n    <tr><td style=\\\"padding:0;\\\">\\n      <a href=\\\"{{preview_url}}\\\" style=\\\"display:block;\\\"><img src=\\\"{{compare_png_url}}\\\" alt=\\\"Preview of the new page\\\" width=\\\"560\\\" style=\\\"display:block;width:100%;height:auto;border:0;\\\"></a>\\n    </td></tr>\\n    <tr><td style=\\\"padding:24px 24px 8px 24px;\\\">\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{greeting}},</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">my name is Kryštof Kočí and I build websites for small businesses. I came across {{name}} on Google Maps{{maps_detail}} and noticed that you don't have a website of your own yet. So I prepared a no-obligation draft of what it could look like:</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{custom_intro}}</p>\\n      <p style=\\\"margin:20px 0 24px 0;text-align:center;\\\">\\n        <a href=\\\"{{preview_url}}\\\" style=\\\"display:inline-block;background:#1f1f1f;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-weight:600;\\\">View the draft</a>\\n      </p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">It is fully working – you can click through it on your phone or computer. The texts and photos are placeholders for now; we would adjust the final version to suit you.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Besides the website, I can also help make sure it brings you new enquiries. People nearby will find you more easily on Google and Maps, call or message you directly, and your existing customers will keep coming back. I take care of everything technical, and you work directly with me – no agency, no middlemen.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">Would it make sense to take a look at the draft and briefly talk about whether something similar could work for you?</p>\\n      <p style=\\\"margin:20px 0 0 0;\\\">Best regards,</p>\\n      <table cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" border=\\\"0\\\" role=\\\"presentation\\\" style=\\\"margin:12px 0 10px 0;\\\"><tr><td width=\\\"22\\\" height=\\\"3\\\" style=\\\"width:22px;height:3px;background:#D9364A;font-size:0;line-height:0;\\\">&nbsp;</td><td width=\\\"22\\\" height=\\\"3\\\" style=\\\"width:22px;height:3px;background:#3E6BE8;font-size:0;line-height:0;\\\">&nbsp;</td></tr></table>\\n      <p style=\\\"margin:0 0 4px 0;font-size:15px;color:#14161B;\\\">{{owner_name}}</p>\\n      <p style=\\\"margin:0 0 8px 0;font-size:11px;letter-spacing:2px;color:#6E6F76;\\\">design meets visibility</p>\\n      <p style=\\\"margin:0 0 4px 0;font-size:12px;color:#14161B;\\\"><a href=\\\"mailto:{{sender_email}}\\\" style=\\\"color:#14161B;text-decoration:none;\\\">{{sender_email}}</a>&nbsp;&nbsp;|&nbsp;&nbsp;+420&nbsp;607&nbsp;778&nbsp;711&nbsp;&nbsp;|&nbsp;&nbsp;<a href=\\\"{{owner_site}}\\\" style=\\\"color:#14161B;text-decoration:none;\\\">krystofkoci.com</a></p>\\n    </td></tr>\\n    <tr><td style=\\\"padding:12px 24px 20px 24px;font-size:12px;line-height:1.45;color:#6b6b6b;border-top:1px solid #ececec;\\\">\\n      {{footer_html}}\\n    </td></tr>\\n  </table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\"}, \"2\": {\"text\": \"{{greeting}},\\n\\na few days ago I sent you a draft of a new website for {{name}}. I know an e-mail like that gets buried easily, so just a short reminder:\\n\\n{{preview_url}}\\n\\nThe biggest difference shows on a phone: a customer sees your phone number, opening hours and an enquiry button on the very first screen – no searching, no pinching.\\n\\nIt is still a no-obligation draft; the texts and photos are a working version. If you like the direction, I will finish it from your own materials. If not, just say so and I will not bother you again.\\n\\nIf you have any questions, simply reply to this e-mail – I will get back to you promptly.\\n\\n{{owner_name}}\\n{{owner_site}}\\n\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\">\\n<title>Reminder: website draft</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f4f4f2;\\\">\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"background:#f4f4f2;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:16px;\\\">\\n  <table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"max-width:560px;background:#ffffff;border-radius:8px;overflow:hidden;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;color:#1f1f1f;\\\">\\n    <tr><td style=\\\"padding:0;\\\">\\n      <a href=\\\"{{preview_url}}\\\" style=\\\"display:block;\\\"><img src=\\\"{{compare_png_url}}\\\" alt=\\\"Current site vs. draft\\\" width=\\\"560\\\" style=\\\"display:block;width:100%;height:auto;border:0;\\\"></a>\\n    </td></tr>\\n    <tr><td style=\\\"padding:24px 24px 8px 24px;\\\">\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{greeting}},</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">a few days ago I sent you a draft of a new website for {{name}}. I know an e-mail like that gets buried easily, so just a short reminder:</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">The biggest difference shows on a phone: a customer sees your phone number, opening hours and an enquiry button on the very first screen – no searching, no pinching.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">It is still a no-obligation draft; the texts and photos are a working version. If you like the direction, I will finish it from your own materials. If not, just say so and I will not bother you again.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">If you have any questions, simply reply to this e-mail – I will get back to you promptly.</p>\\n      <p style=\\\"margin:20px 0 24px 0;text-align:center;\\\">\\n        <a href=\\\"{{preview_url}}\\\" style=\\\"display:inline-block;background:#1f1f1f;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-weight:600;\\\">View the draft</a>\\n      </p>\\n      <p style=\\\"margin:0 0 4px 0;\\\">{{owner_name}}<br><a href=\\\"{{owner_site}}\\\" style=\\\"color:#1f1f1f;\\\">{{owner_site}}</a></p>\\n    </td></tr>\\n    <tr><td style=\\\"padding:12px 24px 20px 24px;font-size:12px;line-height:1.45;color:#6b6b6b;border-top:1px solid #ececec;\\\">\\n      {{footer_html}}\\n    </td></tr>\\n  </table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\"}, \"3\": {\"text\": \"{{greeting}},\\n\\nthis is my last e-mail – I do not want to clutter your inbox.\\n\\nI will keep the draft for {{name}} available at {{preview_url}} for a few more weeks, then I will take it down.\\n\\n{{mail3_offer}}\\n\\nIf you get in touch, I will be glad to help. If not, I wish you plenty of happy customers and apologise for the interruption.\\n\\n{{owner_name}}\\n{{owner_site}}\\n\", \"html\": \"<!doctype html>\\n<html lang=\\\"en\\\">\\n<head>\\n<meta charset=\\\"utf-8\\\">\\n<meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1\\\">\\n<title>Last e-mail</title>\\n</head>\\n<body style=\\\"margin:0;padding:0;background:#f4f4f2;\\\">\\n<table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"background:#f4f4f2;\\\">\\n<tr><td align=\\\"center\\\" style=\\\"padding:16px;\\\">\\n  <table role=\\\"presentation\\\" width=\\\"100%\\\" cellpadding=\\\"0\\\" cellspacing=\\\"0\\\" style=\\\"max-width:560px;background:#ffffff;border-radius:8px;overflow:hidden;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.5;color:#1f1f1f;\\\">\\n    <tr><td style=\\\"padding:0;\\\">\\n      <a href=\\\"{{preview_url}}\\\" style=\\\"display:block;\\\"><img src=\\\"{{compare_png_url}}\\\" alt=\\\"Preview\\\" width=\\\"560\\\" style=\\\"display:block;width:100%;height:auto;border:0;\\\"></a>\\n    </td></tr>\\n    <tr><td style=\\\"padding:24px 24px 8px 24px;\\\">\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{greeting}},</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">this is my last e-mail – I do not want to clutter your inbox.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">I will keep the draft for {{name}} available at {{preview_url}} for a few more weeks, then I will take it down.</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">{{mail3_offer}}</p>\\n      <p style=\\\"margin:0 0 14px 0;\\\">If you get in touch, I will be glad to help. If not, I wish you plenty of happy customers and apologise for the interruption.</p>\\n      <p style=\\\"margin:20px 0 24px 0;text-align:center;\\\">\\n        <a href=\\\"{{preview_url}}\\\" style=\\\"display:inline-block;background:#1f1f1f;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:6px;font-weight:600;\\\">View the draft</a>\\n      </p>\\n      <p style=\\\"margin:0 0 4px 0;\\\">{{owner_name}}<br><a href=\\\"{{owner_site}}\\\" style=\\\"color:#1f1f1f;\\\">{{owner_site}}</a></p>\\n    </td></tr>\\n    <tr><td style=\\\"padding:12px 24px 20px 24px;font-size:12px;line-height:1.45;color:#6b6b6b;border-top:1px solid #ececec;\\\">\\n      {{footer_html}}\\n    </td></tr>\\n  </table>\\n</td></tr>\\n</table>\\n</body>\\n</html>\\n\"}}};\nconst FOOTERS = {\"cz\": \"--\\n{{owner_name}}, IČO: {{owner_ico}}, sídlo: {{owner_address}}, e-mail: {{sender_email}}, web: {{owner_site}}\\nToto je obchodní sdělení – individuální, jednorázová nabídka zaslaná na veřejně uvedený firemní kontakt. Žádné hromadné rozesílání, žádný seznam.\\nPokud si další e-mail nepřejete, klikněte na {{unsubscribe_url}} nebo odpovězte slovy NEMÁM ZÁJEM – okamžitě vás vyřadím a už nenapíšu. Slibuji.\\nJak nakládám s údaji: https://krystofkoci.com/ochrana-udaju\\n\", \"optout\": \"--\\n{{owner_name}} · {{owner_address}} · {{sender_email}} · {{owner_site}}\\nThis is a one-time, individually prepared business offer sent to a publicly listed business contact. Sender: {{owner_name}}, sole proprietor (Czech Republic).\\nNot interested? Unsubscribe here: {{unsubscribe_url}} – or reply \\\"NO THANKS\\\" and you will never hear from me again.\\nPrivacy: https://krystofkoci.com/ochrana-udaju\\n\", \"published\": \"--\\n{{owner_name}} · {{owner_address}} · {{sender_email}} · {{owner_site}}\\nI am writing to this address because it is conspicuously published as your business contact and the offer relates directly to your business role. This is a single, individually prepared message – not a mailing list.\\nIf you would rather not hear from me: {{unsubscribe_url}} – or reply \\\"NO THANKS\\\". The request is honoured immediately.\\nPrivacy: https://krystofkoci.com/ochrana-udaju\\n\", \"corporate\": \"--\\nSent by {{owner_name}}, sole trader registered in the Czech Republic (ID no. {{owner_ico}}), {{owner_address}} · {{sender_email}} · {{owner_site}}\\nA one-off, individually prepared business proposal addressed to your company at its published business contact. No mailing list involved.\\nTo opt out of any further message: {{unsubscribe_url}} – or reply \\\"NO THANKS\\\". Opt-outs are processed immediately.\\nPrivacy: https://krystofkoci.com/ochrana-udaju\\n\"};\n// ===========================================================================\nconst crypto = require('crypto');\nconst ownerTz = env('OWNER_TZ', 'Europe/Prague');\nconst testMode = env('TEST_MODE', 'true').toLowerCase() === 'true';\nconst cap = Number(env('DAILY_CAP', '30')) || 30;\nconst perRun = Number(env('SEND_PER_RUN', '4')) || 4;\nconst owner = { name: env('OWNER_NAME', 'Kryštof Kočí'), site: env('OWNER_SITE', 'https://krystofkoci.com'),\n  email: env('SENDER_EMAIL', 'kontakt@krystofkoci.com'), ico: env('OWNER_ICO', '[DOPLNIT IČO]'), address: env('OWNER_ADDRESS', '[DOPLNIT sídlo]'),\n  test_to: env('OWNER_EMAIL', '') };\nconst webhookBase = env('WEBHOOK_URL', 'https://n8n.krystofkoci.com/').replace(/\\/+$/, '');\nconst unsubSecret = env('UNSUB_SECRET', '');\nif (!unsubSecret) throw new Error('Chybí env UNSUB_SECRET (podpis odkazu pro odhlášení).');\nif (testMode && !owner.test_to) throw new Error('TEST_MODE=true, ale OWNER_EMAIL je prázdný.');\nconst now = DateTime.now();\nconst nowOwner = now.setZone(ownerTz);\nconst leads = clean(($('Agregace leadů').first().json.data || []).map(j => ({ json: j })));\nconst blocklist = clean($input.all());\nconst blockedVals = new Set(blocklist.map(b => String(b.value || '').trim().toLowerCase()).filter(Boolean));\nconst blockedC = blockedCountries();\nconst addBusinessDays = (dt, n, tz) => { let d = dt.setZone(tz); let added = 0; while (added < n) { d = d.plus({ days: 1 }); if (d.weekday <= 5) added++; } return d; };\nconst inWindow = (tz) => { if (testMode) return true; const l = now.setZone(tz); if (!l.isValid || l.weekday > 5) return false; const m = l.hour * 60 + l.minute; return (m >= 510 && m < 690) || (m >= 810 && m < 960); };\nconst fill = (s, v) => String(s).replace(/\\{\\{(\\w+)\\}\\}/g, (_, k) => (v[k] ?? ''));\nconst lcFirst = (s) => { s = String(s || '').trim(); if (!s) return ''; if (/^[A-Z]{2,}/.test(s)) return s; return s.charAt(0).toLowerCase() + s.slice(1); };\nconst endDot = (s) => s && !/[.!?]$/.test(s) ? s + '.' : s;\nconst footerFor = (regime, lang) => { if (lang === 'cs') return 'cz'; switch (String(regime)) { case 'opt_out': return 'optout'; case 'published_address': return 'published'; case 'corporate_only': case 'opt_in': return 'corporate'; default: return 'optout'; } };\n// leady odeslané v TEST_MODE (next_action=TEST) šly jen tobě – na ostro se počítají jako neoslovené\nconst liveSince = parseISO(env('LIVE_SINCE', ''));   // nastaví `nasadit_sablony.sh --ostre`; vše odeslané dřív šlo jen tobě\nconst testOnly = (l) => { if (testMode) return false; if (String(l.next_action || '') === 'TEST') return true; const s = parseISO(l.sent_1_at); return !!(liveSince && s && s < liveSince); };\nconst sentToday = leads.filter(l => { if (testOnly(l)) return false; const d = parseISO(l.sent_1_at); return d && d.setZone(ownerTz).hasSame(nowOwner, 'day'); }).length;\nlet budget1 = Math.max(0, cap - sentToday);\nconst out = [];\nconst stats = { step1: 0, step2: 0, step3: 0, suppressed: 0, outside_window: 0, not_due: 0, cap_left: budget1 };\nconst sends = () => out.filter(o => o._action !== 'update').length;\nfor (const l of leads) {\n  if (!l || !l.id) continue;\n  if (sends() >= perRun) break;\n  const st = String(l.status || '');\n  const step = (testOnly(l) && ['sent_1', 'sent_2', 'sent_3'].includes(st)) ? 1 : st === 'approved' ? 1 : st === 'sent_1' ? 2 : st === 'sent_2' ? 3 : 0;\n  if (!step) continue;\n  const lang = l.lang === 'cs' ? 'cs' : 'en';\n  const tz = l.tz || (lang === 'cs' ? 'Europe/Prague' : 'America/Chicago');\n  const email = String(l.email || '').trim().toLowerCase();\n  const dom = domainOf(email);\n  const stop = (reason, newStatus) => { stats.suppressed++; out.push({ _action: 'update', id: l.id, status: newStatus || st, next_action: newStatus === 'needs_email' ? 'doplnit e-mail' : (l.next_action || ''),\n    notes: [l.notes, `${nowOwner.toFormat('d.L.')} ${reason}`].filter(Boolean).join(' | ').slice(-1000) }); };\n  // ---- tvrdá potlačení ----\n  if (!email.includes('@')) { if (step === 1) stop('neodesláno: chybí e-mail', 'needs_email'); continue; }\n  if (String(l.legal_regime) === 'blocked' || blockedC.has(String(l.country || '').toUpperCase())) { stop('neodesláno: blokovaná země/režim', 'blocked'); continue; }\n  if (['do_not_contact', 'unsubscribed', 'bounced'].includes(st)) continue;\n  if (blockedVals.has(email) || (dom && blockedVals.has(dom))) { stop('neodesláno: e-mail/doména na blocklistu', 'do_not_contact'); continue; }\n  if (step > 1 && (truthy(l.manual_takeover) || l.last_reply_at || String(l.next_action) === 'owner')) continue;\n  if (step === 1 && dom && !FREE_MAIL.has(dom)) {\n    const clash = leads.find(o => o.id !== l.id && domainOf(o.email) === dom && !testOnly(o) && parseISO(o.sent_1_at) && now.diff(parseISO(o.sent_1_at), 'days').days < 90);\n    if (clash) { stop(`neodesláno: doména ${dom} kontaktována ${parseISO(clash.sent_1_at).toFormat('d.L.yyyy')} (${clash.id})`, 'skipped'); continue; }\n  }\n  // ---- časování ----\n  if (step === 2) { const d = parseISO(l.sent_1_at); if (!d || addBusinessDays(d, 3, tz) > now) { stats.not_due++; continue; } }\n  if (step === 3) { const d = parseISO(l.sent_2_at); if (!d || addBusinessDays(d, 4, tz) > now) { stats.not_due++; continue; } }\n  if (!inWindow(tz)) { stats.outside_window++; continue; }\n  if (step === 1) { if (budget1 <= 0) continue; budget1--; }\n  // ---- render ----\n  const variant = variantFor(l);\n  const reasons = String(l.reasons || '').split(' | ').map(s => s.trim()).filter(Boolean);\n  const noWeb = String(l.branch || '').toLowerCase() === 'no_website';\n  const r1 = endDot(lcFirst(reasons[0] || (lang === 'cs' ? 'na mobilu se špatně čte a chybí rychlý kontakt' : 'it is hard to read on a phone and lacks a quick way to get in touch')));\n  const r2 = '';\n  const r1noDot = r1.replace(/\\.$/, '');\n  const rating = Number(String(l.rating || '').replace(',', '.')) || 0;\n  const ratingCnt = Number(l.rating_count) || 0;\n  const ratingDisp = lang === 'cs' ? String(l.rating || '').replace('.', ',') : String(l.rating || '').replace(',', '.');\n  let reviews_line = '';\n  if (noWeb) {\n    reviews_line = (ratingCnt >= 15 && rating >= 4)\n      ? (lang === 'cs' ? `Na Googlu přitom máte ${ratingDisp} hvězdiček a spokojené zákazníky – vlastní stránka ten dobrý dojem potvrdí a pomůže vám získávat poptávky i mimo mapy.` : `Meanwhile you have ${ratingDisp} stars on Google and happy customers – a page of your own confirms that impression and helps you win enquiries beyond the map listing.`)\n      : (lang === 'cs' ? 'Na internetu o vás navíc zatím skoro nic není – vlastní stránka je první krok, jak se zviditelnit, a firmě zpravidla pomáhá růst.' : 'There is hardly anything about you online yet – your own page is the first step to getting noticed, and it usually helps a business grow.');\n  } else if (ratingCnt > 0 && ratingCnt < 15) {\n    reviews_line = lang === 'cs' ? 'Všiml jsem si také, že na Googlu máte zatím jen pár hodnocení – moderní web zpravidla pomáhá být víc vidět a získávat poptávky i mimo mapy.' : 'I also noticed you only have a handful of Google reviews so far – a modern website usually helps you get noticed and win enquiries beyond the map listing.';\n  } else if (rating >= 4.3 && ratingCnt >= 15) {\n    reviews_line = lang === 'cs' ? 'Hodnocení na Googlu máte skvělá – nový web ten dojem jen podtrhne.' : 'Your Google reviews are excellent – a new website will only underline that impression.';\n  }\n  const maps_detail = (rating >= 4.3 && ratingCnt >= 15) ? (lang === 'cs' ? `, kde máte výborné hodnocení ${ratingDisp} z 5,` : `, where you have an excellent ${ratingDisp} out of 5 rating,`) : '';\n  const mail3_offer = noWeb\n    ? (lang === 'cs' ? 'Jestli teď web není na pořadu dne, může stránka klidně zůstat jen jako jednoduchá vizitka s kontaktem – základ už je hotový a dá se spustit rychle.' : 'If a website is not on the agenda right now, the page can simply stay a small business card with your contact details – the groundwork is done and it can go live quickly.')\n    : (lang === 'cs' ? `Jestli nový web teď není na pořadu dne, můžu místo toho jen vylepšit ten současný (${r1noDot}) – bývá to pár hodin práce, ne nový projekt.` : `If a new website is not on the agenda right now, I can simply improve your current one (${r1noDot}) – that is usually a few hours of work, not a new project.`);\n  const t = crypto.createHmac('sha256', unsubSecret).update(String(l.id)).digest('hex').slice(0, 24);\n  const unsubscribe_url = `${webhookBase}/webhook/odhlasit?id=${encodeURIComponent(l.id)}&t=${t}`;\n  const v = { maps_detail, reviews_line, mail3_offer, name: l.name || '', greeting: lang === 'cs' ? 'Dobrý den' : 'Hello', city: l.city || '', preview_url: l.preview_url || '',\n    reason_1: r1, reason_2: r2, owner_name: owner.name, owner_site: owner.site, unsubscribe_url,\n    custom_intro: step === 1 ? String(l.custom_intro || '').trim() : '', compare_png_url: l.compare_png_url || l.og_png_url || '',\n    owner_ico: owner.ico, owner_address: owner.address, sender_email: owner.email };\n  const vHtml = Object.fromEntries(Object.entries(v).map(([k, val]) => [k, /_url$|_email$/.test(k) ? val : esc(val)]));\n  let subject = subjectFor({ ...l, subject_variant: variant });\n  const T = TEMPLATES[lang][(step === 1 && noWeb) ? '1_noweb' : String(step)];\n  const footerText = fill(FOOTERS[footerFor(l.legal_regime, lang)], v).trim();\n  let text = fill(T.text, v).replace(/\\n{3,}/g, '\\n\\n').trim() + '\\n\\n' + footerText;\n  const footerHtml = esc(footerText).replace(/^--\\s*$/m, '').replace(/(https?:\\/\\/[^\\s<]+)/g, '<a href=\"$1\" style=\"color:#6b6b6b;\">$1</a>').replace(/\\n/g, '<br>');\n  let html = fill(T.html, { ...vHtml, footer_html: footerHtml }).replace(/<p[^>]*>\\s*<\\/p>\\s*/g, '');\n  if (testMode) subject = '[TEST] ' + subject;\n  out.push({ _action: step === 1 ? 'send1' : 'followup', step, id: l.id, to: testMode ? owner.test_to : email, email, subject,\n    text, html, thread_id: l.thread_id || '', last_message_id: l.last_message_id || '', subject_variant: variant, lang, tz, unsubscribe_url,\n    name: l.name, from_name: owner.name, from_email: owner.email });\n  stats['step' + step]++;\n}\nconsole.log('04 stats: ' + JSON.stringify(stats) + ` sentToday=${sentToday}`);\nreturn out.map(j => ({ json: j }));"
+      },
+      "id": "7e733e27-6dfb-49ed-bb4f-2445090e4f52",
+      "name": "Vybrat a vyrenderovat",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "07d56d20-355b-463a-b2ce-851fd6523c83",
+      "name": "Smyčka odeslání",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1340,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "57e41d1b-5e13-4639-b908-cf491d0d21e0",
+                    "leftValue": "={{ $json._action }}",
+                    "rightValue": "send1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "send1"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "34187474-74d8-4020-a2a8-3dd864ed7b90",
+                    "leftValue": "={{ $json._action }}",
+                    "rightValue": "followup",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "followup"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c76608df-ea3c-4c92-8f3d-1bccc2d9d273",
+                    "leftValue": "={{ $json._action }}",
+                    "rightValue": "update",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "update"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "aaa36ee2-73ac-498f-9bf3-3fc7526e130f",
+      "name": "Akce",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "={{ $env.OWNER_NAME }}",
+          "replyTo": "={{ $env.SENDER_EMAIL }}"
+        }
+      },
+      "id": "71a3afcd-0a4c-4680-94e0-9ef3e35aa830",
+      "name": "Gmail: 1. e-mail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1780,
+        100
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-kontakt",
+          "name": "Gmail – info@krystofkoci.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.item.json || {};\nconst l = $('Smyčka odeslání').item.json;\nreturn { json: { id: l.id, status: 'sent_1', sent_1_at: DateTime.now().toISO(), thread_id: r.threadId || '', last_message_id: r.id || '',\n  subject_variant: l.subject_variant, next_action: (String($env.TEST_MODE ?? 'true').toLowerCase() === 'true') ? 'TEST' : '' } };\n// next_action=TEST: mail šel jen tobě (TEST_MODE) – po přepnutí na ostro dostane firma 1. e-mail znovu, tentokrát skutečně",
+        "mode": "runOnceForEachItem"
+      },
+      "id": "048bbd74-afc6-4e5f-87b3-3d93d13509a9",
+      "name": "Zapsat sent_1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://gmail.googleapis.com/gmail/v1/users/me/messages/{{ $json.last_message_id }}?format=metadata&metadataHeaders=Message-ID&metadataHeaders=Subject&metadataHeaders=References",
+        "options": {
+          "timeout": 60000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2"
+      },
+      "id": "681cc348-9f06-46bd-8e6e-9a7dd199e6d8",
+      "name": "Gmail API: hlavičky 1. zprávy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1780,
+        300
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-kontakt",
+          "name": "Gmail – info@krystofkoci.com"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\n// ---- sestavení MIME zprávy pro Gmail API (raw, base64url) ----\nfunction buildMime(o) {\n  const B = (typeof Buffer !== 'undefined') ? Buffer : require('buffer').Buffer;\n  const encW = (s) => /[^\\x00-\\x7F]/.test(s) ? '=?UTF-8?B?' + B.from(s, 'utf8').toString('base64') + '?=' : s;\n  const b64 = (s) => B.from(s, 'utf8').toString('base64').replace(/(.{76})/g, '$1\\r\\n');\n  const boundary = 'np_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);\n  const head = [`From: ${encW(o.fromName)} <${o.fromEmail}>`, `To: ${o.to}`, `Subject: ${encW(o.subject)}`, 'MIME-Version: 1.0'];\n  if (o.inReplyTo) head.push(`In-Reply-To: ${o.inReplyTo}`);\n  if (o.references) head.push(`References: ${o.references}`);\n  if (o.unsubscribe) head.push(`List-Unsubscribe: <${o.unsubscribe}>`);\n  head.push('X-Outreach-Bot: 1');\n  head.push(`Content-Type: multipart/alternative; boundary=\"${boundary}\"`);\n  const parts = [`--${boundary}`, 'Content-Type: text/plain; charset=\"UTF-8\"', 'Content-Transfer-Encoding: base64', '', b64(o.text || ''),\n                 `--${boundary}`, 'Content-Type: text/html; charset=\"UTF-8\"', 'Content-Transfer-Encoding: base64', '', b64(o.html || ''), `--${boundary}--`, ''];\n  const msg = head.join('\\r\\n') + '\\r\\n\\r\\n' + parts.join('\\r\\n');\n  return B.from(msg, 'utf8').toString('base64').replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');\n}\nconst textToHtml = (t) => '<div style=\"font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#1f1f1f;\">' +\n  esc(t).replace(/(https?:\\/\\/[^\\s<]+)/g, '<a href=\"$1\" style=\"color:#1f1f1f;\">$1</a>').replace(/\\n/g, '<br>') + '</div>';\n\nconst l = $('Smyčka odeslání').item.json;\nconst meta = $input.item.json || {};\nconst hdrs = ((meta.payload || {}).headers || []);\nconst h = (n) => { const x = hdrs.find(y => String(y.name).toLowerCase() === n.toLowerCase()); return x ? String(x.value) : ''; };\nconst origMsgId = h('Message-ID');\nconst origSubject = h('Subject');\nconst subject = origSubject ? (/^re:/i.test(origSubject) ? origSubject : 'Re: ' + origSubject) : 'Re: ' + l.subject;\nconst references = [h('References'), origMsgId].filter(Boolean).join(' ');\nconst raw = buildMime({ fromName: l.from_name, fromEmail: l.from_email, to: l.to, subject, text: l.text, html: l.html,\n  inReplyTo: origMsgId, references, unsubscribe: l.unsubscribe_url });\nreturn { json: { raw, threadId: meta.threadId || l.thread_id || '', subject } };",
+        "mode": "runOnceForEachItem"
+      },
+      "id": "4214a505-fdf9-4045-b6d4-a4436a9b3f97",
+      "name": "Sestavit MIME (follow-up)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "options": {
+          "timeout": 60000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.threadId ? { raw: $json.raw, threadId: $json.threadId } : { raw: $json.raw }) }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2"
+      },
+      "id": "d9da04cb-c3e4-4068-b899-fc099f016588",
+      "name": "Gmail API: odeslat ve vlákně",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2220,
+        300
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-kontakt",
+          "name": "Gmail – info@krystofkoci.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.item.json || {};\nconst l = $('Smyčka odeslání').item.json;\nconst row = { id: l.id, status: 'sent_' + l.step, thread_id: r.threadId || l.thread_id || '', last_message_id: r.id || '', next_action: (String($env.TEST_MODE ?? 'true').toLowerCase() === 'true') ? 'TEST' : '' };\nrow['sent_' + l.step + '_at'] = DateTime.now().toISO();\nreturn { json: row };",
+        "mode": "runOnceForEachItem"
+      },
+      "id": "3ce978f1-895d-4267-b9fd-be37897b6a7e",
+      "name": "Zapsat sent_N",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { _action, ...row } = $input.item.json;\nreturn { json: row };",
+        "mode": "runOnceForEachItem"
+      },
+      "id": "7501fa39-f812-40a0-8d05-c87816106672",
+      "name": "Očistit update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "market",
+              "displayName": "market",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lang",
+              "displayName": "lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tz",
+              "displayName": "tz",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "legal_regime",
+              "displayName": "legal_regime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "primary_type",
+              "displayName": "primary_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp",
+              "displayName": "whatsapp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp_opt_in",
+              "displayName": "whatsapp_opt_in",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "has_website",
+              "displayName": "has_website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "maps_url",
+              "displayName": "maps_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating",
+              "displayName": "rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating_count",
+              "displayName": "rating_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "branch",
+              "displayName": "branch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons",
+              "displayName": "reasons",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons_cs",
+              "displayName": "reasons_cs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "preview_url",
+              "displayName": "preview_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "compare_png_url",
+              "displayName": "compare_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "og_png_url",
+              "displayName": "og_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "batch_id",
+              "displayName": "batch_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notified_at",
+              "displayName": "notified_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_intro",
+              "displayName": "custom_intro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_subject",
+              "displayName": "custom_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "subject_variant",
+              "displayName": "subject_variant",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_1_at",
+              "displayName": "sent_1_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_2_at",
+              "displayName": "sent_2_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_3_at",
+              "displayName": "sent_3_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_message_id",
+              "displayName": "last_message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_reply_at",
+              "displayName": "last_reply_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_channel",
+              "displayName": "last_channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "auto_reply_count",
+              "displayName": "auto_reply_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "manual_takeover",
+              "displayName": "manual_takeover",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "price_quoted",
+              "displayName": "price_quoted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "next_action",
+              "displayName": "next_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "883c5321-cec9-4574-bbef-ef61e22bf1dd",
+      "name": "Zapsat do CRM",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2660,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "market",
+              "displayName": "market",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lang",
+              "displayName": "lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tz",
+              "displayName": "tz",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "legal_regime",
+              "displayName": "legal_regime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "primary_type",
+              "displayName": "primary_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp",
+              "displayName": "whatsapp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp_opt_in",
+              "displayName": "whatsapp_opt_in",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "has_website",
+              "displayName": "has_website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "maps_url",
+              "displayName": "maps_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating",
+              "displayName": "rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating_count",
+              "displayName": "rating_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "branch",
+              "displayName": "branch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons",
+              "displayName": "reasons",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons_cs",
+              "displayName": "reasons_cs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "preview_url",
+              "displayName": "preview_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "compare_png_url",
+              "displayName": "compare_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "og_png_url",
+              "displayName": "og_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "batch_id",
+              "displayName": "batch_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notified_at",
+              "displayName": "notified_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_intro",
+              "displayName": "custom_intro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_subject",
+              "displayName": "custom_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "subject_variant",
+              "displayName": "subject_variant",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_1_at",
+              "displayName": "sent_1_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_2_at",
+              "displayName": "sent_2_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_3_at",
+              "displayName": "sent_3_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_message_id",
+              "displayName": "last_message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_reply_at",
+              "displayName": "last_reply_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_channel",
+              "displayName": "last_channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "auto_reply_count",
+              "displayName": "auto_reply_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "manual_takeover",
+              "displayName": "manual_takeover",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "price_quoted",
+              "displayName": "price_quoted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "next_action",
+              "displayName": "next_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ed7aa88a-e644-4813-ba2c-00620e7df0bd",
+      "name": "Zapsat potlačení",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2000,
+        500
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "id": "9b75001e-252c-47f7-859c-de11120ba73f",
+      "name": "Rozestup 30 s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2880,
+        300
+      ],
+      "webhookId": "29446238-c5c0-4dc3-a44f-59ec86e09209"
+    },
+    {
+      "parameters": {},
+      "id": "c0c68098-43e8-49aa-80a1-76eb6423eb92",
+      "name": "Hotovo",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        60
+      ]
+    }
+  ],
+  "connections": {
+    "Každých 15 minut": {
+      "main": [
+        [
+          {
+            "node": "Zapnuto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zapnuto?": {
+      "main": [
+        [
+          {
+            "node": "Všechny leady",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Všechny leady": {
+      "main": [
+        [
+          {
+            "node": "Agregace leadů",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agregace leadů": {
+      "main": [
+        [
+          {
+            "node": "Blocklist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Blocklist": {
+      "main": [
+        [
+          {
+            "node": "Vybrat a vyrenderovat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vybrat a vyrenderovat": {
+      "main": [
+        [
+          {
+            "node": "Smyčka odeslání",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smyčka odeslání": {
+      "main": [
+        [
+          {
+            "node": "Hotovo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Akce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Akce": {
+      "main": [
+        [
+          {
+            "node": "Gmail: 1. e-mail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Gmail API: hlavičky 1. zprávy",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Očistit update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail: 1. e-mail": {
+      "main": [
+        [
+          {
+            "node": "Zapsat sent_1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zapsat sent_1": {
+      "main": [
+        [
+          {
+            "node": "Zapsat do CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail API: hlavičky 1. zprávy": {
+      "main": [
+        [
+          {
+            "node": "Sestavit MIME (follow-up)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sestavit MIME (follow-up)": {
+      "main": [
+        [
+          {
+            "node": "Gmail API: odeslat ve vlákně",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail API: odeslat ve vlákně": {
+      "main": [
+        [
+          {
+            "node": "Zapsat sent_N",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zapsat sent_N": {
+      "main": [
+        [
+          {
+            "node": "Zapsat do CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Očistit update": {
+      "main": [
+        [
+          {
+            "node": "Zapsat potlačení",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zapsat potlačení": {
+      "main": [
+        [
+          {
+            "node": "Smyčka odeslání",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zapsat do CRM": {
+      "main": [
+        [
+          {
+            "node": "Rozestup 30 s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rozestup 30 s": {
+      "main": [
+        [
+          {
+            "node": "Smyčka odeslání",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Každých 15 minut": {
+      "recurrenceRules": [
+        null
+      ],
+      "recurrenceRuleSignatures": [
+        null
+      ]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "c94ddf83-4007-4a00-bd11-2741dbadaa13",
+  "activeVersionId": null,
+  "versionCounter": 6,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-25T18:39:04.148Z",
+      "createdAt": "2026-10-25T18:39:04.148Z",
+      "role": "workflow:owner",
+      "workflowId": "weboutreachwf004",
+      "projectId": "qlm5jIHOlquhrXmj",
+      "project": {
+        "updatedAt": "2026-10-25T18:45:57.237Z",
+        "createdAt": "2026-10-25T18:38:47.559Z",
+        "id": "qlm5jIHOlquhrXmj",
+        "name": "Krystof Koci <kontakt@krystofkoci.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "d5729b57-8469-4ca0-a7fb-0500133a81aa"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

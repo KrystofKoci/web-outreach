@@ -1,0 +1,183 @@
+country,city,category,lang,market,enabled,weight
+CZ,Brno,autoservis,cs,cz,TRUE,1.0
+CZ,Brno,elektrikář,cs,cz,TRUE,1.0
+CZ,Brno,oprava praček a spotřebičů,cs,cz,TRUE,1.0
+CZ,Brno,dámské kadeřnictví,cs,cz,TRUE,1.0
+CZ,Brno,restaurace,cs,cz,TRUE,1.0
+CZ,Brno,květinářství,cs,cz,TRUE,1.0
+CZ,Brno,barbershop,cs,cz,TRUE,1.0
+CZ,Ostrava,autoservis,cs,cz,TRUE,1.0
+CZ,Ostrava,elektrikář,cs,cz,TRUE,1.0
+CZ,Ostrava,oprava praček a spotřebičů,cs,cz,TRUE,1.0
+CZ,Ostrava,dámské kadeřnictví,cs,cz,TRUE,1.0
+CZ,Ostrava,restaurace,cs,cz,TRUE,1.0
+CZ,Ostrava,květinářství,cs,cz,TRUE,1.0
+CZ,Ostrava,barbershop,cs,cz,TRUE,1.0
+CZ,Plzeň,autoservis,cs,cz,TRUE,1.0
+CZ,Plzeň,elektrikář,cs,cz,TRUE,1.0
+CZ,Plzeň,oprava praček a spotřebičů,cs,cz,TRUE,1.0
+CZ,Plzeň,dámské kadeřnictví,cs,cz,TRUE,1.0
+CZ,Plzeň,restaurace,cs,cz,TRUE,1.0
+CZ,Plzeň,květinářství,cs,cz,TRUE,1.0
+CZ,Plzeň,barbershop,cs,cz,TRUE,1.0
+CZ,Olomouc,autoservis,cs,cz,TRUE,1.0
+CZ,Olomouc,elektrikář,cs,cz,TRUE,1.0
+CZ,Olomouc,oprava praček a spotřebičů,cs,cz,TRUE,1.0
+CZ,Olomouc,dámské kadeřnictví,cs,cz,TRUE,1.0
+CZ,Olomouc,restaurace,cs,cz,TRUE,1.0
+CZ,Olomouc,květinářství,cs,cz,TRUE,1.0
+CZ,Olomouc,barbershop,cs,cz,TRUE,1.0
+CZ,Liberec,autoservis,cs,cz,TRUE,1.0
+CZ,Liberec,elektrikář,cs,cz,TRUE,1.0
+CZ,Liberec,oprava praček a spotřebičů,cs,cz,TRUE,1.0
+CZ,Liberec,dámské kadeřnictví,cs,cz,TRUE,1.0
+CZ,Liberec,restaurace,cs,cz,TRUE,1.0
+CZ,Liberec,květinářství,cs,cz,TRUE,1.0
+CZ,Liberec,barbershop,cs,cz,TRUE,1.0
+CZ,České Budějovice,autoservis,cs,cz,TRUE,1.0
+CZ,České Budějovice,elektrikář,cs,cz,TRUE,1.0
+CZ,České Budějovice,oprava praček a spotřebičů,cs,cz,TRUE,1.0
+CZ,České Budějovice,dámské kadeřnictví,cs,cz,TRUE,1.0
+CZ,České Budějovice,restaurace,cs,cz,TRUE,1.0
+CZ,České Budějovice,květinářství,cs,cz,TRUE,1.0
+CZ,České Budějovice,barbershop,cs,cz,TRUE,1.0
+CZ,Hradec Králové,autoservis,cs,cz,TRUE,1.0
+CZ,Hradec Králové,elektrikář,cs,cz,TRUE,1.0
+CZ,Hradec Králové,oprava praček a spotřebičů,cs,cz,TRUE,1.0
+CZ,Hradec Králové,dámské kadeřnictví,cs,cz,TRUE,1.0
+CZ,Hradec Králové,restaurace,cs,cz,TRUE,1.0
+CZ,Hradec Králové,květinářství,cs,cz,TRUE,1.0
+CZ,Hradec Králové,barbershop,cs,cz,TRUE,1.0
+CZ,Pardubice,autoservis,cs,cz,TRUE,1.0
+CZ,Pardubice,elektrikář,cs,cz,TRUE,1.0
+CZ,Pardubice,oprava praček a spotřebičů,cs,cz,TRUE,1.0
+CZ,Pardubice,dámské kadeřnictví,cs,cz,TRUE,1.0
+CZ,Pardubice,restaurace,cs,cz,TRUE,1.0
+CZ,Pardubice,květinářství,cs,cz,TRUE,1.0
+CZ,Pardubice,barbershop,cs,cz,TRUE,1.0
+CZ,Zlín,autoservis,cs,cz,TRUE,1.0
+CZ,Zlín,elektrikář,cs,cz,TRUE,1.0
+CZ,Zlín,oprava praček a spotřebičů,cs,cz,TRUE,1.0
+CZ,Zlín,dámské kadeřnictví,cs,cz,TRUE,1.0
+CZ,Zlín,restaurace,cs,cz,TRUE,1.0
+CZ,Zlín,květinářství,cs,cz,TRUE,1.0
+CZ,Zlín,barbershop,cs,cz,TRUE,1.0
+CZ,Ústí nad Labem,autoservis,cs,cz,TRUE,1.0
+CZ,Ústí nad Labem,elektrikář,cs,cz,TRUE,1.0
+CZ,Ústí nad Labem,oprava praček a spotřebičů,cs,cz,TRUE,1.0
+CZ,Ústí nad Labem,dámské kadeřnictví,cs,cz,TRUE,1.0
+CZ,Ústí nad Labem,restaurace,cs,cz,TRUE,1.0
+CZ,Ústí nad Labem,květinářství,cs,cz,TRUE,1.0
+CZ,Ústí nad Labem,barbershop,cs,cz,TRUE,1.0
+CZ,Jihlava,autoservis,cs,cz,TRUE,1.0
+CZ,Jihlava,elektrikář,cs,cz,TRUE,1.0
+CZ,Jihlava,oprava praček a spotřebičů,cs,cz,TRUE,1.0
+CZ,Jihlava,dámské kadeřnictví,cs,cz,TRUE,1.0
+CZ,Jihlava,restaurace,cs,cz,TRUE,1.0
+CZ,Jihlava,květinářství,cs,cz,TRUE,1.0
+CZ,Jihlava,barbershop,cs,cz,TRUE,1.0
+CZ,Kladno,autoservis,cs,cz,TRUE,1.0
+CZ,Kladno,elektrikář,cs,cz,TRUE,1.0
+CZ,Kladno,oprava praček a spotřebičů,cs,cz,TRUE,1.0
+CZ,Kladno,dámské kadeřnictví,cs,cz,TRUE,1.0
+CZ,Kladno,restaurace,cs,cz,TRUE,1.0
+CZ,Kladno,květinářství,cs,cz,TRUE,1.0
+CZ,Kladno,barbershop,cs,cz,TRUE,1.0
+US,Tulsa OK,auto repair,en,en,TRUE,1.0
+US,Tulsa OK,electrician,en,en,TRUE,1.0
+US,Tulsa OK,appliance repair,en,en,TRUE,1.0
+US,Tulsa OK,hair salon,en,en,TRUE,1.0
+US,Tulsa OK,restaurant,en,en,TRUE,1.0
+US,Tulsa OK,florist,en,en,TRUE,1.0
+US,Tulsa OK,barber shop,en,en,TRUE,1.0
+US,Omaha NE,auto repair,en,en,TRUE,1.0
+US,Omaha NE,electrician,en,en,TRUE,1.0
+US,Omaha NE,appliance repair,en,en,TRUE,1.0
+US,Omaha NE,hair salon,en,en,TRUE,1.0
+US,Omaha NE,restaurant,en,en,TRUE,1.0
+US,Omaha NE,florist,en,en,TRUE,1.0
+US,Omaha NE,barber shop,en,en,TRUE,1.0
+US,Wichita KS,auto repair,en,en,TRUE,1.0
+US,Wichita KS,electrician,en,en,TRUE,1.0
+US,Wichita KS,appliance repair,en,en,TRUE,1.0
+US,Wichita KS,hair salon,en,en,TRUE,1.0
+US,Wichita KS,restaurant,en,en,TRUE,1.0
+US,Wichita KS,florist,en,en,TRUE,1.0
+US,Wichita KS,barber shop,en,en,TRUE,1.0
+US,Des Moines IA,auto repair,en,en,TRUE,1.0
+US,Des Moines IA,electrician,en,en,TRUE,1.0
+US,Des Moines IA,appliance repair,en,en,TRUE,1.0
+US,Des Moines IA,hair salon,en,en,TRUE,1.0
+US,Des Moines IA,restaurant,en,en,TRUE,1.0
+US,Des Moines IA,florist,en,en,TRUE,1.0
+US,Des Moines IA,barber shop,en,en,TRUE,1.0
+US,Boise ID,auto repair,en,en,TRUE,1.0
+US,Boise ID,electrician,en,en,TRUE,1.0
+US,Boise ID,appliance repair,en,en,TRUE,1.0
+US,Boise ID,hair salon,en,en,TRUE,1.0
+US,Boise ID,restaurant,en,en,TRUE,1.0
+US,Boise ID,florist,en,en,TRUE,1.0
+US,Boise ID,barber shop,en,en,TRUE,1.0
+US,Kansas City MO,auto repair,en,en,TRUE,1.0
+US,Kansas City MO,electrician,en,en,TRUE,1.0
+US,Kansas City MO,appliance repair,en,en,TRUE,1.0
+US,Kansas City MO,hair salon,en,en,TRUE,1.0
+US,Kansas City MO,restaurant,en,en,TRUE,1.0
+US,Kansas City MO,florist,en,en,TRUE,1.0
+US,Kansas City MO,barber shop,en,en,TRUE,1.0
+CA,Calgary,auto repair,en,en,TRUE,1.0
+CA,Calgary,electrician,en,en,TRUE,1.0
+CA,Calgary,appliance repair,en,en,TRUE,1.0
+CA,Calgary,hair salon,en,en,TRUE,1.0
+CA,Calgary,restaurant,en,en,TRUE,1.0
+CA,Calgary,florist,en,en,TRUE,1.0
+CA,Calgary,barber shop,en,en,TRUE,1.0
+CA,Edmonton,auto repair,en,en,TRUE,1.0
+CA,Edmonton,electrician,en,en,TRUE,1.0
+CA,Edmonton,appliance repair,en,en,TRUE,1.0
+CA,Edmonton,hair salon,en,en,TRUE,1.0
+CA,Edmonton,restaurant,en,en,TRUE,1.0
+CA,Edmonton,florist,en,en,TRUE,1.0
+CA,Edmonton,barber shop,en,en,TRUE,1.0
+CA,Winnipeg,auto repair,en,en,TRUE,1.0
+CA,Winnipeg,electrician,en,en,TRUE,1.0
+CA,Winnipeg,appliance repair,en,en,TRUE,1.0
+CA,Winnipeg,hair salon,en,en,TRUE,1.0
+CA,Winnipeg,restaurant,en,en,TRUE,1.0
+CA,Winnipeg,florist,en,en,TRUE,1.0
+CA,Winnipeg,barber shop,en,en,TRUE,1.0
+GB,Leeds,auto repair,en,en,TRUE,1.0
+GB,Leeds,electrician,en,en,TRUE,1.0
+GB,Leeds,appliance repair,en,en,TRUE,1.0
+GB,Leeds,hair salon,en,en,TRUE,1.0
+GB,Leeds,restaurant,en,en,TRUE,1.0
+GB,Leeds,florist,en,en,TRUE,1.0
+GB,Leeds,barber shop,en,en,TRUE,1.0
+GB,Sheffield,auto repair,en,en,TRUE,1.0
+GB,Sheffield,electrician,en,en,TRUE,1.0
+GB,Sheffield,appliance repair,en,en,TRUE,1.0
+GB,Sheffield,hair salon,en,en,TRUE,1.0
+GB,Sheffield,restaurant,en,en,TRUE,1.0
+GB,Sheffield,florist,en,en,TRUE,1.0
+GB,Sheffield,barber shop,en,en,TRUE,1.0
+IE,Cork,auto repair,en,en,TRUE,1.0
+IE,Cork,electrician,en,en,TRUE,1.0
+IE,Cork,appliance repair,en,en,TRUE,1.0
+IE,Cork,hair salon,en,en,TRUE,1.0
+IE,Cork,restaurant,en,en,TRUE,1.0
+IE,Cork,florist,en,en,TRUE,1.0
+IE,Cork,barber shop,en,en,TRUE,1.0
+AU,Adelaide,auto repair,en,en,TRUE,1.0
+AU,Adelaide,electrician,en,en,TRUE,1.0
+AU,Adelaide,appliance repair,en,en,TRUE,1.0
+AU,Adelaide,hair salon,en,en,TRUE,1.0
+AU,Adelaide,restaurant,en,en,TRUE,1.0
+AU,Adelaide,florist,en,en,TRUE,1.0
+AU,Adelaide,barber shop,en,en,TRUE,1.0
+AU,Perth,auto repair,en,en,TRUE,1.0
+AU,Perth,electrician,en,en,TRUE,1.0
+AU,Perth,appliance repair,en,en,TRUE,1.0
+AU,Perth,hair salon,en,en,TRUE,1.0
+AU,Perth,restaurant,en,en,TRUE,1.0
+AU,Perth,florist,en,en,TRUE,1.0
+AU,Perth,barber shop,en,en,TRUE,1.0

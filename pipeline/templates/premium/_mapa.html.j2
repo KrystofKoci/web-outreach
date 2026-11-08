@@ -1,0 +1,16 @@
+{# MAPA_PATCH_V1 – vložená mapa Google (bez API klíče). Barvy dědí ze šablony přes currentColor. #}
+{% if map_embed_url %}
+<div class="pz-mapa">
+<style>
+.pz-mapa{box-sizing:border-box;width:100%;max-width:1240px;margin:clamp(28px,4vw,48px) auto 0;padding:0 clamp(16px,5vw,64px)}
+.pz-mapa .ram{position:relative;overflow:hidden;border-radius:14px;border:1px solid color-mix(in srgb,currentColor 18%,transparent);height:clamp(260px,36vw,400px);background:color-mix(in srgb,currentColor 6%,transparent)}
+.pz-mapa iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+[data-tema="tmava"] .pz-mapa iframe,[data-tema="dark"] .pz-mapa iframe,.pz-mapa.tmava iframe{filter:invert(.9) hue-rotate(180deg) saturate(.7) brightness(.95)}
+.pz-mapa .pod{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;align-items:center;margin-top:12px;font-size:14px;opacity:.85}
+.pz-mapa .pod a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+</style>
+<div class="ram"><iframe src="{{ map_embed_url }}" title="{{ 'Mapa' if lang == 'cs' else 'Map' }} – {{ name }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>
+<p class="pod"><span>{% if map_is_area %}{{ ('Působíme ' ~ city_in) if lang == 'cs' else ('We work in and around ' ~ city) }}{% else %}{{ address }}{% endif %}</span>
+<a href="{{ map_link_url }}" rel="noopener" target="_blank">{{ 'Otevřít v Mapách Google' if lang == 'cs' else 'Open in Google Maps' }}</a></p>
+</div>
+{% endif %}

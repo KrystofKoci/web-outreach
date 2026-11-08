@@ -1,0 +1,19 @@
+{% extends 'base.html.j2' %}
+{#- Auto repair: graphite split hero, signal-red rule, hazard stripe on the photo panel. -#}
+{% block extra_css %}
+:root{--radius:4px}
+.hero--split{background:var(--brand)}
+.hero--split h1{font-weight:800;letter-spacing:-.03em;text-transform:none}
+.hero--split .hero-copy{padding-left:22px;border-left:6px solid var(--accent)}
+.hero--split .hero-cat{color:var(--on-brand-muted)}
+.hero--split .hero-cat::before{display:none}
+.hero--split .hero-art::after{content:"";position:absolute;left:-14px;top:14px;bottom:-14px;width:22px;background:repeating-linear-gradient(-45deg,var(--accent) 0 12px,transparent 12px 24px);opacity:.9}
+.hero--split .photo,.hero--split .ph{border-radius:2px}
+.hero--split .ph{background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.02))}
+.top .mark{border-radius:4px}
+.svc{border:0;border-bottom:3px solid var(--line)}
+.svc:hover{border-bottom-color:var(--accent)}
+.svc .ico-wrap{background:var(--accent);color:#fff;border-radius:4px}
+.top-cta{border-radius:4px;background:var(--accent)}
+.why .tick{border-radius:4px}
+{% endblock %}

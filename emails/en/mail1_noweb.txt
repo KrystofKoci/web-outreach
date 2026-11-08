@@ -1,0 +1,18 @@
+{{greeting}},
+
+{{custom_intro}}
+
+I was browsing businesses in your area and came across {{name}}. You do not have a website of your own yet – and that is exactly where customers look for information these days before deciding who to call.
+
+{{reviews_line}}
+
+So I took the liberty of preparing a no-obligation draft of what your page could look like:
+
+{{preview_url}}
+
+It covers the essentials: what you do, where to find you, your opening hours and a button customers use to reach you. The texts and photos are a working version – we would shape the final look together with you. And if you ever wanted more, I can extend the page with further sections and subtle animations. I build websites myself, not as an agency.
+
+If the draft catches your eye, do not hesitate to contact me. It is non-binding – and I can first adjust it to your ideas, so you see the result before deciding anything.
+
+{{owner_name}}
+{{owner_site}}

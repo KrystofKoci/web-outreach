@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>{{ page_title }}</title>
+<script>
+  (function(){var q=new URLSearchParams(location.search),h=document.documentElement;
+  h.dataset.tema=(q.get('tema')==='tmava'||location.hash==='#tmava')?'tmava':'svetla';
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&q.get('pohyb')!=='0')h.classList.add('pohyb');})();
+</script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&amp;family=Instrument+Serif:ital@0;1&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="{{ A }}zaklad.css" rel="stylesheet"/>
+<style>
+  /* V10 Panel přes obraz – autoservis Píst.
+     Světlá: čistá profesionální dílna (fotka tónovaná do teplé šedi, ať nepřináší další barvy), pod textem plná barva pozadí s krátkým přechodem – žádná mlha přes fotku.
+     Tmavá: dílna ztlumená do noci, svítí jen lampa nad mechanikem a kapotou (druhá vrstva fotky s maskou + teplá záře).
+     Kolo 7: objednávkový šuplík z hero odstraněn (přání majitele), objednává se jen ve formuláři #objednat pod službami.
+     Rohový blok (Otevřeno / Adresa / Telefon) je vidět i na mobilu – nad fotkou pod lištou. */
+  :root {
+    --pozadi:#EFEDE8; --plocha:#F6F4F0; --text:#171717; --tlumeny:#58554F; --linka:rgba(23,23,23,.14); --pole-okraj:rgba(23,23,23,.24);
+    --akcent:#A31C1B; --na-akcentu:#FFF7F3; --stopa:#E6DCCF;
+    --zavoj: linear-gradient(90deg, #EFEDE8 0%, #EFEDE8 22%, rgba(239,237,232,.9) 27%, rgba(239,237,232,0) 37%);
+    --zavoj-hore: linear-gradient(180deg, rgba(239,237,232,.75) 0%, rgba(239,237,232,0) 16%);
+    --foto: brightness(1.02) contrast(1.02);
+    --zare: rgba(255,226,170,0); --svetlo: 0;
+    --sklo: rgba(246,244,240,.66);
+  }
+  html[data-tema="tmava"] {
+    --pozadi:#0E0C0B; --plocha:#151210; --text:#EEEAE4; --tlumeny:#A59E96; --linka:rgba(238,234,228,.14); --pole-okraj:rgba(238,234,228,.26);
+    --akcent:#C42724; --na-akcentu:#FFFFFF; --stopa:#6B3A22;
+    --zavoj: linear-gradient(90deg, #0E0C0B 0%, #0E0C0B 22%, rgba(14,12,11,.9) 27%, rgba(14,12,11,0) 37%);
+    --zavoj-hore: linear-gradient(180deg, rgba(14,12,11,.85) 0%, rgba(14,12,11,0) 18%);
+    --foto: brightness(.27) contrast(1.12);
+    --zare: rgba(255,208,150,.42); --svetlo: 1;
+    --sklo: rgba(14,12,11,.55);
+  }
+  body { background: var(--pozadi); color: var(--text); font-family: "Figtree", system-ui, sans-serif; font-size: 16px; line-height: 1.5; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+  .doplnit { color: var(--tlumeny); }
+
+  /* ---------- lišta N3: logo | odkazy ve skleněné pilulce | telefon + téma ---------- */
+  .lista { position: absolute; inset: 0 0 auto 0; z-index: 20; height: 76px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 clamp(18px, 3vw, 44px); }
+  .logo { justify-self: start; font-family: "Instrument Serif", serif; font-size: 31px; line-height: 1; }
+  .odkazy { display: flex; gap: 2px; padding: 4px; border-radius: 999px; background: var(--sklo); border: 1px solid var(--linka); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  .odkazy a { font-size: 14px; padding: 8px 17px; border-radius: 999px; color: var(--tlumeny); }
+  .odkazy a[aria-current] { color: var(--text); background: var(--plocha); }
+  .odkazy a:hover { color: var(--text); }
+  .vpravo { justify-self: end; display: flex; align-items: center; gap: 16px; font-size: 14px; }
+  .vpravo .tel { padding: 10px 16px; border-radius: 999px; background: var(--sklo); border: 1px solid var(--linka); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  .vpravo .tel:hover { color: var(--tlumeny); }
+  .tema-prepinac { background: var(--sklo); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  .menu-tl { display: none; height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--linka); background: var(--sklo); align-items: center; gap: 8px; font-size: 14px; }
+  .menu-tl i { display: block; width: 16px; height: 1px; background: currentColor; box-shadow: 0 5px 0 currentColor; transform: translateY(-2.5px); }
+  .menu-panel { position: absolute; top: 66px; right: 14px; left: 14px; z-index: 40; flex-direction: column; gap: 2px; padding: 8px; border-radius: 22px; background: var(--plocha); border: 1px solid var(--linka); box-shadow: 0 24px 50px -28px rgba(0,0,0,.45); }
+  .menu-panel:not([hidden]) { display: flex; }
+  .menu-panel a { padding: 13px 16px; border-radius: 14px; font-size: 16px; }
+  .menu-panel .tel-m { margin-top: 6px; background: var(--akcent); color: var(--na-akcentu); border-radius: 999px; display: flex; justify-content: space-between; }
+  .menu-panel .tel-m .doplnit { color: inherit; }
+  .menu-panel .tel-m:focus-visible { outline-color: var(--text); }
+
+  /* ---------- hero ---------- */
+  .hero { position: relative; min-height: max(100svh, 700px); overflow: hidden; isolation: isolate; --stopa-z: 3; }
+  /* fotka začíná 9 % zleva, levý okraj patří plné barvě pozadí pod textem */
+  .foto { position: absolute; inset: 0 0 0 9%; z-index: 0; overflow: hidden; }
+  .foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 50%; filter: var(--foto);
+    transform: scale(1.03); transform-origin: 62% 45%; }
+  /* tmavá: lampa nad kapotou – stejná fotka v plném jasu, vidět jen v kuželu světla */
+  .foto img.svetlo { filter: brightness(.92) sepia(.22) contrast(1.05); opacity: var(--svetlo);
+    -webkit-mask-image: radial-gradient(ellipse 21% 34% at 47% 40%, #000 0%, rgba(0,0,0,.6) 40%, transparent 100%);
+            mask-image: radial-gradient(ellipse 21% 34% at 47% 40%, #000 0%, rgba(0,0,0,.6) 40%, transparent 100%); }
+  .foto::before { content: ""; position: absolute; z-index: 1; left: 31%; top: 4%; width: 24%; height: 34%; border-radius: 50%;
+    background: radial-gradient(closest-side, var(--zare), transparent); mix-blend-mode: screen; }
+  .foto::after { content: ""; position: absolute; inset: 0; z-index: 2; background: var(--zavoj-hore), var(--zavoj); }
+
+  .hlava { position: absolute; z-index: 6; left: clamp(18px, 3vw, 44px); top: clamp(118px, 17svh, 170px); max-width: 44vw; }
+  .hero h1 { font-family: "Instrument Serif", serif; font-weight: 400; font-size: clamp(3rem, 6vw, 6.4rem); line-height: .96; letter-spacing: -.02em; }
+  .hero h1 em { color: var(--tlumeny); }
+  .hlava p { margin-top: 22px; max-width: 24em; font-size: 16.5px; color: var(--tlumeny); }
+
+  .roh { position: absolute; z-index: 6; right: clamp(18px, 3vw, 44px); top: 104px; display: grid; gap: 4px; text-align: right; padding: 12px 16px; border-radius: 16px;
+    background: var(--sklo); border: 1px solid var(--linka); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+  .roh span, .roh .doplnit { color: var(--text); }
+  .roh { background: color-mix(in srgb, var(--plocha) 88%, transparent); }
+
+  /* formulář „Objednat servis“: reset fieldsetu a CTA pilulka s kruhem (dřív sdílené se šuplíkem v hero) */
+  fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .cta { height: 58px; display: inline-flex; align-items: center; padding: 0 8px 0 26px; border-radius: 999px; background: var(--akcent); color: var(--na-akcentu); font-size: 15.5px; font-weight: 500; white-space: nowrap; }
+  .cta [data-magnet-vnitrek] { align-items: center; gap: 16px; }
+  .cta .kruh { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.16); }
+  .cta .kruh svg { width: 16px; height: 16px; transition: transform .4s; }
+
+  /* ---------- služby: řádky fotka | název, popis, cena (blok plní systém, viz POZNAMKY_autoservis.md) ---------- */
+  .sluzby { padding: clamp(80px, 9vw, 130px) clamp(18px, 3vw, 44px) 120px; max-width: 1360px; margin: 0 auto; }
+  .sluzby-hlava { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 20px 40px; align-items: end; margin-bottom: clamp(32px, 4vw, 56px); }
+  .sluzby h2 { font-family: "Instrument Serif", serif; font-weight: 400; font-size: clamp(2.2rem, 3.4vw, 3.2rem); line-height: 1.04; letter-spacing: -.015em; }
+  .sluzby .pod { color: var(--tlumeny); max-width: 30em; }
+  .radky { border-top: 1px solid var(--linka); }
+  .radky li { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 20px clamp(28px, 4vw, 56px); align-items: center; padding: 22px 0; border-bottom: 1px solid var(--linka); }
+  .radky .foto-sl { aspect-ratio: 4 / 3; border-radius: 18px; overflow: hidden; background: var(--plocha); margin: 0; }
+  .radky .foto-sl img { width: 100%; height: 100%; object-fit: cover; filter: var(--foto-sl, none); }
+  html[data-tema="tmava"] .radky .foto-sl { --foto-sl: brightness(.84) contrast(1.06); box-shadow: 0 0 0 1px var(--linka); }
+  .radky .text-sl { display: grid; gap: 12px; max-width: 34em; }
+  .radky h3 { font-family: "Instrument Serif", serif; font-weight: 400; font-size: clamp(1.7rem, 2.4vw, 2.3rem); line-height: 1.05; }
+  .radky p { color: var(--tlumeny); }
+  .radky .cena { justify-self: start; margin-top: 6px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--pole-okraj); font-size: 15px; font-variant-numeric: tabular-nums; }
+
+  /* ---------- objednávka servisu (kolo 5): formulář pod službami, data-formular="objednavka", nic neodesílá ----------
+     Okraje polí --pole-hrana mají ≥ 3 : 1 proti pozadí i ploše (světlá 3,3 / 3,5, tmavá 3,6 / 3,4); fokus = obrys v barvě textu. */
+  :root { --pole-hrana: #85817A; }
+  html[data-tema="tmava"] { --pole-hrana: #6F6860; }
+  html[data-tema="tmava"] .objednat { color-scheme: dark; }
+  .objednat { padding: 0 clamp(18px, 3vw, 44px) clamp(90px, 9vw, 140px); max-width: 1360px; margin: 0 auto; }
+  .objednat-hlava { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 20px 40px; align-items: end; margin-bottom: clamp(28px, 3.4vw, 48px); }
+  .objednat h2 { font-family: "Instrument Serif", serif; font-weight: 400; font-size: clamp(2.2rem, 3.4vw, 3.2rem); line-height: 1.04; letter-spacing: -.015em; }
+  .objednat .pod { color: var(--tlumeny); max-width: 30em; }
+  .obj-form { background: var(--plocha); border: 1px solid var(--linka); border-radius: 30px; padding: 6px clamp(20px, 3vw, 44px) clamp(24px, 3vw, 38px); }
+  .obj-skupina { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 16px clamp(28px, 4vw, 56px); padding: clamp(24px, 2.6vw, 34px) 0; border-bottom: 1px solid var(--linka); }
+  .obj-titul { font-family: "Instrument Serif", serif; font-weight: 400; font-size: clamp(1.6rem, 2.1vw, 2rem); line-height: 1.05; }
+  .obj-napoveda { margin-top: 10px; color: var(--tlumeny); font-size: 14.5px; max-width: 22em; }
+  .obj-pole { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 16px; align-content: start; }
+  .f-pole { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .f-pole.cela { grid-column: 1 / -1; }
+  .f-pole[hidden] { display: none; }
+  .f-pole > label, .f-pole > legend { font-size: 14.5px; font-weight: 500; margin: 0; padding: 0; }
+  .f-pole > legend { margin-bottom: 8px; }
+  .f-pole small { font-weight: 400; font-size: 13.5px; color: var(--tlumeny); }
+  .f-pole input:not([type="radio"]):not([type="checkbox"]), .f-pole select, .f-pole textarea {
+    width: 100%; height: 54px; border-radius: 999px; border: 1px solid var(--pole-hrana); background: var(--pozadi); color: var(--text);
+    font: inherit; font-size: 16px; padding: 0 20px; margin: 0; }
+  .f-pole textarea { height: auto; min-height: 132px; border-radius: 22px; padding: 14px 20px; resize: vertical; line-height: 1.5; }
+  .f-pole ::placeholder { color: var(--tlumeny); opacity: 1; }
+  .f-pole input:not([type="radio"]):not([type="checkbox"]):focus-visible, .f-pole select:focus-visible, .f-pole textarea:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; border-color: var(--text); }
+  .obj-form .f-pole input[aria-invalid="true"]:not([type="checkbox"]):not([type="radio"]), .obj-form .f-pole textarea[aria-invalid="true"] { border-color: var(--akcent); box-shadow: inset 0 0 0 1px var(--akcent); }
+  .vyber { position: relative; display: block; color: var(--text); }
+  .vyber[hidden] { display: none; }
+  .vyber select { -webkit-appearance: none; appearance: none; padding-right: 50px; cursor: pointer; }
+  .vyber select:disabled { color: var(--tlumeny); cursor: not-allowed; opacity: 1; }
+  .vyber::after { content: ""; position: absolute; right: 23px; top: 50%; width: 8px; height: 8px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: translateY(-70%) rotate(45deg); pointer-events: none; }
+  .vyber select option { background: var(--plocha); color: var(--text); }
+  /* druh vozidla: radio jako pilulky */
+  .druhy { display: flex; flex-wrap: wrap; gap: 8px; }
+  .druh { position: relative; cursor: pointer; }
+  .druh span { display: inline-flex; align-items: center; height: 46px; padding: 0 22px; border-radius: 999px; border: 1px solid var(--pole-hrana); background: var(--pozadi); font-size: 15px; }
+  .druh:hover span { border-color: var(--text); }
+  .druh input:checked + span { background: var(--text); color: var(--plocha); border-color: var(--text); }
+  .druh input:focus-visible + span, .je-chyba .druh input:focus + span { outline: 2px solid var(--text); outline-offset: 3px; }
+  .je-chyba .druh input:not(:checked) + span { border-color: var(--akcent); box-shadow: inset 0 0 0 1px var(--akcent); }
+  /* služby: zaškrtávací políčka generovaná z bloku služeb */
+  .zaskrtavaci { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 8px; }
+  .zaskrt { position: relative; display: block; cursor: pointer; }
+  .zaskrt-plocha { display: flex; align-items: center; gap: 12px; min-height: 52px; height: 100%; padding: 12px 16px; border-radius: 16px; border: 1px solid var(--pole-hrana); background: var(--pozadi); font-size: 15px; line-height: 1.3; }
+  .zaskrt:hover .zaskrt-plocha { border-color: var(--text); }
+  .zaskrt .box { flex: none; width: 20px; height: 20px; border-radius: 6px; border: 1.5px solid var(--tlumeny); display: grid; place-items: center; }
+  .zaskrt .box::after { content: ""; width: 10px; height: 5px; border-left: 2px solid var(--plocha); border-bottom: 2px solid var(--plocha); transform: translateY(-1px) rotate(-45deg); opacity: 0; }
+  .zaskrt input:checked + .zaskrt-plocha { border-color: var(--text); }
+  .zaskrt input:checked + .zaskrt-plocha .box { background: var(--text); border-color: var(--text); }
+  .zaskrt input:checked + .zaskrt-plocha .box::after { opacity: 1; }
+  .zaskrt input:focus-visible + .zaskrt-plocha, .je-chyba .zaskrt input:focus + .zaskrt-plocha { outline: 2px solid var(--text); outline-offset: 2px; }
+  .je-chyba .zaskrt-plocha { border-color: var(--akcent); box-shadow: inset 0 0 0 1px var(--akcent); }
+  .chyba { display: flex; gap: 8px; align-items: baseline; font-size: 13.5px; color: var(--text); }
+  .chyba::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--akcent); transform: translateY(-1px); }
+  .chyba[hidden] { display: none; }
+  .obj-odeslat { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 16px clamp(28px, 4vw, 56px); padding-top: clamp(22px, 2.4vw, 30px); }
+  .obj-odeslat > div { grid-column: 2; display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; }
+  .obj-hlaska { color: var(--tlumeny); font-size: 14.5px; max-width: 26em; }
+  .obj-hlaska.ukazka, .obj-hlaska.chybi { color: var(--text); }
+  .obj-odeslat .cta { flex: none; }
+  @media (max-width: 1180px) {
+    .obj-skupina, .obj-odeslat { grid-template-columns: minmax(0, 3fr) minmax(0, 7fr); }
+  }
+  @media (max-width: 760px) {
+    .objednat { padding: 0 16px 90px; }
+    .objednat-hlava { grid-template-columns: 1fr; gap: 12px; margin-bottom: 24px; }
+    .obj-form { border-radius: 24px; padding: 2px 16px 22px; }
+    .obj-skupina { grid-template-columns: 1fr; gap: 14px; padding: 24px 0; }
+    .obj-napoveda { margin-top: 6px; }
+    .obj-pole { grid-template-columns: 1fr; gap: 16px; }
+    .obj-odeslat { grid-template-columns: 1fr; }
+    .obj-odeslat > div { grid-column: auto; flex-direction: column; align-items: stretch; }
+    .obj-odeslat .cta { justify-content: space-between; }
+    .obj-odeslat .cta [data-magnet-vnitrek] { width: 100%; justify-content: space-between; }
+  }
+
+  /* ---------- notebook ---------- */
+  @media (max-width: 1180px) {
+    .hlava { top: clamp(108px, 15svh, 150px); max-width: 44vw; }
+    .hero h1 { font-size: clamp(3rem, 6.2vw, 5rem); }
+    .hlava p { max-width: 21em; font-size: 15.5px; }
+    .foto { left: 6%; }
+    .foto img { object-position: 66% 50%; }
+    .foto::after { background: var(--zavoj-hore), linear-gradient(90deg, var(--pozadi) 0%, var(--pozadi) 33%, color-mix(in srgb, var(--pozadi) 88%, transparent) 39%, transparent 50%); }
+  }
+  @media (max-width: 1000px) {
+    .odkazy, .vpravo .tel { display: none; }
+    .lista { grid-template-columns: 1fr auto; }
+    .menu-tl { display: inline-flex; }
+    .vpravo { gap: 8px; }
+  }
+  /* ---------- mobil ---------- */
+  @media (max-width: 760px) {
+    .lista { height: 64px; padding: 0 16px; }
+    /* hero bez šuplíku: výška podle obsahu (fotka + nadpis), dřív 100svh kvůli šuplíku dole */
+    .hero { min-height: 0; }
+    .foto { inset: 0 0 auto 0; height: 40svh; }
+    .foto img { object-position: 55% 45%; }
+    .foto img.svetlo { -webkit-mask-image: radial-gradient(ellipse 45% 60% at 45% 45%, #000, transparent); mask-image: radial-gradient(ellipse 45% 60% at 45% 45%, #000, transparent); }
+    .foto::after { background: linear-gradient(180deg, color-mix(in srgb, var(--pozadi) 70%, transparent) 0%, transparent 26%, transparent 72%, var(--pozadi) 100%); }
+    /* rohový blok i na mobilu: nad fotkou pod lištou, zarovnaný s jejím pravým okrajem */
+    .roh { top: 76px; right: 16px; }
+    .hlava { position: relative; left: auto; top: auto; max-width: none; margin: calc(40svh - 14px) 16px 20px; z-index: 6; }
+    .hero h1 { font-size: clamp(2.7rem, 12.5vw, 3.6rem); }
+    .hlava p { display: none; }
+    .sluzby { padding: 70px 16px 90px; }
+    .sluzby-hlava { grid-template-columns: 1fr; gap: 12px; margin-bottom: 26px; }
+    .radky li { grid-template-columns: 1fr; gap: 16px; padding: 18px 0 26px; }
+    .radky .foto-sl { border-radius: 14px; }
+    .radky .text-sl { gap: 8px; }
+  }
+  /* malé telefony (360 × 740): nižší fotka a menší nadpis (beze změny z doby šuplíku), nižší CTA formuláře */
+  @media (max-width: 380px) {
+    .foto { height: 37svh; }
+    .hlava { margin: calc(37svh - 16px) 16px 14px; }
+    .hero h1 { font-size: 2.45rem; }
+    .cta { height: 52px; }
+  }
+</style>
+<style id="pz-css">
+.pz-hod{padding:clamp(56px,9vw,104px) 24px;text-align:center;color:inherit;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-hod .pz-in{max-width:560px;margin:0 auto}
+.pz-hod .pz-cislo{font-size:clamp(44px,7vw,72px);line-height:1;margin:0;font-weight:500;letter-spacing:-.02em}
+.pz-hod .pz-cislo span{font-size:.32em;opacity:.7;letter-spacing:0;margin-left:.3em}
+.pz-hod .pz-hv{position:relative;display:inline-block;font-size:22px;letter-spacing:4px;margin:14px 0 8px;color:color-mix(in srgb,currentColor 22%,transparent)}
+.pz-hod .pz-hv b{position:absolute;inset:0 auto 0 0;overflow:hidden;white-space:nowrap;color:var(--akcent,var(--accent,#E3A008));font-weight:400}
+.pz-hod .pz-pod{margin:0 0 14px;opacity:.78}
+.pz-hod a{color:inherit}
+.pz-pata{padding:28px 24px 34px;text-align:center;font-size:14px;opacity:.85;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-pata p{margin:4px 0}.pz-pata a{color:inherit}
+.pz-credit{font-size:12px;opacity:.7;text-align:center;padding:0 24px 22px}
+.pz-credit a{color:inherit}
+.pz-pv{position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;background:#111827;color:#fff;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;
+ padding:10px 14px;border-radius:14px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.pz-pv a{color:#fff}.pz-pv .pz-cta{background:#fff;color:#111827;text-decoration:none;font-weight:700;padding:.4em .85em;border-radius:999px}
+.pz-pv button{background:none;border:0;color:#fff;opacity:.8;cursor:pointer;font:inherit;text-decoration:underline}
+.pz-pv.pz-skryt{display:none}
+@media print{.pz-pv{display:none}}
+</style></head>
+<body>
+<header class="lista">
+<a aria-label="{{ brand }}, car service – home" class="logo" href="#">{{ brand }}</a>
+<nav aria-label="Main" class="odkazy">
+<a aria-current="page" href="#objednat">Book</a><a href="#sluzby">Services</a><a href="#sluzby">Prices</a><a href="#kontakt">Contact</a>
+</nav>
+<div class="vpravo">
+{% if phone %}<a class="tel" href="tel:{{ phone_href }}">Phone {{ phone }}</a>{% endif %}
+<button aria-label="Switch to dark mode" aria-pressed="false" class="tema-prepinac" data-prepnout-tema="" type="button">
+<svg aria-hidden="true" class="ikona-slunce" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+<svg aria-hidden="true" class="ikona-mesic" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg>
+</button>
+<button aria-controls="menu" aria-expanded="false" class="menu-tl" data-menu-zaklad="" type="button"><i></i>Menu</button>
+</div>
+<nav aria-label="Menu" class="menu-panel" hidden="" id="menu">
+<a href="#objednat">Book</a><a href="#sluzby">Services</a><a href="#sluzby">Prices</a><a href="#kontakt">Contact</a>
+{% if phone %}<a class="tel-m" href="tel:{{ phone_href }}"><span>Call</span>{{ phone }}</a>{% endif %}
+</nav>
+</header>
+<main>
+<section aria-label="Home" class="hero" id="hero">
+<div class="foto">
+<img alt="A bright workshop with a lift: a mechanic in a work jacket leans under the open bonnet of a saloon, a tool bench beside him" fetchpriority="high" height="1600" src="{{ A }}img/V10-autoservis-dilna2.webp" width="2400"/>
+<img alt="" aria-hidden="true" class="svetlo" height="1600" src="{{ A }}img/V10-autoservis-dilna2.webp" width="2400"/>
+</div>
+<div class="hlava">
+<h1 data-slozit="">We fix what’s needed.</h1>
+<p data-po-nadpisu="0.2">Before we start, we call you with what we found and what it will cost. You decide.</p>
+</div>
+<p class="roh mono" data-po-nadpisu="0.3">{% if hours_today %}<span>Open {{ hours_today }}</span>{% endif %}{% if address %}<span>Address {{ address }}</span>{% endif %}{% if phone %}<a href="tel:{{ phone_href }}">Phone {{ phone }}</a>{% endif %}</p>
+</section>
+<section class="sluzby" id="sluzby">
+<div class="sluzby-hlava">
+<h2 data-odhalit="">What to bring your car in for</h2>
+<p class="pod" data-odhalit="">You get an estimate for every job in advance. If the price changes, we call you first.</p>
+</div>
+
+<ul class="radky" data-odhalit="deti" data-sluzby="autoservis">
+<li data-sluzba="servis">
+<figure class="foto-sl"><img alt="A mechanic leans over an open engine bay" decoding="async" height="900" loading="lazy" src="{{ A }}img/V10-autoservis-sluzba-servis.webp" width="1200"/></figure>
+<div class="text-sl"><h3>Manufacturer-scheduled service</h3><p>We service your car according to your model’s schedule and record everything in the service book.</p><span class="cena" data-cena="servis">{{ price_text }}</span></div>
+</li>
+<li data-sluzba="olej">
+<figure class="foto-sl"><img alt="A gloved hand drains an old oil filter under a raised car" decoding="async" height="900" loading="lazy" src="{{ A }}img/V10-autoservis-sluzba-olej.webp" width="1200"/></figure>
+<div class="text-sl"><h3>Oil and filter change</h3><p>Oil to the manufacturer’s specification plus new oil, air and cabin filters. Useful between services if you drive a lot.</p><span class="cena" data-cena="olej">{{ price_text }}</span></div>
+</li>
+<li data-sluzba="brzdy">
+<figure class="foto-sl"><img alt="A brake disc and caliper on a raised car with the wheel off" decoding="async" height="900" loading="lazy" src="{{ A }}img/V10-autoservis-sluzba-brzdy.webp" width="1200"/></figure>
+<div class="text-sl"><h3>Brakes</h3><p>We measure the pads and discs and check the brake fluid. We only replace what is really worn.</p><span class="cena" data-cena="brzdy">{{ price_text }}</span></div>
+</li>
+<li data-sluzba="pneu">
+<figure class="foto-sl"><img alt="A mechanic fits a tyre on a rim in a tyre changer" decoding="async" height="900" loading="lazy" src="{{ A }}img/V10-autoservis-sluzba-pneu.webp" width="1200"/></figure>
+<div class="text-sl"><h3>Tyre service and storage</h3><p>We change and balance your tyres and measure the tread depth. You can leave next season’s set with us.</p><span class="cena" data-cena="pneu">{{ price_text }}</span></div>
+</li>
+<li data-sluzba="klimatizace">
+<figure class="foto-sl"><img alt="Air vents on a car dashboard" decoding="async" height="900" loading="lazy" src="{{ A }}img/V10-autoservis-sluzba-klima.webp" width="1200"/></figure>
+<div class="text-sl"><h3>Air conditioning</h3><p>Refrigerant top-up, evaporator disinfection and a leak test, so it cools in summer and the cabin doesn’t smell musty.</p><span class="cena" data-cena="klimatizace">{{ price_text }}</span></div>
+</li>
+<li data-sluzba="diagnostika">
+<figure class="foto-sl"><img alt="Hands on a laptop connected to a car with a diagnostic cable" decoding="async" height="900" loading="lazy" src="{{ A }}img/V10-autoservis-sluzba-diagnostika.webp" width="1200"/></figure>
+<div class="text-sl"><h3>Diagnostics</h3><p>We read the fault codes from the control units and confirm the cause by measuring. Only then do we decide on parts.</p><span class="cena" data-cena="diagnostika">{{ price_text }}</span></div>
+</li>
+<li data-sluzba="stk">
+<figure class="foto-sl"><img alt="A lit headlight of a dark car" decoding="async" height="900" loading="lazy" src="{{ A }}img/V10-autoservis-sluzba-stk.webp" width="1200"/></figure>
+<div class="text-sl"><h3>Inspection prep</h3><p>We check the lights, brakes, shock absorbers, exhaust and everything the inspector looks at, so you can go to the inspection with peace of mind.</p><span class="cena" data-cena="stk">{{ price_text }}</span></div>
+</li>
+</ul>
+</section>
+
+{# SEKCE_PATCH_V1 #}{% include "_onas.html.j2" %}
+<section aria-labelledby="objednat-h" class="objednat" id="objednat">
+<div class="objednat-hlava">
+<h2 data-odhalit="" id="objednat-h">Book a service</h2>
+<p class="pod" data-odhalit="">Tell us what your vehicle needs. Based on the kind, make and year we’ll estimate how long the work takes and get back to you with a date.</p>
+</div>
+<form aria-labelledby="objednat-h" class="obj-form" data-formular="objednavka" novalidate="">
+<div class="obj-skupina">
+<h3 class="obj-titul">Your contact details</h3>
+<div class="obj-pole">
+<div class="f-pole cela">
+<label for="f-jmeno">Full name</label>
+<input autocomplete="name" id="f-jmeno" name="jmeno" required="" type="text"/>
+<span class="chyba" hidden="" id="e-jmeno">Please enter your full name.</span>
+</div>
+<div class="f-pole">
+<label for="f-telefon">Phone</label>
+<input autocomplete="tel" id="f-telefon" inputmode="tel" name="telefon" required="" type="tel"/>
+<span class="chyba" hidden="" id="e-telefon">Please enter a phone number (at least 9 digits).</span>
+</div>
+<div class="f-pole">
+<label for="f-email">E-mail <small>(optional)</small></label>
+<input autocomplete="email" id="f-email" name="email" type="email"/>
+<span class="chyba" hidden="" id="e-email">Please check your e-mail – the @ or the domain is missing.</span>
+</div>
+</div>
+</div>
+<div class="obj-skupina">
+<h3 class="obj-titul">Vehicle</h3>
+<div class="obj-pole">
+<fieldset class="f-pole cela" id="f-druh">
+<legend>Vehicle kind</legend>
+<div class="druhy">
+<label class="druh"><input class="sr-only" name="druh" required="" type="radio" value="auto"/><span>Car</span></label>
+<label class="druh"><input class="sr-only" name="druh" required="" type="radio" value="motorka"/><span>Motorbike</span></label>
+<label class="druh"><input class="sr-only" name="druh" required="" type="radio" value="jine"/><span>Other</span></label>
+</div>
+<span class="chyba" hidden="" id="e-druh">Choose whether it is a car, a motorbike or another vehicle.</span>
+</fieldset>
+<div class="f-pole">
+<label for="f-typ" id="l-typ">Vehicle type <small>(optional)</small></label>
+<span class="vyber"><select disabled="" id="f-typ" name="typ"><option value="">Choose the vehicle kind first</option></select></span>
+<input autocomplete="off" disabled="" hidden="" id="f-typ-jine" name="typ" placeholder="Tell us about the vehicle" type="text"/>
+</div>
+<div class="f-pole">
+<label for="f-znacka">Make</label>
+<input autocomplete="off" id="f-znacka" name="znacka" required="" type="text"/>
+<span class="chyba" hidden="" id="e-znacka">Please enter the make.</span>
+</div>
+<div class="f-pole">
+<label for="f-model">Model</label>
+<input autocomplete="off" id="f-model" name="model" required="" type="text"/>
+<span class="chyba" hidden="" id="e-model">Please enter the model.</span>
+</div>
+<div class="f-pole">
+<label for="f-rok">Year <small>(optional)</small></label>
+<input autocomplete="off" id="f-rok" inputmode="numeric" name="rok" pattern="[0-9]{4}" placeholder="e.g. 2016" type="text"/>
+<span class="chyba" hidden="" id="e-rok">Enter the year as four digits, from 1950 to this year.</span>
+</div>
+</div>
+</div>
+<div class="obj-skupina">
+<div>
+<h3 class="obj-titul">What’s needed</h3>
+<p class="obj-napoveda" id="n-sluzby">Tick services from the list above, or describe the problem in your own words.</p>
+</div>
+<div class="obj-pole">
+<fieldset aria-describedby="n-sluzby" class="f-pole cela" id="f-sluzby">
+<legend>Services</legend>
+<div class="zaskrtavaci" data-sluzby-volby=""></div>
+<span class="chyba" hidden="" id="e-sluzby">Tick at least one service, or describe what’s needed under Anything else.</span>
+</fieldset>
+<div class="f-pole cela">
+<label for="f-zprava">Anything else</label>
+<textarea id="f-zprava" name="zprava" placeholder="E.g. something squeaks at the front when braking; mornings suit me better." rows="4"></textarea>
+</div>
+</div>
+</div>
+<div class="obj-odeslat">
+<div>
+<p aria-live="polite" class="obj-hlaska" id="obj-hlaska">Fields not marked “optional” are required.</p>
+<button class="cta" type="submit"><span data-magnet-vnitrek="">Book<span aria-hidden="true" class="kruh"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></span></span></button>
+</div>
+</div>
+</form>
+{% include "_mapa.html.j2" %}
+</section>
+</main>
+{% include "_recenze.html.j2" %}
+{% if rating %}<section aria-label="Rating on Google" class="pz-hod"><div class="pz-in">
+<p class="pz-cislo">{{ rating_txt }}<span>out of 5</span></p>
+<p aria-hidden="true" class="pz-hv">★★★★★<b style="width:{{ rating_pct }}%">★★★★★</b></p>
+<p class="pz-pod">Rating on Google{% if show_count %} · {{ rating_count }} reviews{% endif %}</p>
+{% if maps_url %}<p><a href="{{ maps_url }}" rel="noopener" target="_blank">View on Google Maps</a></p>{% endif %}
+</div></section>{% endif %}<footer class="pz-pata"><p><strong>{{ name }}</strong></p>
+{% if address %}<p>{{ address }}</p>{% endif %}
+<p>{% if phone %}<a href="tel:{{ phone_href }}">{{ phone }}</a>{% endif %}{% if phone and email %} · {% endif %}{% if email %}<a href="mailto:{{ email }}">{{ email }}</a>{% endif %}</p></footer><script>
+  (function () {
+    var b = document.querySelector('.menu-tl'), p = document.getElementById('menu');
+    b.addEventListener('click', function () { var o = p.hidden; p.hidden = !o; b.setAttribute('aria-expanded', o ? 'true' : 'false'); });
+  })();
+
+  /* Objednávka servisu (kolo 5): služby se generují z bloku služeb, typ vozidla podle druhu, kontrola povinných polí,
+     fokus na první chybné pole. Nic se neodesílá (ukázka šablony). */
+  (function () {
+    var f = document.querySelector('[data-formular="objednavka"]'); if (!f) return;
+    var hl = document.getElementById('obj-hlaska');
+    var typSel = document.getElementById('f-typ'), typTxt = document.getElementById('f-typ-jine'), typLabel = document.getElementById('l-typ');
+    var rok = document.getElementById('f-rok'), ROK_MIN = 1950, ROK_MAX = new Date().getFullYear();
+    var zprava = document.getElementById('f-zprava'), fsSluzby = document.getElementById('f-sluzby'), volby = f.querySelector('[data-sluzby-volby]');
+    var seznam = document.querySelector('ul[data-sluzby="autoservis"]');
+    var TYPY = { auto: ['Passenger car', 'SUV', 'Kombi', 'Van'], motorka: ['Road bike', 'Enduro / cross', 'Scooter', 'Quad'] };
+    document.getElementById('e-rok').textContent = 'Enter the year as four digits, from ' + ROK_MIN + ' do ' + ROK_MAX + '.';
+
+    /* zaškrtávací služby = položky li[data-sluzba] nad formulářem (název z h3); zaškrtnuté zůstanou zaškrtnuté i po změně seznamu */
+    function nactiSluzby() {
+      var byly = {};
+      volby.querySelectorAll('input:checked').forEach(function (i) { byly[i.getAttribute('data-id')] = true; });
+      volby.textContent = '';
+      var polozky = seznam ? seznam.querySelectorAll('li[data-sluzba]') : [];
+      Array.prototype.forEach.call(polozky, function (li) {
+        var id = li.getAttribute('data-sluzba'), h = li.querySelector('h3');
+        var nazev = (h ? h.textContent : id).replace(/[ \t\n\r]+/g, ' ').trim();
+        var lab = document.createElement('label'); lab.className = 'zaskrt';
+        var inp = document.createElement('input');
+        inp.type = 'checkbox'; inp.className = 'sr-only'; inp.name = 'sluzby[]'; inp.id = 'f-sl-' + id;
+        inp.value = nazev.replace(/\s+/g, ' '); inp.setAttribute('data-id', id); inp.checked = !!byly[id];
+        var pl = document.createElement('span'); pl.className = 'zaskrt-plocha';
+        var box = document.createElement('span'); box.className = 'box'; box.setAttribute('aria-hidden', 'true');
+        pl.appendChild(box); pl.appendChild(document.createTextNode(nazev));
+        lab.appendChild(inp); lab.appendChild(pl); volby.appendChild(lab);
+      });
+      fsSluzby.hidden = !polozky.length; /* bez služeb zbývá jen pole Něco navíc */
+      if (!document.getElementById('e-sluzby').hidden) over('sluzby');
+    }
+    nactiSluzby();
+    if (seznam && 'MutationObserver' in window) new MutationObserver(nactiSluzby).observe(seznam, { childList: true, subtree: true, characterData: true });
+
+    /* typ vozidla podle druhu: auto / motorka = výběr, jiné = volné pole */
+    function nastavTyp(druh) {
+      var jine = druh === 'jine';
+      typSel.parentNode.hidden = jine; typSel.disabled = jine || !druh;
+      typTxt.hidden = !jine; typTxt.disabled = !jine;
+      typLabel.htmlFor = jine ? 'f-typ-jine' : 'f-typ';
+      if (jine) return;
+      typSel.textContent = '';
+      var prvni = document.createElement('option'); prvni.value = '';
+      prvni.textContent = druh ? 'Choose…' : 'Choose the vehicle kind first'; typSel.appendChild(prvni);
+      (TYPY[druh] || []).forEach(function (t) { var o = document.createElement('option'); o.value = t; o.textContent = t; typSel.appendChild(o); });
+    }
+    var vybrany = f.querySelector('input[name="druh"]:checked'); /* obnovený stav formuláře po návratu na stránku */
+    if (vybrany) nastavTyp(vybrany.value);
+
+    /* pravidla v pořadí polí; cile = prvky, které dostanou aria-invalid / popis chyby, první z nich dostane fokus */
+    var radia = function () { return Array.prototype.slice.call(f.querySelectorAll('input[name="druh"]')); };
+    var zaskrt = function () { return Array.prototype.slice.call(volby.querySelectorAll('input')); };
+    var pole = function (id) { return function () { return [document.getElementById(id)]; }; };
+    var hodnota = function (id) { return document.getElementById(id).value.trim(); };
+    var PRAVIDLA = {
+      jmeno:   { cile: pole('f-jmeno'),   spatne: function () { return !hodnota('f-jmeno'); } },
+      telefon: { cile: pole('f-telefon'), spatne: function () { return hodnota('f-telefon').replace(/\D/g, '').length < 9; } },
+      email:   { cile: pole('f-email'),   spatne: function () { var v = hodnota('f-email'); return !!v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); } },
+      druh:    { cile: radia, skupina: 'f-druh', spatne: function () { return !f.querySelector('input[name="druh"]:checked'); } },
+      znacka:  { cile: pole('f-znacka'),  spatne: function () { return !hodnota('f-znacka'); } },
+      model:   { cile: pole('f-model'),   spatne: function () { return !hodnota('f-model'); } },
+      rok:     { cile: pole('f-rok'),     spatne: function () { var v = hodnota('f-rok'); if (!v) return false; var n = +v; return !/^\d{4}$/.test(v) || n < ROK_MIN || n > ROK_MAX; } },
+      sluzby:  { cile: function () { return zaskrt().concat([zprava]); }, skupina: 'f-sluzby', spatne: function () { return !volby.querySelector('input:checked') && !zprava.value.trim(); } }
+    };
+    function oznac(klic, ano) {
+      var p = PRAVIDLA[klic], idChyby = 'e-' + klic;
+      document.getElementById(idChyby).hidden = !ano;
+      if (p.skupina) document.getElementById(p.skupina).classList.toggle('je-chyba', ano);
+      p.cile().forEach(function (el) {
+        var d = (el.getAttribute('aria-describedby') || '').split(' ').filter(function (x) { return x && x !== idChyby; });
+        if (ano) d.push(idChyby);
+        if (d.length) el.setAttribute('aria-describedby', d.join(' ')); else el.removeAttribute('aria-describedby');
+        if (ano) el.setAttribute('aria-invalid', 'true'); else el.removeAttribute('aria-invalid');
+      });
+    }
+    function over(klic) { var s = PRAVIDLA[klic].spatne(); oznac(klic, s); return s; }
+
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var prvni = null;
+      Object.keys(PRAVIDLA).forEach(function (k) {
+        if (over(k) && !prvni) prvni = PRAVIDLA[k].cile().filter(function (el) { return !el.closest('[hidden]'); })[0];
+      });
+      if (prvni) {
+        hl.classList.remove('ukazka'); hl.classList.add('chybi');
+        hl.textContent = 'Please check the highlighted fields.';
+        prvni.focus(); return;
+      }
+      hl.classList.remove('chybi'); hl.classList.add('ukazka');
+      hl.textContent = 'Thank you, we’ll get back to you soon.';
+    });
+    /* po opravě chyba zmizí hned; nové chyby se ukazují až při odeslání */
+    function klicPole(el) {
+      if (el.name === 'druh') return 'druh';
+      if (el.name === 'sluzby[]' || el === zprava) return 'sluzby';
+      return el.name in PRAVIDLA ? el.name : null;
+    }
+    function znovu(e) {
+      var k = klicPole(e.target);
+      if (k && !document.getElementById('e-' + k).hidden) over(k);
+    }
+    rok.addEventListener('input', function () { var c = rok.value.replace(/\D/g, '').slice(0, 4); if (c !== rok.value) rok.value = c; });
+    f.addEventListener('input', znovu);
+    f.addEventListener('change', function (e) {
+      if (e.target.name === 'druh') nastavTyp(e.target.value);
+      znovu(e);
+    });
+  })();
+</script>
+<script defer="" src="{{ A }}zaklad.js"></script>
+<script id="sluzby-vychozi" type="application/json">
+[
+  {
+    "id": "a service",
+    "nazev": "Manufacturer-scheduled service",
+    "popis": "We service your car according to your model’s schedule and record everything in the service book.",
+    "foto": "{{ A }}img/V10-autoservis-sluzba-servis.webp",
+    "alt": "A mechanic leans over an open engine bay"
+  },
+  {
+    "id": "olej",
+    "nazev": "Oil and filter change",
+    "popis": "Oil to the manufacturer’s specification plus new oil, air and cabin filters. Useful between services if you drive a lot.",
+    "foto": "{{ A }}img/V10-autoservis-sluzba-olej.webp",
+    "alt": "A gloved hand drains an old oil filter under a raised car"
+  },
+  {
+    "id": "brzdy",
+    "nazev": "Brakes",
+    "popis": "We measure the pads and discs and check the brake fluid. We only replace what is really worn.",
+    "foto": "{{ A }}img/V10-autoservis-sluzba-brzdy.webp",
+    "alt": "A brake disc and caliper on a raised car with the wheel off"
+  },
+  {
+    "id": "pneu",
+    "nazev": "Tyre service and storage",
+    "popis": "We change and balance your tyres and measure the tread depth. You can leave next season’s set with us.",
+    "foto": "{{ A }}img/V10-autoservis-sluzba-pneu.webp",
+    "alt": "A mechanic fits a tyre on a rim in a tyre changer"
+  },
+  {
+    "id": "klimatizace",
+    "nazev": "Air conditioning",
+    "popis": "Refrigerant top-up, evaporator disinfection and a leak test, so it cools in summer and the cabin doesn’t smell musty.",
+    "foto": "{{ A }}img/V10-autoservis-sluzba-klima.webp",
+    "alt": "Air vents on a car dashboard"
+  },
+  {
+    "id": "diagnostika",
+    "nazev": "Diagnostics",
+    "popis": "We read the fault codes from the control units and confirm the cause by measuring. Only then do we decide on parts.",
+    "foto": "{{ A }}img/V10-autoservis-sluzba-diagnostika.webp",
+    "alt": "Hands on a laptop connected to a car with a diagnostic cable"
+  },
+  {
+    "id": "stk",
+    "nazev": "Inspection prep",
+    "popis": "We check the lights, brakes, shock absorbers, exhaust and everything the inspector looks at, so you can go to the inspection with peace of mind.",
+    "foto": "{{ A }}img/V10-autoservis-sluzba-stk.webp",
+    "alt": "A lit headlight of a dark car"
+  }
+]
+</script>
+<p class="pz-credit">Website draft by: <a href="{{ owner_site }}" rel="noopener">{{ owner_name }}</a> · Photos: Unsplash</p>
+{% if show_banner %}<div class="pz-pv" id="pz-pv" role="note"><span>Non-binding draft of a new website for <strong>{{ name }}</strong> · prepared by {{ owner_name }}</span>
+<a class="pz-cta" href="{{ want_url }}">I want this website</a>{% if wa_url %}<a class="pz-cta" href="{{ wa_url }}" rel="noopener" target="_blank">WhatsApp</a>{% endif %}
+<button data-pz-skryt="" type="button">Hide</button></div>{% endif %}
+<script id="pz-js">(function(){
+var pv=document.getElementById('pz-pv');if(pv){var x=pv.querySelector('[data-pz-skryt]');x&&x.addEventListener('click',function(){pv.classList.add('pz-skryt');});}
+var HOOK="{{ form_webhook_url }}",LEAD="{{ lead_id }}";
+function lab(f,el){var l=el.id&&f.querySelector('label[for="'+el.id+'"]');if(!l)l=el.closest('label');var s=(l?l.textContent:'')||el.name||'';return s.replace(/\s+/g,' ').replace(/\*/g,'').trim();}
+document.addEventListener('submit',function(e){var f=e.target;if(!f||f.tagName!=='FORM'||f.hasAttribute('data-pz-ignore')||!HOOK)return;
+  var d={lead_id:LEAD,source:'preview',name:'',email:'',phone:'',message:''},rest=[],seen={};
+  Array.prototype.forEach.call(f.elements,function(el){ if(!el.name||el.type==='submit'||el.type==='button')return; if((el.type==='checkbox'||el.type==='radio')&&!el.checked)return;
+   var v=(el.value||'').trim(); if(!v)return; var n=el.name.toLowerCase();
+   if(/^(jmeno|name|jmeno_prijmeni)$/.test(n))d.name=v; else if(/^(email|e-mail)$/.test(n))d.email=v; else if(/^(telefon|phone|tel)$/.test(n))d.phone=v;
+   else {var k=lab(f,el)||el.name; if(seen[k]){seen[k].push(v);}else{seen[k]=[v];rest.push(k);}} });
+  d.message=rest.map(function(k){return k+': '+seen[k].join(', ');}).join('\n');
+  setTimeout(function(){ if(f.querySelector('[aria-invalid="true"],.chyba,.is-invalid'))return; if(!f.hasAttribute('novalidate')&&!f.checkValidity())return; if(!d.name&&!d.email&&!d.phone)return;
+   try{fetch(HOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch(err){}
+  },0);
+},true);
+})();</script></body>
+</html>

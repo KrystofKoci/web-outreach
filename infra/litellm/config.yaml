@@ -1,0 +1,79 @@
+# LiteLLM – jediná brána pro všechna volání modelů (n8n i pipeline).
+# Aliasy modelů: workflowy a pipeline znají jen jména vlevo (agent-reply, classify, copy),
+# konkrétní model měníš jen tady. Rozpočet: LLM_MONTHLY_BUDGET_USD v .env (výchozí 20 USD / 30 dní).
+#
+# Virtuální klíč pro n8n/pipeline vytvoříš po startu:
+#   curl -s http://localhost:4000/key/generate -H "Authorization: Bearer $LITELLM_MASTER_KEY" \
+#        -H "Content-Type: application/json" -d '{"key_alias":"n8n","max_budget":20,"budget_duration":"30d"}'
+# (nebo použij rovnou LITELLM_MASTER_KEY – jednodušší, ale bez odděleného rozpočtu)
+
+model_list:
+  - model_name: agent-reply            # odpovědi na e-maily (05_inbox_agent)
+    litellm_params:
+      model: anthropic/claude-sonnet-5-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+      max_tokens: 1200
+      temperature: 0.4
+
+  - model_name: classify               # klasifikace příchozích e-mailů (05) – levný model
+    litellm_params:
+      model: anthropic/claude-haiku-5-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+      max_tokens: 400
+      temperature: 0
+
+  - model_name: copy                   # texty do náhledů (pipeline copy_writer)
+    litellm_params:
+      model: anthropic/claude-sonnet-5-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+      max_tokens: 2000
+      temperature: 0.6
+
+  - model_name: extract                # extrakce nabídky z původního webu (pipeline offer_extract) – levný model
+    litellm_params:
+      model: anthropic/claude-haiku-5-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+      max_tokens: 1200
+      temperature: 0
+
+  # záložní cíl pro fallback (stejný model jako classify, jiný alias kvůli čitelnosti logu)
+  - model_name: haiku-fallback
+    litellm_params:
+      model: anthropic/claude-haiku-5-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  # Volitelně OpenAI (když vyplníš OPENAI_API_KEY) – odkomentuj a přidej do fallbacků:
+  # - model_name: gpt-fallback
+  #   litellm_params:
+  #     model: openai/gpt-4.1-mini
+  #     api_key: os.environ/OPENAI_API_KEY
+
+litellm_settings:
+  drop_params: true
+  num_retries: 2
+  request_timeout: 90
+  # Když Sonnet selže (výpadek, rate limit), zkus Haiku; classify padá na stejný model.
+  fallbacks:
+    - agent-reply: ["haiku-fallback"]
+    - copy: ["haiku-fallback"]
+    - classify: ["haiku-fallback"]
+    - extract: ["copy"]
+  # Globální strop útraty pro celou proxy (součet všech klíčů).
+  max_budget: os.environ/LLM_MONTHLY_BUDGET_USD
+  budget_duration: 30d
+  success_callback: []
+  failure_callback: []
+  set_verbose: false
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  # DATABASE_URL z prostředí → klíče, útrata a logy požadavků v Postgresu (db `litellm`)
+  store_model_in_db: false
+  disable_spend_logs: false
+  # když DB spadne, proxy dál obsluhuje požadavky (jen přestane účtovat)
+  allow_requests_on_db_unavailable: true
+
+router_settings:
+  routing_strategy: simple-shuffle
+  allowed_fails: 3
+  cooldown_time: 30

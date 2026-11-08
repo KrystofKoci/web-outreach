@@ -1,0 +1,20 @@
+{# SEKCE_PATCH_V1 – použité / opravované značky (varianta B, mřížka log). Logo chybí → zobrazí se název. #}
+{% if brands %}
+<section class="pz-zn" aria-labelledby="pz-zn-h">
+<style>
+.pz-zn{box-sizing:border-box;padding:clamp(48px,7vw,96px) clamp(16px,5vw,64px)}
+.pz-zn .in{max-width:1240px;margin:0 auto}
+.pz-zn h2{margin:0 0 24px;font-size:clamp(26px,3vw,40px);line-height:1.15;font-weight:inherit}
+.pz-zn ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.pz-zn li{background:#FFFFFF;border:1px solid rgba(0,0,0,.08);border-radius:12px;min-height:84px;display:flex;align-items:center;justify-content:center;padding:14px 18px;box-sizing:border-box;text-align:center;font-weight:600;font-size:16px}
+.pz-zn img{max-width:100%;max-height:40px;width:auto;height:auto;display:block}
+.pz-zn .dal{margin:18px 0 0;font-size:15px;opacity:.8}
+.pz-zn .dal a{color:inherit}
+</style>
+<div class="in">
+<h2 id="pz-zn-h">{{ brands_title }}</h2>
+<ul>{% for b in brands %}<li style="color:{{ b.barva }}">{% if b.soubor %}<img src="{{ A }}znacky/{{ b.soubor }}" alt="{{ b.nazev }}" loading="lazy" onerror="this.replaceWith(this.alt)">{% else %}{{ b.nazev }}{% endif %}</li>{% endfor %}</ul>
+<p class="dal">{% if niche == 'opravar' %}{{ 'Vaše značka tu není? Napište nám – nejspíš ji opravíme taky.' if lang == 'cs' else 'Your brand is not listed? Ask us – we most likely repair it too.' }}{% else %}{{ 'Produkty, se kterými pracujeme, vám rádi doporučíme i na doma.' if lang == 'cs' else 'We are happy to recommend the products we use for your home care too.' }}{% endif %}</p>
+</div>
+</section>
+{% endif %}

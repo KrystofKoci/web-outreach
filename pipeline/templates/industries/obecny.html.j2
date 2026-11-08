@@ -1,0 +1,10 @@
+{% extends 'base.html.j2' %}
+{#- Generic local business: calm slate-blue block hero, amber accent. -#}
+{% block extra_css %}
+.hero--block{background:var(--brand)}
+.hero--block .hero-cat{color:var(--on-brand-muted)}
+.hero--block .ph{background:linear-gradient(160deg,rgba(255,255,255,.16),rgba(255,255,255,.04))}
+.hero-orb{position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.14),transparent 65%);right:-160px;bottom:-260px;pointer-events:none}
+.svc{border-top:4px solid var(--accent)}
+{% endblock %}
+{% block hero_deco %}<div class="hero-orb" aria-hidden="true"></div>{% endblock %}

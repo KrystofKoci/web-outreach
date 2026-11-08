@@ -1,0 +1,1986 @@
+<!DOCTYPE html>
+
+<html lang="cs">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<title>{{ page_title }}</title>
+<meta content="{{ meta_description }}" name="description"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#090B0F;--bg2:#10131A;--ink:#F3EFE6;--ink2:#A9A69D;--mute:#6A6760;--line:rgba(243,239,230,.12);--mint:#C9A96B;--mint2:#8F7340;--glow:rgba(201,169,107,.45);
+  --display:'Cormorant Garamond',Georgia,'Times New Roman',serif;--sans:'Inter',system-ui,sans-serif;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.gutter{padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1240px;margin:0 auto}
+a{color:inherit}
+h1,h2,h3{font-family:var(--display);font-weight:500;letter-spacing:.02em;line-height:1;margin:0;text-wrap:balance;text-transform:uppercase}
+p{margin:0}
+.small{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2);font-weight:600}
+.btn{display:inline-flex;align-items:center;gap:12px;border-radius:2px;padding:15px 24px;font:600 12px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;text-decoration:none;border:1px solid var(--line);color:var(--ink);background:transparent;cursor:pointer;transition:.25s}
+.btn:hover{border-color:rgba(255,255,255,.4)}
+.btn.mint{background:var(--mint);color:#15110A;border-color:var(--mint)}
+.btn.mint:hover{background:#D9BC84}
+.btn .ar{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.18);font-size:13px}
+.btn:not(.mint) .ar{background:rgba(255,255,255,.1)}
+:focus-visible{outline:2px solid var(--mint);outline-offset:3px}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:50;opacity:.05;mix-blend-mode:screen;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* nav */
+.nav{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:40;background:linear-gradient(rgba(9,11,15,.85),rgba(9,11,15,0))}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:76px}
+.logo{font-family:var(--display);font-weight:600;font-size:24px;letter-spacing:.22em;text-transform:uppercase;text-decoration:none}
+.logo i{font-style:normal;color:var(--mint)}
+.navl{display:flex;gap:28px;align-items:center}
+.navl a.link{font-size:14px;text-decoration:none;color:var(--ink2)}
+.navl a.link:hover{color:var(--ink)}
+@media (max-width:760px){.navl a.link{display:none}}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:41}
+
+/* hero: scroll through renders */
+.hero{position:relative;height:320svh}
+.hstage{position:sticky;top:0;height:100svh;overflow:hidden;background:var(--bg)}
+.wm{position:absolute;z-index:2;left:50%;top:9%;transform:translateX(-50%);font-family:var(--display);font-weight:500;font-size:clamp(6rem,22vw,22rem);line-height:1;letter-spacing:.16em;text-transform:uppercase;color:transparent;-webkit-text-stroke:1px rgba(243,239,230,.22);mix-blend-mode:screen;user-select:none;pointer-events:none;white-space:nowrap;opacity:0;animation:fade 1.8s .2s ease forwards}
+#carbox{position:absolute;inset:0;margin:auto;height:min(72svh,820px);aspect-ratio:980/580;max-width:94vw;cursor:pointer}
+#film{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+#lights{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+.hfoot{position:absolute;z-index:3;left:0;right:0;bottom:max(26px,env(safe-area-inset-bottom,0px))}
+.hfoot .wrap{display:flex;justify-content:space-between;gap:16px}
+.dots{position:absolute;z-index:3;left:50%;bottom:max(30px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:8px}
+.dots{width:min(46vw,300px);height:1px;background:rgba(243,239,230,.18);display:block;overflow:hidden}
+.dots b{display:block;height:100%;width:0;background:var(--mint);transform-origin:left}
+.scroll-cue{position:absolute;z-index:3;right:max(24px,env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%) rotate(90deg);transform-origin:right center;display:flex;align-items:center;gap:10px;color:var(--ink2);font-size:11px;letter-spacing:.24em;text-transform:uppercase}
+.scroll-cue i{display:none}
+.intro{padding-block:clamp(72px,10vw,140px)}
+.intro .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:end}
+.h-title{font-size:clamp(2.8rem,7.2vw,6.4rem)}
+.h-title em{font-style:italic;color:var(--mint)}
+.h-title .ln{display:block;overflow:hidden;padding-bottom:.1em;margin-bottom:-.1em}
+.h-title .ln span{display:block;transform:translateY(110%);transition:transform 1.1s cubic-bezier(.2,.75,.2,1)}
+.intro.in .h-title .ln span{transform:none}
+.intro.in .h-title .ln:nth-child(2) span{transition-delay:.12s}
+.lede{color:var(--ink2);max-width:40ch;font-size:1.08rem;line-height:1.7}
+.ctas{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+@keyframes fade{to{opacity:1}}
+@media (max-width:900px){{ "{#" }}carbox{height:auto;width:100vw;aspect-ratio:980/580;max-width:none}.hfoot .wrap{flex-direction:column;gap:4px}.dots{display:none}.scroll-cue{display:none}.wm{font-size:24vw;letter-spacing:.06em;top:16%}.intro .wrap{grid-template-columns:1fr;gap:28px}}
+
+/* sections */
+section.blk{padding-block:clamp(72px,10vw,140px)}
+.head{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:end;margin-bottom:48px}
+.head h2{font-size:clamp(2.4rem,5.6vw,4.8rem)}
+.head p{color:var(--ink2);max-width:30em}
+@media (max-width:720px){.head{grid-template-columns:1fr}}
+.marq{border-block:1px solid var(--line);overflow:hidden;padding:16px 0;font:500 clamp(1.1rem,2.4vw,1.6rem)/1 var(--display);text-transform:uppercase;letter-spacing:.18em;white-space:nowrap}
+.marq div{display:inline-block;animation:slide 40s linear infinite}
+.marq span{padding:0 1.2em}.marq em{font-style:normal;color:var(--mint)}
+@keyframes slide{to{transform:translateX(-50%)}}
+
+/* services grid */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+.grid article{background:var(--bg);padding:30px 26px 34px;display:grid;gap:14px;min-height:260px;position:relative;transition:background .3s}
+.grid article:hover{background:var(--bg2)}
+.grid .no{font:700 12px var(--sans);letter-spacing:.14em;color:var(--mint)}
+.grid h3{font-size:1.75rem;text-transform:none;letter-spacing:0}
+.grid p{color:var(--ink2);font-size:.95rem}
+.grid .pr{margin-top:auto;font:600 1.7rem/1 var(--display);letter-spacing:.02em;color:var(--mint)}
+.grid .pr small{font:500 12px var(--sans);color:var(--mute);margin-left:8px;letter-spacing:.06em;text-transform:uppercase}
+@media (max-width:900px){.grid{grid-template-columns:1fr 1fr}}
+@media (max-width:600px){.grid{grid-template-columns:1fr}.grid article{min-height:0}}
+
+/* stats band */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);border-block:1px solid var(--line)}
+.stats div{padding:34px 20px;border-right:1px solid var(--line)}
+.stats div:last-child{border-right:0}
+.stats b{display:block;font:500 clamp(2.2rem,4.8vw,4rem)/1 var(--display);letter-spacing:.01em}
+.stats b i{font-style:normal;color:var(--mint)}
+.stats span{display:block;margin-top:10px;color:var(--ink2);font-size:.92rem}
+@media (max-width:760px){.stats{grid-template-columns:1fr 1fr}.stats div:nth-child(2){border-right:0}.stats div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+
+/* visit */
+.visit{display:grid;grid-template-columns:1.1fr .9fr;gap:60px;align-items:start}
+.addr{font:500 clamp(1.6rem,3vw,2.4rem)/1.15 var(--display);letter-spacing:.02em;margin:0 0 20px;text-transform:uppercase}
+.addr em{font-style:normal;color:var(--mint)}
+.hours{list-style:none;margin:0;padding:0}
+.hours li{display:flex;justify-content:space-between;padding:13px 0;border-top:1px solid var(--line);font-size:1rem}
+.hours li:last-child{border-bottom:1px solid var(--line)}
+.hours li span{color:var(--ink2)}
+.hours li.today,.hours li.today span{color:var(--mint)}
+.form{display:grid;gap:14px;border:1px solid var(--line);padding:30px;border-radius:4px;background:var(--bg2)}
+.form h3{font-size:1.8rem;text-transform:none;letter-spacing:0;margin-bottom:4px}
+.form label{display:grid;gap:8px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);font-weight:600}
+.form input,.form select{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);padding:14px 16px;border-radius:2px;font:500 15px var(--sans)}
+.form input:focus,.form select:focus{border-color:var(--mint);outline:none}
+.form .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ok{display:none;border:1px solid var(--mint);border-radius:2px;padding:18px}
+.ok b{display:block;font:600 1.4rem var(--display);margin-bottom:6px}
+@media (max-width:820px){.visit{grid-template-columns:1fr;gap:44px}.form .row{grid-template-columns:1fr}}
+
+/* rating */
+.rate{border-top:1px solid var(--line);padding-block:72px;text-align:center}
+.rate .stars{color:var(--mint);font-size:20px;letter-spacing:.3em;margin-bottom:14px}
+.rate .rnum{font:500 clamp(3rem,8vw,6rem)/1 var(--display);letter-spacing:0}
+.rate .rnum span{display:block;font:600 12px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin-top:12px}
+.rate .rtxt{color:var(--ink2);margin-top:18px}
+footer{border-top:1px solid var(--line);padding-block:34px 44px;color:var(--mute);font-size:13px}
+footer .wrap{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+
+/* articles */
+.arts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin-top:38px}
+.arts details{background:var(--bg);min-width:0}
+.arts details[open]{background:var(--bg2)}
+.arts summary{list-style:none;cursor:pointer;display:flex;gap:18px;align-items:baseline;padding:26px 28px;position:relative}
+.arts summary::-webkit-details-marker{display:none}
+.arts summary .no{font:400 13px var(--display);color:var(--mint);letter-spacing:.08em}
+.arts summary h3{font-size:1.45rem;line-height:1.25;flex:1;font-weight:500;text-transform:none;letter-spacing:0}
+.arts summary .pm{color:var(--mute);font-size:20px;line-height:1;transition:transform .3s}
+.arts details[open] summary .pm{transform:rotate(45deg);color:var(--mint)}
+.arts .body{padding:0 28px 30px 59px;color:var(--ink2);display:grid;gap:12px;font-size:.98rem;line-height:1.65}
+.arts .body strong{color:var(--ink);font-weight:600}
+@media (max-width:760px){.arts{grid-template-columns:1fr}.arts .body{padding-left:28px}}
+
+
+/* services: HorizonX fold carousel, driven by page scroll */
+
+.fc-host{width:100%;height:100%}
+.fc-frame{display:grid;place-items:center;width:100%;height:100%;overflow:var(--fc-clip,hidden);background:transparent}
+.fc-root{position:relative;width:min(100%,var(--fc-width));height:min(100%,var(--fc-height));border-radius:var(--fc-radius);background:var(--fc-bg);overflow:var(--fc-clip,hidden);outline:none;container-type:size;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;touch-action:pan-y}
+.fc-root[data-draggable]{cursor:grab}
+.fc-root[data-dragging]{cursor:grabbing}
+/* The ring is its own layer: an inset shadow on the root paints under the canvas. */
+.fc-root:focus-visible::after{content:'';position:absolute;inset:0;z-index:2;border-radius:inherit;box-shadow:inset 0 0 0 2px var(--fc-ink);pointer-events:none}
+.fc-gl{position:absolute;inset:0;pointer-events:none}
+.fc-canvas{display:block;width:100%;height:100%}
+.fc-still{display:none;position:absolute;left:50%;top:calc(50% - min(35.7cqw,49.4cqh) * 0.044);width:min(35.7cqw,49.4cqh);aspect-ratio:4/5;object-fit:cover;border-radius:calc(min(35.7cqw,49.4cqh) * 0.036);transform:translate(-50%,-50%)}
+@container (max-aspect-ratio:9/10){.fc-still{width:min(50cqw,49.4cqh);top:calc(50% - min(50cqw,49.4cqh) * 0.044)}}
+.fc-root[data-fc-fallback] .fc-still{display:block}
+.fc-hint{position:absolute;left:0;right:0;bottom:19px;margin:0;text-align:center;font:400 12.5px/16px Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--fc-ink);pointer-events:none}
+.fc-hint[hidden]{display:none}
+.fc-arrow{display:inline-block;width:1.22em;height:0.8em;vertical-align:-0.02em;fill:none;stroke:currentColor;stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}
+.fc-step{position:absolute;top:50%;z-index:1;display:grid;place-items:center;width:44px;height:44px;margin:-22px 0 0;padding:0;border:0;border-radius:50%;background:var(--fc-bg);color:var(--fc-ink);font-size:16px;cursor:pointer;clip-path:inset(50%);opacity:0}
+.fc-step .fc-arrow{width:18px;height:12px;stroke-width:1.4}
+.fc-step:focus-visible{clip-path:none;opacity:1;outline:2px solid var(--fc-ink);outline-offset:2px}
+.fc-prev{left:16px}
+.fc-next{right:16px}
+.fc-sr,.fc-live{position:absolute;width:1px;height:1px;margin:0;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+
+.fold-sec{position:relative;height:calc(100svh + 5 * 62svh)}
+.fold-stick{position:sticky;top:0;height:100svh;display:grid;grid-template-rows:auto 1fr auto;padding-top:96px;padding-bottom:28px;box-sizing:border-box;overflow:hidden}
+.fold-head .head{margin-bottom:0}
+.fold-head .head h2{font-size:clamp(2rem,4.4vw,3.8rem)}
+.fold-stage{position:relative;min-height:0}
+.fold-stage .fc-frame{height:100%}
+.fold-ctrl{display:flex;justify-content:center;align-items:center;gap:22px;padding-top:6px}
+.fold-btn{width:54px;height:54px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:border-color .25s,background .25s,color .25s}
+.fold-btn svg{width:18px;height:12px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.fold-btn:hover{border-color:var(--mint);color:var(--mint)}
+.fold-btn:disabled{opacity:.3;cursor:default;border-color:var(--line);color:var(--ink)}
+.fold-count{display:flex;align-items:center;gap:12px;font:500 12px/1 var(--sans);letter-spacing:.18em;color:var(--mute);min-width:110px;justify-content:center}
+.fold-count b{color:var(--ink);font-weight:500}
+.fold-count i{display:block;width:36px;height:1px;background:var(--line)}
+@media (max-width:760px){.fold-sec{height:calc(100svh + 5 * 52svh)}.fold-stick{padding-top:84px}.fold-head .head{grid-template-columns:1fr;gap:10px}.fold-head .head p{font-size:.92rem}}
+
+
+.fold-stick{grid-template-rows:auto 1fr auto auto}
+.fold-head .head h2{font-size:clamp(1.8rem,3.6vw,3.2rem)}
+.fold-info{text-align:center;padding-top:4px}
+.fold-info-in{display:grid;justify-items:center;gap:6px;transition:opacity .28s ease,transform .28s ease}
+.fold-info-in.swap{opacity:0;transform:translateY(10px)}
+.fold-title{font-size:clamp(1.3rem,2.2vw,1.9rem);letter-spacing:.06em}
+.fold-price{margin:2px 0 0;display:flex;align-items:baseline;gap:10px;font-family:var(--display);color:var(--mint);line-height:1}
+.fold-price b{font-weight:500;font-size:clamp(2.8rem,5.2vw,4.6rem);letter-spacing:-.01em}
+.fold-from,.fold-cur{font-size:clamp(1.1rem,1.6vw,1.5rem);color:var(--ink2)}
+.fold-from:empty{display:none}
+.fold-desc{margin:4px 0 0;max-width:40em;color:var(--ink2);font-size:.98rem}
+@media (max-height:760px){.fold-head .head p{display:none}.fold-desc{display:none}}
+@media (max-width:760px){.fold-desc{font-size:.9rem;padding-inline:8px}}
+
+/* ===== Kolo 8 (schválené úpravy majitele) ===== */
+.doplnit{color:var(--mute);font-family:var(--sans);font-style:normal;font-weight:500;letter-spacing:.03em;text-transform:none;font-size:.78em;white-space:nowrap}
+.addr .doplnit,.stats .doplnit{font-size:.55em}
+.fold-price b .doplnit{font-size:.42em;letter-spacing:.04em;color:var(--ink2)}
+[hidden]{display:none!important}
+/* telefon a mobilní menu v liště */
+.navl a.tel{font-size:14px;text-decoration:none;color:var(--ink);white-space:nowrap}
+.navl a.tel:hover{color:var(--mint)}
+.navl a.tel .doplnit{font-size:.92em}
+.menu-tl{display:none;align-items:center;gap:10px;height:42px;padding:0 16px;border:1px solid var(--line);border-radius:2px;background:transparent;color:var(--ink);font:600 12px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.menu-tl i{display:block;width:15px;height:1.5px;background:currentColor;box-shadow:0 5px 0 currentColor;transform:translateY(-2.5px)}
+.menu-tl[aria-expanded="true"]{border-color:var(--mint);color:var(--mint)}
+.menu-panel{position:absolute;top:70px;right:max(16px,env(safe-area-inset-right,0px));min-width:220px;display:flex;flex-direction:column;padding:8px;background:var(--bg2);border:1px solid var(--line);border-radius:4px;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.menu-panel a{padding:13px 16px;font-size:15px;text-decoration:none;color:var(--ink);border-radius:2px}
+.menu-panel a:hover{background:rgba(255,255,255,.05);color:var(--mint)}
+.menu-panel a.obj{margin-top:6px;background:var(--mint);color:#15110A;font-weight:600;text-align:center;letter-spacing:.1em;text-transform:uppercase;font-size:12px}
+@media (max-width:760px){
+  .navl{gap:10px}
+  .navl a.btn.obj{display:none}
+  .menu-tl{display:inline-flex}
+  .navl a.tel{display:inline-flex;align-items:center;height:42px;padding:0 12px;border:1px solid var(--line);border-radius:2px;font:600 12px/1 var(--sans);letter-spacing:.08em;white-space:nowrap}
+  .navl a.tel .doplnit{font-size:12px;letter-spacing:.02em;color:var(--ink2)}
+  .navl a.tel .tel-l{margin-right:.4em}
+}
+.tel-i{display:none;width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linejoin:round;margin-right:7px;flex:none}
+@media (max-width:419px){.navl a.tel .tel-l{display:none}.navl a.tel .tel-i{display:block}
+  .nav .gutter{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .navl{gap:8px}.navl a.tel{padding:0 10px}.tel-i{margin-right:6px}.menu-tl{padding:0 12px;gap:8px}}
+@media (max-width:374px){.logo{letter-spacing:.16em}.navl a.tel .doplnit{font-size:11px}}
+/* kontakt */
+.kontakty{list-style:none;margin:26px 0 0;padding:0}
+.kontakty li{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-top:1px solid var(--line)}
+.kontakty li:last-child{border-bottom:1px solid var(--line)}
+.kontakty li span{color:var(--ink2)}
+.kontakty a{text-decoration:none}
+.kontakty a:hover{color:var(--mint)}
+.hours li .doplnit{font-size:.9em}
+/* objednávka servisu – pole jako u V10, v tmavé paletě Kalouse */
+.objednat{margin-top:clamp(64px,8vw,110px);scroll-margin-top:84px}
+.objednat-hlava{display:grid;grid-template-columns:1fr auto;gap:20px 40px;align-items:end;margin-bottom:clamp(24px,3vw,40px)}
+.objednat-hlava h2{font-size:clamp(2rem,4.4vw,3.6rem)}
+.objednat-hlava h2 em{font-style:italic;color:var(--mint)}
+.objednat-hlava p{color:var(--ink2);max-width:30em}
+.obj-form{background:var(--bg2);border:1px solid var(--line);border-radius:4px;padding:4px clamp(20px,3vw,40px) clamp(24px,3vw,36px)}
+.obj-skupina{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,7fr);gap:16px clamp(28px,4vw,56px);padding:clamp(24px,2.6vw,32px) 0;border-bottom:1px solid var(--line)}
+.obj-titul{font-family:var(--display);font-weight:500;font-size:clamp(1.5rem,2vw,1.9rem);text-transform:none;letter-spacing:.01em;line-height:1.05}
+.obj-napoveda{margin-top:10px;color:var(--ink2);font-size:14.5px;max-width:22em}
+.obj-pole{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px 16px;align-content:start}
+.f-pole{display:flex;flex-direction:column;gap:8px;min-width:0;border:0;margin:0;padding:0}
+.f-pole.cela{grid-column:1/-1}
+.f-pole>label,.f-pole>legend{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);font-weight:600;margin:0;padding:0}
+.f-pole>legend{margin-bottom:8px}
+.f-pole small{font-weight:500;letter-spacing:.04em;text-transform:none;font-size:12px;color:var(--mute)}
+.f-pole input:not([type=radio]):not([type=checkbox]),.f-pole select,.f-pole textarea{width:100%;height:50px;background:var(--bg);border:1px solid rgba(243,239,230,.28);color:var(--ink);padding:0 16px;border-radius:2px;font:500 15px var(--sans);margin:0;color-scheme:dark}
+.f-pole textarea{height:auto;min-height:120px;padding:13px 16px;resize:vertical;line-height:1.5}
+.f-pole ::placeholder{color:var(--mute);opacity:1}
+.f-pole input:not([type=radio]):not([type=checkbox]):focus-visible,.f-pole select:focus-visible,.f-pole textarea:focus-visible{outline:2px solid var(--mint);outline-offset:2px;border-color:var(--mint)}
+.obj-form .f-pole input[aria-invalid=true]:not([type=checkbox]):not([type=radio]),.obj-form .f-pole textarea[aria-invalid=true]{border-color:#D98B6A;box-shadow:inset 0 0 0 1px #D98B6A}
+.vyber{position:relative;display:block}
+.vyber select{-webkit-appearance:none;appearance:none;padding-right:44px;cursor:pointer}
+.vyber select:disabled{color:var(--mute);cursor:not-allowed;opacity:1}
+.vyber::after{content:"";position:absolute;right:20px;top:50%;width:8px;height:8px;border-right:1.5px solid var(--ink2);border-bottom:1.5px solid var(--ink2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.vyber select option{background:var(--bg2);color:var(--ink)}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+.druhy{display:flex;flex-wrap:wrap;gap:8px}
+.druh{position:relative;cursor:pointer}
+.druh span{display:inline-flex;align-items:center;height:44px;padding:0 22px;border:1px solid rgba(243,239,230,.28);border-radius:2px;background:var(--bg);font-size:14px;letter-spacing:.06em}
+.druh:hover span{border-color:var(--ink2)}
+.druh input:checked+span{background:var(--mint);color:#15110A;border-color:var(--mint);font-weight:600}
+.druh input:focus-visible+span,.je-chyba .druh input:focus+span{outline:2px solid var(--mint);outline-offset:3px}
+.je-chyba .druh input:not(:checked)+span{border-color:#D98B6A}
+.zaskrtavaci{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:8px}
+.zaskrt{position:relative;display:block;cursor:pointer}
+.zaskrt-plocha{display:flex;align-items:center;gap:12px;min-height:50px;height:100%;padding:11px 14px;border:1px solid rgba(243,239,230,.28);border-radius:2px;background:var(--bg);font-size:14.5px;line-height:1.3}
+.zaskrt:hover .zaskrt-plocha{border-color:var(--ink2)}
+.zaskrt .box{flex:none;width:18px;height:18px;border:1.5px solid var(--ink2);border-radius:2px;display:grid;place-items:center}
+.zaskrt .box::after{content:"";width:9px;height:5px;border-left:2px solid #15110A;border-bottom:2px solid #15110A;transform:translateY(-1px) rotate(-45deg);opacity:0}
+.zaskrt input:checked+.zaskrt-plocha{border-color:var(--mint)}
+.zaskrt input:checked+.zaskrt-plocha .box{background:var(--mint);border-color:var(--mint)}
+.zaskrt input:checked+.zaskrt-plocha .box::after{opacity:1}
+.zaskrt input:focus-visible+.zaskrt-plocha,.je-chyba .zaskrt input:focus+.zaskrt-plocha{outline:2px solid var(--mint);outline-offset:2px}
+.je-chyba .zaskrt-plocha{border-color:#D98B6A}
+.chyba{display:flex;gap:8px;align-items:baseline;font-size:13px;color:var(--ink)}
+.chyba::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:#D98B6A;transform:translateY(-1px)}
+.obj-odeslat{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,7fr);gap:16px clamp(28px,4vw,56px);padding-top:clamp(22px,2.4vw,30px)}
+.obj-odeslat>div{grid-column:2;display:flex;align-items:center;justify-content:space-between;gap:16px 24px;flex-wrap:wrap}
+.obj-hlaska{color:var(--ink2);font-size:14px;max-width:26em}
+.obj-hlaska.ukazka,.obj-hlaska.chybi{color:var(--ink)}
+@media (max-width:1100px){.obj-skupina,.obj-odeslat{grid-template-columns:minmax(0,3fr) minmax(0,7fr)}}
+@media (max-width:760px){
+  .objednat-hlava{grid-template-columns:1fr;gap:12px}
+  .obj-form{padding:2px 16px 22px}
+  .obj-skupina{grid-template-columns:1fr;gap:14px;padding:22px 0}
+  .obj-pole{grid-template-columns:1fr;gap:16px}
+  .obj-odeslat{grid-template-columns:1fr}
+  .obj-odeslat>div{grid-column:1}
+  .obj-odeslat .btn{width:100%;justify-content:center}
+}
+.rate .rnum span.doplnit{display:inline;margin:0;font:500 .4em var(--sans);letter-spacing:.03em;text-transform:none;color:var(--mute)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.h-title .ln span,.reveal{transform:none;opacity:1}.wm{opacity:1}.marq div{animation:none}}
+</style>
+<style id="pz-css">
+.pz-hod{padding:clamp(56px,9vw,104px) 24px;text-align:center;color:inherit;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-hod .pz-in{max-width:560px;margin:0 auto}
+.pz-hod .pz-cislo{font-size:clamp(44px,7vw,72px);line-height:1;margin:0;font-weight:500;letter-spacing:-.02em}
+.pz-hod .pz-cislo span{font-size:.32em;opacity:.7;letter-spacing:0;margin-left:.3em}
+.pz-hod .pz-hv{position:relative;display:inline-block;font-size:22px;letter-spacing:4px;margin:14px 0 8px;color:color-mix(in srgb,currentColor 22%,transparent)}
+.pz-hod .pz-hv b{position:absolute;inset:0 auto 0 0;overflow:hidden;white-space:nowrap;color:var(--akcent,var(--accent,#E3A008));font-weight:400}
+.pz-hod .pz-pod{margin:0 0 14px;opacity:.78}
+.pz-hod a{color:inherit}
+.pz-pata{padding:28px 24px 34px;text-align:center;font-size:14px;opacity:.85;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-pata p{margin:4px 0}.pz-pata a{color:inherit}
+.pz-credit{font-size:12px;opacity:.7;text-align:center;padding:0 24px 22px}
+.pz-credit a{color:inherit}
+.pz-pv{position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;background:#111827;color:#fff;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;
+ padding:10px 14px;border-radius:14px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.pz-pv a{color:#fff}.pz-pv .pz-cta{background:#fff;color:#111827;text-decoration:none;font-weight:700;padding:.4em .85em;border-radius:999px}
+.pz-pv button{background:none;border:0;color:#fff;opacity:.8;cursor:pointer;font:inherit;text-decoration:underline}
+.pz-pv.pz-skryt{display:none}
+@media print{.pz-pv{display:none}}
+</style><style>.nav .logo{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}</style></head>
+<body>
+<header class="nav"><div class="wrap gutter">
+<a class="logo" href="#top">{{ brand }}</a>
+<nav class="navl">
+<a class="link" href="#sluzby">Služby</a><a class="link" href="#dilna">Dílna</a><a class="link" href="#kontakt">Kontakt</a><a class="link" href="#clanky">Rady</a>
+{% if phone %}<a aria-label="Zavolat – telefon {{ phone }}" class="tel" href="tel:{{ phone_href }}"><svg aria-hidden="true" class="tel-i" viewbox="0 0 16 16"><path d="M5.2 1.8 3.4 2.3c-.9.3-1.4 1.2-1.2 2.1.9 4.4 4.4 7.9 8.8 8.8.9.2 1.8-.3 2.1-1.2l.5-1.8-2.9-1.4-1.3 1.3C7.6 9.4 6.6 8.4 5.9 6.6l1.3-1.3z"></path></svg><span class="tel-l">Tel. </span><span class="tel-c">{{ phone }}</span></a>{% endif %}
+<a class="btn mint obj" href="#objednat" style="padding:11px 16px 11px 18px">Objednat <span class="ar">→</span></a>
+<button aria-controls="menu-panel" aria-expanded="false" class="menu-tl" type="button"><i aria-hidden="true"></i>Menu</button>
+</nav>
+<nav aria-label="Menu" class="menu-panel" hidden="" id="menu-panel">
+<a href="#sluzby">Služby</a><a href="#dilna">Dílna</a><a href="#kontakt">Kontakt</a><a href="#clanky">Rady</a><a class="obj" href="#objednat">Objednat servis</a>
+</nav>
+</div></header>
+<main id="top">
+<section aria-label="Při scrollu přijede auto a zastaví" class="hero" id="hero">
+<div class="hstage">
+<div aria-hidden="true" class="wm">{{ brand }}</div>
+<div aria-label="Při scrollu vůz přijede ve smyku a zastaví; na kliknutí dvakrát blikne světly" id="carbox" role="img">
+<canvas data-frames="122" data-src="{{ A }}kalous/frames/f_{n}.webp" height="580" id="film" width="980"></canvas>
+<canvas height="580" id="lights" width="980"></canvas>
+</div>
+<div class="hfoot gutter"><div class="wrap">
+<span class="small">Autoservis pro vozy vyšší třídy{% if city %} · {{ city }}{% endif %}</span>
+</div></div>
+<div aria-hidden="true" class="scroll-cue"><span>Scrollujte</span><i>↓</i></div>
+</div>
+</section>
+<section class="intro gutter"><div class="wrap">
+<h1 class="h-title"><span class="ln"><span>Víte, co je</span></span><span class="ln"><span><em>opravené.</em></span></span></h1>
+<div class="intro-r">
+<p class="lede">Servis pro vozy, u kterých záleží na každém dílu. Rozsah práce a cenu s vámi domluvíme předem.</p>
+<div class="ctas"><a class="btn mint" href="#objednat">Objednat servis <span class="ar">→</span></a><a class="btn" href="#sluzby">Ceník</a></div>
+</div>
+</div></section>
+<section aria-label="Služby a ceny" class="fold-sec" id="sluzby">
+<div class="fold-stick">
+<div class="wrap gutter fold-head"><div class="head reveal"><h2>Služby a <em style="font-style:italic;color:var(--mint)">ceny</em></h2><p>Ceny jsou orientační, přesnou cenu podle vozu domluvíme předem. Co tu není, naceníme na dotaz.</p></div></div>
+<div class="fold-stage">
+<div class="fc-frame" style="--fc-width:1280px;--fc-height:680px;--fc-radius:0px;--fc-bg:#090b0f;--fc-clip:hidden;--fc-ink:#b3b3b3;"><div aria-label="Služby autoservisu" aria-roledescription="karusel" class="fc-root" role="region" tabindex="0"><div aria-hidden="true" class="fc-gl"></div><img alt="" class="fc-still" decoding="async" draggable="false" src="{{ A }}kalous/cards/olej.webp"/><p aria-hidden="true" class="fc-hint" hidden="">Táhněte, scrollujte nebo použijte šipky <svg aria-hidden="true" class="fc-arrow" viewbox="0 0 16 10"><path d="M15 5H1.5M5.5 1L1.5 5l4 4"></path></svg> <svg aria-hidden="true" class="fc-arrow" viewbox="0 0 16 10"><path d="M1 5h13.5M10.5 1l4 4-4 4"></path></svg></p><button aria-label="Předchozí služba" class="fc-step fc-prev" data-fc-step="-1" type="button"><svg aria-hidden="true" class="fc-arrow" viewbox="0 0 16 10"><path d="M15 5H1.5M5.5 1L1.5 5l4 4"></path></svg></button><button aria-label="Další služba" class="fc-step fc-next" data-fc-step="1" type="button"><svg aria-hidden="true" class="fc-arrow" viewbox="0 0 16 10"><path d="M1 5h13.5M10.5 1l4 4-4 4"></path></svg></button><ol class="fc-sr" data-sluzby="autoservis"><li data-sluzba="olej"><span class="n">Výměna oleje a filtrů</span>, <span class="p">Olej podle normy výrobce, olejový, vzduchový a kabinový filtr, kontrola kapalin.</span>, <span class="cena" data-cena="olej">{{ price_text }}</span></li><li data-sluzba="brzdy"><span class="n">Brzdy</span>, <span class="p">Destičky nebo kotouče na nápravu, brzdová kapalina, zajetí při zkušební jízdě.</span>, <span class="cena" data-cena="brzdy">{{ price_text }}</span></li><li data-sluzba="diagnostika"><span class="n">Diagnostika</span>, <span class="p">Načtení chyb, zkušební jízda a písemný výsledek.</span>, <span class="cena" data-cena="diagnostika">{{ price_text }}</span></li><li data-sluzba="pneu"><span class="n">Pneuservis a geometrie</span>, <span class="p">Přezutí, vyvážení a 3D geometrie.</span>, <span class="cena" data-cena="pneu">{{ price_text }}</span></li><li data-sluzba="stk"><span class="n">Příprava na STK</span>, <span class="p">Projdeme kontrolní body a opravíme, co by neprošlo.</span>, <span class="cena" data-cena="stk">{{ price_text }}</span></li><li data-sluzba="rozvody"><span class="n">Rozvody a klimatizace</span>, <span class="p">Řemen nebo řetěz, kladky, pumpa. Plnění klimatizace R134a i R1234yf.</span>, <span class="cena" data-cena="rozvody">{{ price_text }}</span></li></ol><p aria-live="polite" class="fc-live"></p></div></div></div>
+<div aria-live="polite" class="fold-info gutter">
+<div class="fold-info-in" id="foldInfo">
+<h3 class="fold-title" id="foldTitle">Výměna oleje a filtrů</h3>
+<p class="fold-price"><span class="fold-from" id="foldFrom"></span><b id="foldPrice"></b></p>
+<p class="fold-desc" id="foldDesc">Olej podle normy výrobce, olejový, vzduchový a kabinový filtr, kontrola kapalin.</p>
+</div>
+</div>
+<div class="fold-ctrl gutter">
+<button aria-label="Předchozí služba" class="fold-btn" id="foldPrev" type="button"><svg aria-hidden="true" viewbox="0 0 16 10"><path d="M15 5H1.5M5.5 1L1.5 5l4 4"></path></svg></button>
+<span aria-hidden="true" class="fold-count"><b id="foldNo">01</b><i></i><span>06</span></span>
+<button aria-label="Další služba" class="fold-btn" id="foldNext" type="button"><svg aria-hidden="true" viewbox="0 0 16 10"><path d="M1 5h13.5M10.5 1l4 4-4 4"></path></svg></button>
+</div>
+</div>
+</section>
+<section class="blk" id="dilna" style="padding-top:0"><div class="wrap gutter">
+<div class="head reveal"><h2>Dílna{% if city %} <em style="font-style:italic;color:var(--mint)">{{ city }}</em>{% endif %}</h2><p>Postaráme se o váš vůz s péčí, jakou si zaslouží – od pravidelného servisu po složitější opravy.</p></div>
+
+</div></section>
+{# SEKCE_PATCH_V1 #}{% include "_onas.html.j2" %}
+<section class="blk" id="kontakt"><div class="wrap gutter"><div class="visit">
+<div class="reveal">
+{% if address %}<p class="addr">Adresa {{ address }}</p>{% endif %}
+<ul class="kontakty">
+{% if phone %}<li><span>Telefon</span><a href="tel:{{ phone_href }}">{{ phone }}</a></li>{% endif %}
+{% if email %}<li><span>E-mail</span><a href="mailto:{{ email }}">{{ email }}</a></li>{% endif %}
+</ul>
+</div>
+<div class="reveal">
+{% if hours %}<ul class="hours" id="hours"><li data-d="1"><span>Pondělí</span>{{ hday[0] }}</li><li data-d="2"><span>Úterý</span>{{ hday[1] }}</li><li data-d="3"><span>Středa</span>{{ hday[2] }}</li><li data-d="4"><span>Čtvrtek</span>{{ hday[3] }}</li><li data-d="5"><span>Pátek</span>{{ hday[4] }}</li><li data-d="6"><span>Sobota</span>{{ hday[5] }}</li><li data-d="0"><span>Neděle</span>{{ hday[6] }}</li></ul>{% endif %}
+</div>
+</div>
+<div class="objednat" id="objednat">
+<div class="objednat-hlava reveal">
+<h2 id="objednat-h">Objednat <em>servis</em></h2>
+<p>Napište, co vůz potřebuje a kdy ho můžete přistavit. Ozveme se a termín potvrdíme.</p>
+</div>
+<form aria-labelledby="objednat-h" class="obj-form" data-formular="objednavka" novalidate="">
+<div class="obj-skupina">
+<h3 class="obj-titul">Kontakt na vás</h3>
+<div class="obj-pole">
+<div class="f-pole cela">
+<label for="f-jmeno">Jméno a příjmení</label>
+<input autocomplete="name" id="f-jmeno" name="jmeno" required="" type="text"/>
+<span class="chyba" hidden="" id="e-jmeno">Vyplňte jméno a příjmení.</span>
+</div>
+<div class="f-pole">
+<label for="f-telefon">Telefon</label>
+<input autocomplete="tel" id="f-telefon" inputmode="tel" name="telefon" required="" type="tel"/>
+<span class="chyba" hidden="" id="e-telefon">Vyplňte telefon, aspoň 9 číslic.</span>
+</div>
+<div class="f-pole">
+<label for="f-email">E-mail <small>(nepovinné)</small></label>
+<input autocomplete="email" id="f-email" name="email" type="email"/>
+<span class="chyba" hidden="" id="e-email">Zkontrolujte e-mail, chybí v něm zavináč nebo doména.</span>
+</div>
+</div>
+</div>
+<div class="obj-skupina">
+<h3 class="obj-titul">Vozidlo</h3>
+<div class="obj-pole">
+<fieldset class="f-pole cela" id="f-druh">
+<legend>Druh vozidla</legend>
+<div class="druhy">
+<label class="druh"><input class="sr-only" name="druh" required="" type="radio" value="auto"/><span>Auto</span></label>
+<label class="druh"><input class="sr-only" name="druh" required="" type="radio" value="motorka"/><span>Motorka</span></label>
+<label class="druh"><input class="sr-only" name="druh" required="" type="radio" value="jine"/><span>Jiné</span></label>
+</div>
+<span class="chyba" hidden="" id="e-druh">Vyberte, jestli jde o auto, motorku, nebo jiné vozidlo.</span>
+</fieldset>
+<div class="f-pole">
+<label for="f-typ" id="l-typ">Typ vozidla <small>(nepovinné)</small></label>
+<span class="vyber"><select disabled="" id="f-typ" name="typ"><option value="">Nejdřív zvolte druh vozidla</option></select></span>
+<input autocomplete="off" disabled="" hidden="" id="f-typ-jine" name="typ" placeholder="Napište, o jaké vozidlo jde" type="text"/>
+</div>
+<div class="f-pole">
+<label for="f-znacka">Značka</label>
+<input autocomplete="off" id="f-znacka" name="znacka" required="" type="text"/>
+<span class="chyba" hidden="" id="e-znacka">Vyplňte značku vozidla.</span>
+</div>
+<div class="f-pole">
+<label for="f-model">Model</label>
+<input autocomplete="off" id="f-model" name="model" required="" type="text"/>
+<span class="chyba" hidden="" id="e-model">Vyplňte model vozidla.</span>
+</div>
+<div class="f-pole">
+<label for="f-rok">Rok výroby <small>(nepovinné)</small></label>
+<input autocomplete="off" id="f-rok" inputmode="numeric" name="rok" pattern="[0-9]{4}" placeholder="např. 2016" type="text"/>
+<span class="chyba" hidden="" id="e-rok">Rok výroby zadejte čtyřmi číslicemi.</span>
+</div>
+</div>
+</div>
+<div class="obj-skupina">
+<h3 class="obj-titul">Termín</h3>
+<div class="obj-pole">
+<div class="f-pole">
+<label for="f-den">Den</label>
+<input id="f-den" name="den" required="" type="date"/>
+<span class="chyba" hidden="" id="e-den">Vyberte den, kdy vůz přistavíte (dnes nebo později).</span>
+</div>
+<div class="f-pole">
+<label for="f-cas">Čas přistavení</label>
+<span class="vyber"><select id="f-cas" name="cas"><option selected="" value="">Kdykoli během dne</option><option value="dopoledne">Dopoledne</option><option value="odpoledne">Odpoledne</option></select></span>
+</div>
+</div>
+</div>
+<div class="obj-skupina">
+<div>
+<h3 class="obj-titul">Co je potřeba</h3>
+<p class="obj-napoveda" id="n-sluzby">Zaškrtněte služby z nabídky výš, nebo problém popište vlastními slovy.</p>
+</div>
+<div class="obj-pole">
+<fieldset aria-describedby="n-sluzby" class="f-pole cela" id="f-sluzby">
+<legend>Služby</legend>
+<div class="zaskrtavaci" data-sluzby-volby=""></div>
+<span class="chyba" hidden="" id="e-sluzby">Zaškrtněte aspoň jednu službu, nebo do pole Něco navíc napište, co je potřeba.</span>
+</fieldset>
+<div class="f-pole cela">
+<label for="f-zprava">Něco navíc</label>
+<textarea id="f-zprava" name="zprava" placeholder="Např. při brzdění vpředu něco skřípe." rows="4"></textarea>
+</div>
+</div>
+</div>
+<div class="obj-odeslat">
+<div>
+<p aria-live="polite" class="obj-hlaska" id="obj-hlaska">Pole bez označení „nepovinné“ je potřeba vyplnit.</p>
+<button class="btn mint" type="submit">Poslat objednávku <span aria-hidden="true" class="ar">→</span></button>
+</div>
+</div>
+</form>
+</div>
+</div>{% include "_mapa.html.j2" %}
+</section>
+<section class="blk" id="clanky" style="padding-top:0"><div class="wrap gutter">
+<div class="head reveal"><h2>Rady z <em style="font-style:italic;color:var(--mint)">dílny</em></h2><p>Krátké odpovědi na to, na co se nás ptáte nejčastěji. Když si nebudete jistí, zavolejte nebo napište.</p></div>
+<div class="arts reveal"><details><summary><span class="no">01</span><h3>Kdy přezout na zimní pneumatiky</h3><span aria-hidden="true" class="pm">+</span></summary><div class="body"><p>Zákon (§ 40a zákona č. 361/2000 Sb.) ukládá zimní pneumatiky <strong>od 1. listopadu do 31. března</strong>, pokud je na silnici sníh, led či námraza, nebo to lze podle počasí čekat. Dezén musí mít minimálně <strong>4 mm</strong>, a to na všech kolech. Na úsecích se značkou „Zimní výbava“ platí povinnost v tomto období vždy.</p><p>Prakticky rozhoduje teplota: jakmile rána klesají <strong>pod 7 °C</strong>, letní směs tvrdne a prodlužuje brzdnou dráhu. Většinou to vychází zpravidla na druhou půlku října; jezdíte-li na hory nebo brzy ráno, přezujte raději začátkem října. Zpět na letní má smysl až po Velikonocích, kdy pominou ranní mrazíky.</p><p>Termín přezutí si objednejte formulářem výš.</p></div></details><details><summary><span class="no">02</span><h3>Jak často na pravidelný servis</h3><span aria-hidden="true" class="pm">+</span></summary><div class="body"><p>Držte interval výrobce: běžně <strong>jednou ročně, nebo po 15–30 tisících km</strong> – co nastane dřív. Rok platí i při malých nájezdech, olej a brzdová kapalina stárnou i stáním.</p><p>Krátké městské trasy, časté studené starty a tažení přívěsu motor zatěžují víc – interval výměny oleje pak zkraťte zhruba o třetinu. U „longlife“ režimu si pohlídejte, že mu odpovídá i použitý olej.</p><p>Při servisní prohlídce u nás měníme olej a filtry, kontrolujeme brzdy, podvozek, kapaliny a baterii a řekneme vám, co je hotové a co počká.</p></div></details><details><summary><span class="no">03</span><h3>Klimatizace: proč ji nechat pravidelně obsloužit</h3><span aria-hidden="true" class="pm">+</span></summary><div class="body"><p>Chladivo z okruhu přirozeně uniká, běžně kolem <strong>10 % ročně</strong>. Po dvou třech letech klimatizace chladí znatelně hůř a kompresor běží bez dostatečného mazání – jeho oprava je pak dražší než roky údržby dohromady.</p><p>Servis klimatizace u nás znamená odsátí a zvážení chladiva, vakuování, kontrolu těsnosti, doplnění oleje a nové naplnění (R134a i R1234yf). Jednou za dva roky je to ideální rytmus.</p><p>K tomu patří <strong>dezinfekce výparníku a nový kabinový filtr</strong> – zbaví vůz zatuchliny z klimatizace a pylu ve vzduchu. Nejlépe na jaře, před sezónou.</p></div></details><details><summary><span class="no">04</span><h3>Jak udržet kvalitní lak karoserie</h3><span aria-hidden="true" class="pm">+</span></summary><div class="body"><p>Lak ničí hlavně špína, která na něm zůstane: posypová sůl, ptačí trus a vyjetý asfalt se do něj leptají už po pár dnech. Základ je <strong>pravidelné šetrné mytí</strong> – vysokotlak zdálky, mikrovlákno, žádné kartáče myček s tvrdými štětinami.</p><p>Dvakrát ročně lak dekontaminujte (clay) a navoskujte – vosk vydrží 2–3 měsíce. Delší ochranu dá <strong>keramická ochrana laku</strong>: drží roky, špína na ní neulpívá a barva má hlubší lesk.</p><p>Drobné škrábance a holografy po myčkách odstraní strojní leštění. Stav laku vám rádi posoudíme při servisní prohlídce.</p></div></details></div>
+</div></section>
+{% include "_recenze.html.j2" %}
+<section {% if not rating %}hidden {% endif %}class="rate gutter" data-count="{{ rating_count_raw }}" data-rating="{{ rating_raw }}" id="hodnoceni"><div class="wrap reveal">
+<div aria-hidden="true" class="stars"></div>
+<p class="rnum"><b id="rnum"></b><span>na Google</span></p>
+<p class="rtxt" id="rtxt"></p>
+</div></section>
+</main>
+<footer><div class="wrap gutter"><span>Návrh webu: Kryštof Kočí, krystofkoci.com</span></div></footer>
+<script>
+(function(){
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const L=(p,a,b)=>Math.max(0,Math.min(1,(p-a)/(b-a)));
+/* hero: scroll drives the arrival (and the reverse), two-blink greeting on arrival and on click */
+const hero=document.getElementById('hero'),box=document.getElementById('carbox');
+const film=document.getElementById('film'),fx=film.getContext('2d');
+const lc=document.getElementById('lights'),lx=lc.getContext('2d');
+const NF=+film.dataset.frames,FR=[];
+const src=i=>film.dataset.src.replace('{n}',String(i).padStart(4,'0'));
+const RINGS=[[501,382,18],[550,386,17],[827,384,8],[846,376,9]];const STOP=61;
+let target=0,cur=0,drawn=-1,greeted=false,busy=false;
+function draw(i){let j=i;while(j>0&&!(FR[j]&&FR[j].complete&&FR[j].naturalWidth))j--;
+  if(j===drawn||!(FR[j]&&FR[j].complete&&FR[j].naturalWidth))return;drawn=j;fx.clearRect(0,0,980,580);fx.drawImage(FR[j],0,0,980,580);}
+function glow(a){lx.clearRect(0,0,980,580);if(a<=0)return;
+  lx.save();lx.globalCompositeOperation='lighter';
+  for(const [x,y,r] of RINGS){
+    let g=lx.createRadialGradient(x,y,0,x,y,r*5);
+    g.addColorStop(0,`rgba(235,244,255,${.95*a})`);g.addColorStop(.25,`rgba(210,228,255,${.6*a})`);g.addColorStop(1,'rgba(205,225,255,0)');
+    lx.fillStyle=g;lx.fillRect(x-r*5,y-r*5,r*10,r*10);
+    lx.strokeStyle=`rgba(255,255,255,${a})`;lx.lineWidth=4;lx.beginPath();lx.arc(x,y,r*.85,0,7);lx.stroke();}
+  lx.restore();}
+function greet(){if(busy||Math.round(cur)<STOP)return;busy=true;const t0=performance.now();
+  (function f(now){const t=(now-t0)/1000;
+    const a=Math.exp(-Math.pow((t-.12)/.055,2))+Math.exp(-Math.pow((t-.38)/.055,2));
+    glow(Math.min(1,a));
+    if(t<.62)requestAnimationFrame(f);else{glow(0);busy=false;}})(t0);}
+/* scroll -> target frame; the car eases toward it so wheel steps feel like motion, not jumps */
+function readScroll(){const r=hero.getBoundingClientRect(),span=r.height-innerHeight;
+  const raw=span>0?Math.min(1,Math.max(0,-r.top/span)):0;
+  const p=Math.min(1,Math.max(0,(raw-.02)/.86));         /* last 12 % of the pin = car standing still */
+  target=p*(NF-1);}
+let raf=0;
+function wake(){if(!raf)raf=requestAnimationFrame(tick);}
+function tick(){raf=0;
+  const d=target-cur;cur+=Math.abs(d)<.05?d:d*.16;
+  draw(Math.round(cur));
+  if(Math.round(cur)>=STOP){if(!greeted){greeted=true;setTimeout(greet,180);}}
+  else if(cur<STOP-10)greeted=false;                         /* rolled back: greet again on the next arrival */
+  if(!busy&&Math.round(cur)<STOP)lx.clearRect(0,0,980,580);
+  if(cur!==target)wake();}                                   /* stojí-li auto, tick spí do dalšího scrollu */
+for(let i=1;i<=NF;i++){const im=new Image();im.decoding='async';
+  im.onload=()=>{if(i===1){document.querySelector('.hstage').classList.add('film');drawn=-1;draw(Math.round(cur));}else if(i-1<=Math.round(cur))wake();};
+  im.src=src(i);FR[i-1]=im;}
+const onScroll=()=>{readScroll();wake();};
+addEventListener('scroll',onScroll,{passive:true});addEventListener('resize',onScroll);
+readScroll();wake();
+box.addEventListener('click',greet);
+/* reveal */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.12});
+document.querySelectorAll('.reveal, .intro').forEach(el=>io.observe(el));
+/* rating */
+(function(){const r=document.getElementById('hodnoceni');const rating=parseFloat(String(r.dataset.rating).replace(',','.')),count=parseInt(r.dataset.count,10);
+  const st=r.querySelector('.stars'),rn=document.getElementById('rnum'),tx=document.getElementById('rtxt');
+  if(!(rating>0)){st.textContent='';rn.innerHTML='<span class="doplnit">[doplnit]</span>';tx.textContent='';return;}
+  st.textContent='★'.repeat(Math.round(rating))+'☆'.repeat(5-Math.round(rating));rn.textContent=rating.toFixed(1).replace('.',',');
+  /* pod 50 recenzí jen známka, od 50 i počet */
+  tx.textContent=count>=50?`${count} recenzí na Google`:'';})();
+/* hours */
+const d=new Date().getDay();document.querySelectorAll('#hours li').forEach(li=>li.classList.toggle('today',+li.dataset.d===d));
+/* mobilní menu */
+(function(){const b=document.querySelector('.menu-tl'),p=document.getElementById('menu-panel');if(!b||!p)return;
+  const zavri=(fokus)=>{p.hidden=true;b.setAttribute('aria-expanded','false');if(fokus)b.focus();};
+  b.addEventListener('click',()=>{const o=p.hidden;p.hidden=!o;b.setAttribute('aria-expanded',String(o));if(o)p.querySelector('a').focus();});
+  p.addEventListener('click',e=>{if(e.target.closest('a'))zavri(false);});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!p.hidden)zavri(true);});
+  document.addEventListener('click',e=>{if(!p.hidden&&!p.contains(e.target)&&!b.contains(e.target))zavri(false);});
+  matchMedia('(min-width:761px)').addEventListener('change',e=>{if(e.matches)zavri(false);});})();
+/* objednávka servisu: stejná pole a logika jako V10 + den a čas přistavení; nic se neodesílá (ukázka šablony) */
+(function(){
+  const f=document.querySelector('[data-formular="objednavka"]');if(!f)return;
+  const hl=document.getElementById('obj-hlaska');
+  const typSel=document.getElementById('f-typ'),typTxt=document.getElementById('f-typ-jine'),typLabel=document.getElementById('l-typ');
+  const rok=document.getElementById('f-rok'),ROK_MIN=1950,ROK_MAX=new Date().getFullYear();
+  const den=document.getElementById('f-den');
+  const zprava=document.getElementById('f-zprava'),fsSluzby=document.getElementById('f-sluzby'),volby=f.querySelector('[data-sluzby-volby]');
+  const seznam=document.querySelector('ol[data-sluzby="autoservis"]');
+  const TYPY={auto:['Osobní','SUV','Kombi','Dodávka'],motorka:['Silniční','Enduro / cross','Skútr','Čtyřkolka']};
+  document.getElementById('e-rok').textContent='Rok výroby zadejte čtyřmi číslicemi, od '+ROK_MIN+' do '+ROK_MAX+'.';
+  const dnes=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+  den.min=dnes();
+  /* zaškrtávací služby = položky li[data-sluzba] seznamu služeb (název ze span.n) */
+  function nactiSluzby(){
+    const byly={};volby.querySelectorAll('input:checked').forEach(i=>{byly[i.dataset.id]=true;});
+    volby.textContent='';
+    const polozky=seznam?seznam.querySelectorAll('li[data-sluzba]'):[];
+    polozky.forEach(li=>{const id=li.dataset.sluzba,n=li.querySelector('.n');const nazev=(n?n.textContent:id).replace(/\s+/g,' ').trim();
+      const lab=document.createElement('label');lab.className='zaskrt';
+      const inp=document.createElement('input');inp.type='checkbox';inp.className='sr-only';inp.name='sluzby[]';inp.id='f-sl-'+id;inp.value=nazev;inp.dataset.id=id;inp.checked=!!byly[id];
+      const pl=document.createElement('span');pl.className='zaskrt-plocha';const box=document.createElement('span');box.className='box';box.setAttribute('aria-hidden','true');
+      pl.appendChild(box);pl.appendChild(document.createTextNode(nazev));lab.appendChild(inp);lab.appendChild(pl);volby.appendChild(lab);});
+    fsSluzby.hidden=!polozky.length;
+    if(!document.getElementById('e-sluzby').hidden)over('sluzby');
+  }
+  /* typ vozidla podle druhu: auto / motorka = výběr, jiné = volné pole */
+  function nastavTyp(druh){const jine=druh==='jine';
+    typSel.parentNode.hidden=jine;typSel.disabled=jine||!druh;typTxt.hidden=!jine;typTxt.disabled=!jine;typLabel.htmlFor=jine?'f-typ-jine':'f-typ';
+    if(jine)return;typSel.textContent='';
+    const prvni=document.createElement('option');prvni.value='';prvni.textContent=druh?'Vyberte…':'Nejdřív zvolte druh vozidla';typSel.appendChild(prvni);
+    (TYPY[druh]||[]).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;typSel.appendChild(o);});}
+  const vybrany=f.querySelector('input[name="druh"]:checked');if(vybrany)nastavTyp(vybrany.value);
+  const radia=()=>Array.from(f.querySelectorAll('input[name="druh"]'));
+  const zaskrt=()=>Array.from(volby.querySelectorAll('input'));
+  const pole=id=>()=>[document.getElementById(id)];
+  const hodnota=id=>document.getElementById(id).value.trim();
+  const PRAVIDLA={
+    jmeno:{cile:pole('f-jmeno'),spatne:()=>!hodnota('f-jmeno')},
+    telefon:{cile:pole('f-telefon'),spatne:()=>hodnota('f-telefon').replace(/\D/g,'').length<9},
+    email:{cile:pole('f-email'),spatne:()=>{const v=hodnota('f-email');return !!v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);}},
+    druh:{cile:radia,skupina:'f-druh',spatne:()=>!f.querySelector('input[name="druh"]:checked')},
+    znacka:{cile:pole('f-znacka'),spatne:()=>!hodnota('f-znacka')},
+    model:{cile:pole('f-model'),spatne:()=>!hodnota('f-model')},
+    rok:{cile:pole('f-rok'),spatne:()=>{const v=hodnota('f-rok');if(!v)return false;const n=+v;return !/^\d{4}$/.test(v)||n<ROK_MIN||n>ROK_MAX;}},
+    den:{cile:pole('f-den'),spatne:()=>{const v=hodnota('f-den');return !v||v<dnes();}},
+    sluzby:{cile:()=>zaskrt().concat([zprava]),skupina:'f-sluzby',spatne:()=>!volby.querySelector('input:checked')&&!zprava.value.trim()}
+  };
+  function oznac(k,ano){const p=PRAVIDLA[k],idCh='e-'+k;document.getElementById(idCh).hidden=!ano;
+    if(p.skupina)document.getElementById(p.skupina).classList.toggle('je-chyba',ano);
+    p.cile().forEach(el=>{const d=(el.getAttribute('aria-describedby')||'').split(' ').filter(x=>x&&x!==idCh);if(ano)d.push(idCh);
+      if(d.length)el.setAttribute('aria-describedby',d.join(' '));else el.removeAttribute('aria-describedby');
+      if(ano)el.setAttribute('aria-invalid','true');else el.removeAttribute('aria-invalid');});}
+  function over(k){const s=PRAVIDLA[k].spatne();oznac(k,s);return s;}
+  nactiSluzby();
+  f.addEventListener('submit',e=>{e.preventDefault();let prvni=null;
+    Object.keys(PRAVIDLA).forEach(k=>{if(over(k)&&!prvni)prvni=PRAVIDLA[k].cile().filter(el=>!el.closest('[hidden]'))[0];});
+    if(prvni){hl.classList.remove('ukazka');hl.classList.add('chybi');hl.textContent='Zkontrolujte prosím označená pole.';prvni.focus();return;}
+    hl.classList.remove('chybi');hl.classList.add('ukazka');hl.textContent='Děkujeme, ozveme se vám co nejdříve.';});
+  const klic=el=>{if(el.name==='druh')return 'druh';if(el.name==='sluzby[]'||el===zprava)return 'sluzby';return el.name in PRAVIDLA?el.name:null;};
+  const znovu=e=>{const k=klic(e.target);if(k&&!document.getElementById('e-'+k).hidden)over(k);};
+  rok.addEventListener('input',()=>{const c=rok.value.replace(/\D/g,'').slice(0,4);if(c!==rok.value)rok.value=c;});
+  f.addEventListener('input',znovu);
+  f.addEventListener('change',e=>{if(e.target.name==='druh')nastavTyp(e.target.value);znovu(e);});
+})();
+})();
+</script>
+<script type="importmap">{"imports":{"three":"{{ A }}kalous/three/three.module.min.js"}}</script>
+<script>
+/* page scroll drives the fold carousel; arrows step one card and keep the scroll in sync */
+(function(){
+  const sec=document.getElementById('sluzby'),N=6;
+  const prev=document.getElementById('foldPrev'),next=document.getElementById('foldNext'),no=document.getElementById('foldNo');
+  let target=0,cur=0,fc=null,lastShown=-1;
+  /* názvy, popisy a ceny služeb bere karusel ze seznamu ol[data-sluzby] – systém doplní cenu jen do span.cena[data-cena] */
+  const INFO=Array.from(document.querySelectorAll('ol[data-sluzby] li[data-sluzba]')).map(li=>[li.querySelector('.n').textContent,'',li.querySelector('.cena').textContent.trim(),li.querySelector('.p').textContent]);
+  const box=document.getElementById('foldInfo'),tT=document.getElementById('foldTitle'),tF=document.getElementById('foldFrom'),tP=document.getElementById('foldPrice'),tD=document.getElementById('foldDesc');
+  let infoTimer=0,first=true;
+  function showInfo(i){const d=INFO[i];if(!d)return;
+    const put=()=>{tT.textContent=d[0];tF.textContent=d[1];
+      if(/\d/.test(d[2]))tP.textContent=d[2];else{tP.textContent='';const sp=document.createElement('span');sp.className='fold-dotaz';sp.textContent=d[2];tP.appendChild(sp);}
+      tD.textContent=d[3];};
+    if(first){first=false;put();return;}
+    box.classList.add('swap');clearTimeout(infoTimer);
+    infoTimer=setTimeout(()=>{put();box.classList.remove('swap');},230);}
+
+  const span=()=>Math.max(1,sec.offsetHeight-innerHeight);
+  let raw=0,idle=0;
+  const ss=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);};
+  function read(){const r=sec.getBoundingClientRect();const p=Math.min(1,Math.max(0,-r.top/span()));
+    const q=Math.min(1,Math.max(0,(p-.04)/.92));raw=q*(N-1);
+    /* each card rests flat for the middle of its scroll step, the fold happens between */
+    const i=Math.floor(raw),f=raw-i;target=Math.min(N-1,i+ss(.3,.7,f));
+    wake();clearTimeout(idle);idle=setTimeout(()=>{target=Math.round(raw);wake();},160);}
+  let raf=0,videt=true,posSet=NaN;
+  const wake=()=>{if(!raf)raf=requestAnimationFrame(tick);};
+  function tick(){raf=0;const d=target-cur;cur+=Math.abs(d)<.002?d:d*.14;
+    if(fc&&videt&&cur!==posSet){fc.setPosition(cur);posSet=cur;}  /* WebGL kreslí jen při změně a v záběru */
+    const idx=Math.round(cur);if(idx!==lastShown){lastShown=idx;no.textContent=String(idx+1).padStart(2,'0');showInfo(idx);
+      prev.disabled=idx<=0;next.disabled=idx>=N-1;}
+    if(cur!==target)wake();}
+  new IntersectionObserver(es=>{videt=es[es.length-1].isIntersecting;if(videt){posSet=NaN;wake();}},{rootMargin:'100px 0px'}).observe(sec);
+  function scrollToIndex(i){i=Math.max(0,Math.min(N-1,i));
+    const q=i/(N-1),p=.04+q*.92;const top=sec.getBoundingClientRect().top+scrollY+p*span();
+    scrollTo({top:Math.round(top),behavior:'smooth'});}
+  prev.addEventListener('click',()=>scrollToIndex(Math.round(raw)-1));
+  next.addEventListener('click',()=>scrollToIndex(Math.round(raw)+1));
+  function attach(){fc=window.__fold||null;posSet=NaN;wake();}
+  attach();addEventListener('fold-ready',attach);
+  addEventListener('scroll',read,{passive:true});addEventListener('resize',()=>{posSet=NaN;read();});read();cur=target;wake();
+})();
+</script>
+<script type="module">
+/**
+ * Fold Carousel — a looping row of cards where the centre card lies flat and
+ * its neighbours fold away from it like doors: each one swings about its inner
+ * edge, recedes, and curls back toward the lens at the side of the stage, where
+ * the stretched part of the picture smears into streaks and the edges pick up a
+ * thin spectral fringe. Drag, the wheel, the arrow keys or the hidden buttons
+ * move it one card at a time; a critically damped spring does the settling.
+ *
+ * The geometry is pure maths and is exported so the unit tests can hold it to
+ * its contract without a GPU. Three.js is loaded on demand (the site's bundler
+ * code-splits it; the downloaded file resolves it through an importmap).
+ *
+ * Units: the centre card is 1 wide and CARD_H tall, world x to the right, z
+ * toward the camera, and the camera sits at (0, 0, CAMERA_Z).
+ */
+
+const CARD_H = 1.25001;
+const CAMERA_Z = 3.2;
+const SEGMENTS = 128;
+const TEX_W = 1024;
+const TEX_H = 1280;
+// A card further than this many slots from the centre is fully off stage.
+const VISIBLE_SPAN = 1.62;
+
+// ---------------------------------------------------------------------------
+// Geometry
+//
+// Every card is described by its signed slot offset s (0 = centre, <0 = left).
+// Left side: the card swings about its own LEFT edge (the hinge) like a door
+// opening toward the viewer, 0 -> 180 deg as |s| goes 0 -> 1, while the hinge
+// recedes. At |s| = 1 it lies on the rest "track": a short flat run facing away
+// (so it reads mirrored), then a curl back toward the camera that flares off
+// the side of the stage. Past |s| = 1 the card slides out along that track.
+// The right side is the exact mirror (hinge = the card's own RIGHT edge).
+// ---------------------------------------------------------------------------
+
+// Rest track (left side), fitted to the silhouettes of the resting neighbours
+// in the reference frames. (x, z) control points.
+const TRACK_POINTS = [
+  [-1.12999, -1.67],
+  [-1.39999, -1.66501],
+  [-1.53001, -1.61001],
+  [-1.56501, -1.45001],
+  [-1.52699, -1.11001],
+  [-1.45399, -0.700001],
+  [-1.35401, -0.260001],
+  [-1.24299, 0.16],
+  [-1.129, 0.530001],
+  [-1.03, 0.950001],
+  [-1.01999, 1.40001],
+  [-1.25, 1.99999],
+  [-1.90001, 2.44999],
+  [-3.20001, 2.75001],
+  [-12.0, 2.95001],
+  [-60.0001, 3.00001]
+];
+
+const HINGE_REST = TRACK_POINTS[0];
+
+// Swing keyframes over t = |s| in [0, 1]: the leaving card is at ~55 deg while
+// the entering one is still folded flat with its flare, and both pass edge-on
+// slightly after the midpoint.
+const KEY_T = [0, 0.299999, 0.500001, 0.7, 1];
+const KEY_ANGLE = [0, 0.299999, 0.515001, 0.919999, 1]; // fraction of 180 deg
+const KEY_HX = [-0.5, -0.77, -0.799999, -0.830001, HINGE_REST[0]];
+const KEY_HZ = [0, -0.449999, -0.869999, -1.10001, HINGE_REST[1]];
+const KEY_CURL = [0, 0, 0.0199999, 0.850001, 1];
+
+// Monotone cubic (Fritsch-Carlson) interpolation through the keyframes, so a
+// keyframe never overshoots into a fold the reference does not show.
+function monotone(xs, ys) {
+  const n = xs.length;
+  const d = [];
+  const m = new Array(n);
+  for (let i = 0; i < n - 1; i++) d.push((ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]));
+  m[0] = d[0];
+  m[n - 1] = d[n - 2];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (d[i] === 0) { m[i] = m[i + 1] = 0; continue; }
+    const a = m[i] / d[i];
+    const b = m[i + 1] / d[i];
+    const h = a * a + b * b;
+    if (h > 9) { const k = 3 / Math.sqrt(h); m[i] = k * a * d[i]; m[i + 1] = k * b * d[i]; }
+  }
+  return (x) => {
+    if (x <= xs[0]) return ys[0];
+    if (x >= xs[n - 1]) return ys[n - 1];
+    let i = 0;
+    while (x > xs[i + 1]) i++;
+    const h = xs[i + 1] - xs[i];
+    const t = (x - xs[i]) / h;
+    const t2 = t * t;
+    const t3 = t2 * t;
+    return (2 * t3 - 3 * t2 + 1) * ys[i] + (t3 - 2 * t2 + t) * h * m[i]
+      + (-2 * t3 + 3 * t2) * ys[i + 1] + (t3 - t2) * h * m[i + 1];
+  };
+}
+const angleAt = monotone(KEY_T, KEY_ANGLE);
+const hingeX = monotone(KEY_T, KEY_HX);
+const hingeZ = monotone(KEY_T, KEY_HZ);
+const curlAt = monotone(KEY_T, KEY_CURL);
+
+// Texture parameter p (0..1 over one card, >1 beyond it) -> arc length on the
+// track. The first FLAT_U of the card keeps its size; after that the texture
+// is stretched quadratically, which is what smears it into streaks.
+const FLAT_U = 0.42;
+const STRETCH = 8;
+function arcOf(p) {
+  if (p <= FLAT_U) return p;
+  const q = p - FLAT_U;
+  return FLAT_U + q + STRETCH * q * q;
+}
+// d(arc)/dp: 1 where the picture keeps its size, growing where it streaks.
+function stretchOf(p) {
+  return p <= FLAT_U ? 1 : 1 + 2 * STRETCH * (p - FLAT_U);
+}
+
+// Dense arc-length table of the Catmull-Rom spline through TRACK_POINTS.
+const track = (() => {
+  const pts = [];
+  const P = TRACK_POINTS;
+  const n = P.length;
+  const get = (i) => P[Math.max(0, Math.min(n - 1, i))];
+  for (let i = 0; i < n - 1; i++) {
+    const p0 = i === 0 ? [2 * P[0][0] - P[1][0], 2 * P[0][1] - P[1][1]] : get(i - 1);
+    const p1 = get(i);
+    const p2 = get(i + 1);
+    const p3 = i + 2 >= n ? [2 * P[n - 1][0] - P[n - 2][0], 2 * P[n - 1][1] - P[n - 2][1]] : get(i + 2);
+    const steps = 80;
+    for (let k = 0; k < steps; k++) {
+      const t = k / steps;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      const c = (a, b, cc, d) =>
+        0.499999 * (2 * b + (-a + cc) * t + (2 * a - 5 * b + 4 * cc - d) * t2 + (-a + 3 * b - 3 * cc + d) * t3);
+      pts.push([c(p0[0], p1[0], p2[0], p3[0]), c(p0[1], p1[1], p2[1], p3[1])]);
+    }
+  }
+  pts.push(P[n - 1]);
+  const len = [0];
+  for (let i = 1; i < pts.length; i++) {
+    len.push(len[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  }
+  return { pts, len, total: len[len.length - 1] };
+})();
+
+function trackAt(arc, out) {
+  const { pts, len, total } = track;
+  const a = Math.min(Math.max(arc, 0), total);
+  let lo = 0;
+  let hi = len.length - 1;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (len[mid] <= a) lo = mid; else hi = mid;
+  }
+  const seg = len[hi] - len[lo] || 1;
+  const f = (a - len[lo]) / seg;
+  out[0] = pts[lo][0] + (pts[hi][0] - pts[lo][0]) * f;
+  out[1] = pts[lo][1] + (pts[hi][1] - pts[lo][1]) * f;
+  return out;
+}
+
+// Rest shape in the hinge's local frame: a = along the card's initial
+// direction (-x at rest), b = toward the camera (+z at rest).
+function restLocal(p, out) {
+  trackAt(arcOf(p), out);
+  const x = out[0] - HINGE_REST[0];
+  const z = out[1] - HINGE_REST[1];
+  out[0] = -x;
+  out[1] = z;
+  return out;
+}
+
+// Left-side card with t = |s| >= 0. u in [0, 1] from the hinge edge.
+// Writes (x, z, smear) into out.
+const tmp = [0, 0];
+function leftPoint(t, u, out) {
+  if (t >= 1) {
+    // Slide out along the rest track: a sliver left at t = 1.3, gone by 1.5.
+    const p = u + 3.99999 * Math.pow(t - 1, 1.30001);
+    trackAt(arcOf(p), out);
+    out[2] = stretchOf(p) - 1;
+    return out;
+  }
+  const theta = Math.PI * angleAt(t);
+  const curl = curlAt(t);
+  // The rigid part of the card swings with the door angle; the curl is added
+  // in the rest orientation (toward the camera) so the near-camera flare never
+  // swings across the view while the angle is still settling.
+  restLocal(u, tmp);
+  const bendX = -(tmp[0] - u) * curl;
+  const bendZ = tmp[1] * curl;
+  out[0] = hingeX(t) + u * Math.cos(theta) + bendX;
+  out[1] = hingeZ(t) + u * Math.sin(theta) + bendZ;
+  out[2] = (stretchOf(u) - 1) * curl;
+  return out;
+}
+
+// Any card: s = signed slot offset, u in [0, 1] = card-local x (0 = own left
+// edge). Returns [x, z, smear].
+function cardPoint(s, u, out) {
+  if (s <= 0) return leftPoint(-s, u, out);
+  leftPoint(s, 1 - u, out);
+  out[0] = -out[0];
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Motion and layout
+// ---------------------------------------------------------------------------
+
+const wrapIndex = (x, n) => ((x % n) + n) % n;
+
+// Signed distance of card i from the strip position, on the shorter way round
+// the loop.
+function offsetOf(i, pos, n) {
+  let s = wrapIndex(i - pos, n);
+  if (s >= n / 2) s -= n;
+  return s;
+}
+
+// Exact solution of a critically damped spring over dt, so it is stable at any
+// frame rate (explicit Euler diverges once omega * dt > 1). Returns [pos, vel].
+function springStep(pos, vel, target, dt, omega) {
+  const x = pos - target;
+  const e = Math.exp(-omega * dt);
+  const c = vel + omega * x;
+  let p = target + (x + c * dt) * e;
+  let v = (vel - omega * c * dt) * e;
+  if (Math.abs(p - target) < 1e-4 && Math.abs(v) < 1e-3) {
+    p = target;
+    v = 0;
+  }
+  return [p, v];
+}
+
+// A released drag lands on the nearest card, nudged at most 0.6 of a slot in
+// the direction of the fling so a flick always goes somewhere.
+function flingTarget(pos, velocity) {
+  return Math.round(pos + Math.max(-0.6, Math.min(0.6, velocity * 0.119999)));
+}
+
+// A wheel gesture that ends between cards snaps to one; any deliberate gesture
+// (one mouse notch included) moves at least one card.
+function settleWheel(from, target) {
+  const moved = target - from;
+  if (Math.abs(moved) < 0.08) return from;
+  return from + Math.sign(moved) * Math.max(1, Math.round(Math.abs(moved)));
+}
+
+// Stage framing. The reference card is 35.7 % of the stage width and 49.4 % of
+// its height (whichever binds); portrait stages get half the width so the
+// folded neighbours stay legible. The camera's field of view is solved so the
+// centre card is exactly cardPx wide on screen.
+function layoutFor(width, height) {
+  const W = Math.max(1, width);
+  const H = Math.max(1, height);
+  const widthShare = W / H < 0.899999 ? 0.500001 : 0.357001;
+  const cardPx = Math.min(W * widthShare, H * 0.494001);
+  const stageW = cardPx / 0.357001;
+  return {
+    cardPx,
+    slotPx: cardPx * 1.25001,
+    fov: (2 * Math.atan(H / 2 / cardPx / CAMERA_Z) * 180) / Math.PI,
+    // The card centre sits slightly above the stage centre.
+    offsetY: cardPx * 0.044,
+    // Screen x relative to the reference stage, so the fringe follows the
+    // geometry at any aspect ratio.
+    edgeScale: W / stageW,
+    fringe: 0.0219999 * stageW,
+    haze: 0.0799999 * stageW
+  };
+}
+
+// Bleed of a transparent stage. The flares are taller than the stage and run
+// off its sides, so a canvas cut at the stage box shows straight edges once no
+// painted panel hides them. The canvas instead grows out to the box that
+// clips the stage on the page (the editor preview, a fullscreen view), each
+// side capped at the larger stage dimension. Rects are in screen pixels;
+// `scale` is screen pixels per layout pixel (the editor fits the stage with a
+// CSS transform). Returns whole layout pixels per side.
+function bleedFor(stageRect, clipRect, scale, width, height) {
+  if (!clipRect || !(scale > 0)) return { left: 0, top: 0, right: 0, bottom: 0 };
+  const cap = Math.max(width, height);
+  const side = (px) => Math.min(cap, Math.max(0, Math.ceil(px / scale)));
+  return {
+    left: side(stageRect.left - clipRect.left),
+    top: side(stageRect.top - clipRect.top),
+    right: side(clipRect.right - stageRect.right),
+    bottom: side(clipRect.bottom - stageRect.bottom)
+  };
+}
+
+// Nearest ancestor that clips its content: the stage may paint up to its edges.
+// None means the page gave the stage no larger box, so there is nothing to
+// bleed into.
+function clipBoxOf(root) {
+  for (let el = root.parentElement; el && el !== document.body && el !== document.documentElement; el = el.parentElement) {
+    if (el.classList.contains('fc-frame')) continue;
+    const style = getComputedStyle(el);
+    if (style.overflowX !== 'visible' || style.overflowY !== 'visible') return el;
+  }
+  return null;
+}
+
+function parseColor(value, fallback = [240, 240, 240]) {
+  const hex = String(value ?? '').trim();
+  const short = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(hex);
+  if (short) return short.slice(1).map((c) => parseInt(c + c, 16));
+  const long = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (long) return long.slice(1).map((c) => parseInt(c, 16));
+  return fallback;
+}
+
+// ---------------------------------------------------------------------------
+// Card faces
+// ---------------------------------------------------------------------------
+
+const FONT_STACK = "Inter, -apple-system, 'Segoe UI', sans-serif";
+const font = (px, weight) => `${weight} ${px}px ${FONT_STACK}`;
+
+// A tag that opens with a bullet is a status, not a label: it draws as a green
+// dot and the words after it, without a pill.
+const LIVE_TAG = /^[●•]\s*/;
+
+function fitText(ctx, text, maxWidth) {
+  const value = String(text ?? '');
+  if (!value || ctx.measureText(value).width <= maxWidth) return value;
+  let lo = 0;
+  let hi = value.length;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (ctx.measureText(`${value.slice(0, mid).trimEnd()}…`).width <= maxWidth) lo = mid;
+    else hi = mid - 1;
+  }
+  return `${value.slice(0, lo).trimEnd()}…`;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawCardFace(ctx, card, image) {
+  const W = TEX_W;
+  const H = TEX_H;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#2a2a2e';
+  ctx.fillRect(0, 0, W, H);
+  const iw = image?.naturalWidth || image?.width || 0;
+  const ih = image?.naturalHeight || image?.height || 0;
+  if (image && iw > 0 && ih > 0) {
+    const scale = Math.max(W / iw, H / ih);
+    const w = iw * scale;
+    const h = ih * scale;
+    ctx.drawImage(image, (W - w) / 2, (H - h) / 2, w, h);
+  } else if (image) {
+    // An image without intrinsic size (a sizeless SVG fill) covers the face.
+    ctx.drawImage(image, 0, 0, W, H);
+  }
+
+  // Soft scrims so the white type stays legible on bright pictures.
+  let g = ctx.createLinearGradient(0, 0, 0, 360);
+  g.addColorStop(0, 'rgba(0,0,0,0.26)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, 360);
+  g = ctx.createLinearGradient(0, H - 300, 0, H);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(1, 'rgba(0,0,0,0.3)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, H - 300, W, 300);
+
+  ctx.textBaseline = 'alphabetic';
+  const tag = String(card.tag ?? '').trim();
+  const live = LIVE_TAG.test(tag);
+  const tagText = live ? tag.replace(LIVE_TAG, '') : tag;
+
+  let pillWidth = 0;
+  if (tagText && !live) {
+    ctx.font = font(34, 500);
+    const label = fitText(ctx, tagText, 360);
+    const tw = ctx.measureText(label).width;
+    pillWidth = tw + 56;
+    const ph = 60;
+    const px = W - 72 - pillWidth;
+    const py = 112;
+    roundRect(ctx, px, py, pillWidth, ph, ph / 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fillText(label, px + 28, py + 42);
+  }
+
+  const titleWidth = W - 140 - (pillWidth ? pillWidth + 24 : 0);
+  ctx.fillStyle = 'rgba(255,255,255,0.93)';
+  ctx.font = font(41, 420);
+  ctx.fillText(fitText(ctx, card.title, titleWidth), 70, 150);
+  ctx.fillText(fitText(ctx, card.subtitle, titleWidth), 70, 205);
+
+  if (live) {
+    ctx.fillStyle = '#7dff9b';
+    ctx.beginPath();
+    ctx.arc(82, 262, 10, 0, Math.PI * 2);
+    ctx.fill();
+    if (tagText) {
+      ctx.font = font(36, 500);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fillText(fitText(ctx, tagText, W - 244), 104, 275);
+    }
+  }
+
+  ctx.font = font(41, 420);
+  ctx.fillStyle = 'rgba(255,255,255,0.93)';
+  ctx.fillText(fitText(ctx, card.caption, W - 140), 70, 1186);
+}
+
+// ---------------------------------------------------------------------------
+// Shaders
+// ---------------------------------------------------------------------------
+
+const CARD_VERTEX = /* glsl */`
+  attribute float smear;
+  varying vec2 vUv;
+  varying float vSmear;
+  void main() {
+    vUv = uv;
+    vSmear = smear;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const CARD_FRAGMENT = /* glsl */`
+  uniform sampler2D map;
+  uniform float radius;
+  uniform float smearAmount;
+  varying vec2 vUv;
+  varying float vSmear;
+  void main() {
+    vec2 size = vec2(1.0, ${CARD_H.toFixed(3)});
+    vec2 p = vUv * size - size * 0.5;
+    vec2 q = abs(p) - size * 0.5 + radius;
+    float d = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
+    float aa = max(fwidth(d), 1e-5);
+    float alpha = clamp(0.5 - d / aa, 0.0, 1.0);
+    if (alpha <= 0.0) discard;
+
+    // Horizontal streak smear on the stretched (flared) part.
+    float spread = vSmear * smearAmount;
+    vec3 col = vec3(0.0);
+    for (int i = 0; i < 9; i++) {
+      float o = (float(i) / 8.0 - 0.5) * spread;
+      col += texture2D(map, vec2(clamp(vUv.x + o, 0.0, 1.0), vUv.y)).rgb;
+    }
+    col /= 9.0;
+    gl_FragColor = vec4(col, alpha);
+  }
+`;
+
+const POST_VERTEX = /* glsl */`
+  varying vec2 vUv;
+  void main() {
+    vUv = position.xy * 0.500001 + 0.499999;
+    gl_Position = vec4(position.xy, 0.0, 1.0);
+  }
+`;
+
+const POST_FRAGMENT = /* glsl */`
+  uniform sampler2D tDiffuse;
+  uniform vec2 resolution;
+  uniform float strength;
+  uniform float haze;
+  uniform float edgeScale;
+  uniform vec2 centre;
+  uniform vec3 bg;
+  uniform float clearStage;
+  varying vec2 vUv;
+  const int TAPS = 24;
+  const int HAZE_TAPS = 14;
+  const float HAZE_HUE = -1.22;
+  const float HAZE_LIGHT = 0.35;
+  const float HAZE_SAT = 1.8;
+  const float HAZE_ALPHA = 0.9;
+  vec3 spectrum(float t) {
+    // t = 0 -> blue, 0.5 -> green, 1 -> red (red is displaced furthest out).
+    return max(vec3(
+      1.0 - abs(t - 1.0) * 1.9,
+      1.0 - abs(t - 0.5) * 2.4,
+      1.0 - abs(t) * 1.9
+    ), 0.0) + 0.02;
+  }
+  // Hue rotation about the grey axis (Rodrigues); positive = red -> green.
+  vec3 hueRotate(vec3 c, float a) {
+    const vec3 k = vec3(0.57735027);
+    float ca = cos(a);
+    return c * ca + cross(k, c) * sin(a) + k * dot(k, c) * (1.0 - ca);
+  }
+  float isCard(vec3 s) {
+    return smoothstep(0.015, 0.05, distance(s, bg));
+  }
+  vec3 hazeTint(vec3 c) {
+    vec3 ghost = hueRotate(c, HAZE_HUE);
+    float luma = dot(ghost, vec3(0.299, 0.587, 0.114));
+    return clamp(mix(vec3(luma), ghost, HAZE_SAT), 0.0, 1.0);
+  }
+
+  // Transparent stage. The cards were drawn over a zero-alpha clear, so the
+  // target holds premultiplied colour and coverage lives in alpha; the page
+  // behind is unknown, so the haze fades by opacity instead of lifting toward
+  // a stage colour, and it is laid under the card rather than over it.
+  vec4 clearPass(vec2 c, float k, vec2 dir) {
+    vec2 off = dir * strength * k / resolution;
+    vec3 acc = vec3(0.0), cover = vec3(0.0), wsum = vec3(0.0);
+    for (int i = 0; i < TAPS; i++) {
+      float t = float(i) / float(TAPS - 1);
+      vec3 w = spectrum(t);
+      vec4 s = texture2D(tDiffuse, vUv - off * t);
+      acc += s.rgb * w;
+      cover += s.a * w;
+      wsum += w;
+    }
+    vec3 col = acc / wsum;
+    cover /= wsum;
+    // Each channel has its own coverage. The widest one sets the alpha and the
+    // channels it leaves uncovered are filled with light, which is what the
+    // pale reference stage lends them: the silhouette keeps its warm spectral
+    // rim on any page, and the colour stays premultiplied (never above alpha).
+    float alpha = max(max(cover.r, cover.g), cover.b);
+    col += alpha - cover;
+
+    vec2 hdir = normalize(vec2(c.x * 0.3, c.y) * resolution + 1e-4);
+    vec2 hoff = hdir * haze * k / resolution;
+    vec3 hc = vec3(0.0);
+    float cov = 0.0, wt = 0.0;
+    for (int i = 0; i < HAZE_TAPS; i++) {
+      float t = (float(i) + 0.5) / float(HAZE_TAPS);
+      vec4 s = texture2D(tDiffuse, vUv - hoff * t);
+      float w = 1.0 - 0.7 * t;
+      float m = smoothstep(0.015, 0.05, s.a) * w;
+      hc += s.rgb / max(s.a, 1e-3) * m;
+      cov += m;
+      wt += w;
+    }
+    float self = smoothstep(0.015, 0.05, texture2D(tDiffuse, vUv).a);
+    if (cov > 0.0) {
+      vec3 ghost = hazeTint(hc / cov);
+      float a = sqrt(cov / wt) * (1.0 - self) * HAZE_ALPHA * (1.0 - HAZE_LIGHT) * smoothstep(0.25, 0.7, k);
+      col += ghost * a * (1.0 - alpha);
+      alpha += a * (1.0 - alpha);
+    }
+    return vec4(col, alpha);
+  }
+
+  void main() {
+    vec2 c = vUv - centre;
+    float ax = abs(c.x) * 2.0 * edgeScale;
+    float k = smoothstep(0.34, 1.0, ax);
+    k *= k;
+    vec2 dir = normalize(c * resolution + 1e-4);
+    if (clearStage > 0.5) {
+      gl_FragColor = clearPass(c, k, dir);
+      return;
+    }
+
+    // Thin spectral split: each channel is displaced along dir by a different
+    // amount (red furthest).
+    vec2 off = dir * strength * k / resolution;
+    vec3 acc = vec3(0.0), wsum = vec3(0.0);
+    for (int i = 0; i < TAPS; i++) {
+      float t = float(i) / float(TAPS - 1);
+      vec3 w = spectrum(t);
+      acc += texture2D(tDiffuse, vUv - off * t).rgb * w;
+      wsum += w;
+    }
+    vec3 col = acc / wsum;
+
+    // Outer haze: a pale, hue-shifted ghost of the card spilling past its
+    // silhouette. The flares open vertically, so the haze spreads mostly away
+    // from the horizontal mid-line rather than radially.
+    vec2 hdir = normalize(vec2(c.x * 0.3, c.y) * resolution + 1e-4);
+    vec2 hoff = hdir * haze * k / resolution;
+    vec3 hc = vec3(0.0);
+    float cov = 0.0, wt = 0.0;
+    for (int i = 0; i < HAZE_TAPS; i++) {
+      float t = (float(i) + 0.5) / float(HAZE_TAPS);
+      vec3 s = texture2D(tDiffuse, vUv - hoff * t).rgb;
+      float w = 1.0 - 0.7 * t;
+      float m = isCard(s) * w;
+      hc += s * m;
+      cov += m;
+      wt += w;
+    }
+    float self = isCard(texture2D(tDiffuse, vUv).rgb);
+    if (cov > 0.0) {
+      vec3 ghost = hazeTint(hc / cov);
+      // Lift toward white on a light stage, toward the stage on a dark one, so
+      // the ghost never reads as a glow the reference does not have.
+      vec3 lift = dot(bg, vec3(0.299, 0.587, 0.114)) > 0.5 ? vec3(1.0) : bg;
+      ghost = mix(ghost, lift, HAZE_LIGHT);
+      float a = sqrt(cov / wt) * (1.0 - self) * HAZE_ALPHA * smoothstep(0.25, 0.7, k);
+      col = mix(col, ghost, a);
+    }
+    gl_FragColor = vec4(col, 1.0);
+  }
+`;
+
+// ---------------------------------------------------------------------------
+// Runtime
+// ---------------------------------------------------------------------------
+
+const ENGINE_DEFAULTS = {
+  cards: [],
+  background: 'transparent',
+  startIndex: 0,
+  settle: 10.5001,
+  autoplay: 0,
+  wheel: 'both',
+  draggable: true,
+  fringe: 1,
+  haze: 1,
+  smear: 1,
+  preview: false,
+  // Draw past the stage box on a solid stage too. The editor sets it when its
+  // panel is painted the stage's colour, so the folded cards are not cut at an
+  // edge nobody can see; an export never carries it.
+  bleed: false
+};
+
+const cardKey = (card) => JSON.stringify([card.src, card.title, card.subtitle, card.tag, card.caption]);
+
+function loadImage(src) {
+  return new Promise((resolve) => {
+    if (!src) { resolve(null); return; }
+    const img = new Image();
+    // The picture is uploaded to the GPU, which a browser only allows for an
+    // image that is same-origin or sent with a CORS header. Anything that
+    // refuses is drawn as a plain face instead of breaking the carousel.
+    img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+function waitForFonts() {
+  const fonts = typeof document !== 'undefined' ? document.fonts : null;
+  if (!fonts?.load) return Promise.resolve();
+  const loads = Promise.all([
+    fonts.load(font(41, 420)),
+    fonts.load(font(34, 500))
+  ]).catch(() => {});
+  // A font that never arrives must not hold the cards back.
+  return Promise.race([loads, new Promise((resolve) => setTimeout(resolve, 1500))]);
+}
+
+function buildFoldCarousel(root, config) {
+  if (!root) return null;
+  let cfg = { ...ENGINE_DEFAULTS, ...config };
+  const reducedMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const stage = root.querySelector('.fc-gl') ?? root;
+  const live = root.querySelector('.fc-live');
+
+  let disposed = false;
+  let scene = null;
+  const cleanups = [];
+  const listen = (target, type, handler, options) => {
+    target.addEventListener(type, handler, options);
+    cleanups.push(() => target.removeEventListener(type, handler, options));
+  };
+
+  const count = () => Math.max(cfg.cards.length, 1);
+  const motion = {
+    pos: cfg.startIndex,
+    vel: 0,
+    target: cfg.startIndex,
+    dragging: false
+  };
+
+  function announce() {
+    if (!live || cfg.preview) return;
+    const n = count();
+    const index = wrapIndex(Math.round(motion.target), n);
+    const card = cfg.cards[index] ?? {};
+    const words = [card.title, card.subtitle].filter(Boolean).join(', ');
+    live.textContent = `Služba ${index + 1} z ${n}${words ? `: ${words}` : ''}`;
+  }
+
+  function go(delta, speak = true) {
+    motion.target = Math.round(motion.target) + delta;
+    if (speak) announce();
+    scene?.invalidate();
+  }
+
+  function goTo(index) {
+    const n = count();
+    // Travel the short way round the loop.
+    go(offsetOf(wrapIndex(Math.round(index), n), Math.round(motion.target), n));
+  }
+
+  // --- input ---------------------------------------------------------------
+
+  let drag = null;
+  listen(root, 'pointerdown', (e) => {
+    if (!cfg.draggable || cfg.preview || e.button !== 0) return;
+    if (e.target instanceof Element && e.target.closest('button')) return;
+    try { root.setPointerCapture(e.pointerId); } catch { /* synthetic events */ }
+    const now = performance.now();
+    drag = { id: e.pointerId, x: e.clientX, pos: motion.pos, lastX: e.clientX, lastT: now, v: 0 };
+    motion.dragging = true;
+    motion.vel = 0;
+    root.setAttribute('data-dragging', '');
+  });
+  listen(root, 'pointermove', (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const now = performance.now();
+    const dt = Math.max(now - drag.lastT, 1) / 1000;
+    const slot = scene?.slotPx() ?? 380;
+    const v = -(e.clientX - drag.lastX) / slot / dt;
+    drag.v = drag.v * 0.7 + v * 0.3;
+    drag.lastX = e.clientX;
+    drag.lastT = now;
+    motion.pos = drag.pos - (e.clientX - drag.x) / slot;
+    scene?.invalidate();
+  });
+  const endDrag = (e) => {
+    if (!drag || e.pointerId !== drag.id) return;
+    // A press that never moved is not a gesture; it must not drop the card
+    // somewhere else, and a release long after the last move has no fling.
+    const idle = performance.now() - drag.lastT > 120;
+    const velocity = idle ? 0 : drag.v;
+    motion.target = flingTarget(motion.pos, velocity);
+    motion.vel = velocity;
+    motion.dragging = false;
+    drag = null;
+    root.removeAttribute('data-dragging');
+    announce();
+    scene?.invalidate();
+  };
+  listen(root, 'pointerup', endDrag);
+  listen(root, 'pointercancel', endDrag);
+  listen(root, 'lostpointercapture', endDrag);
+
+  let wheelTimer = 0;
+  let wheelFrom = null;
+  listen(root, 'wheel', (e) => {
+    if (cfg.preview || cfg.wheel === 'off') return;
+    const horizontal = Math.abs(e.deltaX) > Math.abs(e.deltaY);
+    // Only a sideways wheel belongs to the carousel unless the author opted in
+    // to taking over the vertical one too; the page keeps scrolling otherwise.
+    if (!horizontal && cfg.wheel !== 'both') return;
+    e.preventDefault();
+    if (wheelFrom === null) wheelFrom = Math.round(motion.target);
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
+    const d = (horizontal ? e.deltaX : e.deltaY) * unit;
+    const next = motion.target + d / ((scene?.slotPx() ?? 380) * 1.20001);
+    motion.target = Math.max(motion.pos - 1.39999, Math.min(motion.pos + 1.39999, next));
+    scene?.invalidate();
+    clearTimeout(wheelTimer);
+    wheelTimer = setTimeout(() => {
+      motion.target = settleWheel(wheelFrom, motion.target);
+      wheelFrom = null;
+      announce();
+      scene?.invalidate();
+    }, 140);
+  }, { passive: false });
+  cleanups.push(() => clearTimeout(wheelTimer));
+
+  listen(root, 'keydown', (e) => {
+    if (cfg.preview || e.target !== root) return;
+    if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') { go(1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { go(-1); e.preventDefault(); }
+    else if (e.key === 'Home') { goTo(0); e.preventDefault(); }
+    else if (e.key === 'End') { goTo(count() - 1); e.preventDefault(); }
+  });
+  for (const button of root.querySelectorAll('[data-fc-step]')) {
+    listen(button, 'click', () => go(Number(button.getAttribute('data-fc-step')) || 0));
+  }
+
+  // --- autoplay --------------------------------------------------------------
+
+  let hovered = false;
+  let focused = false;
+  let onScreen = true;
+  let autoTimer = 0;
+  listen(root, 'pointerenter', () => { hovered = true; });
+  listen(root, 'pointerleave', () => { hovered = false; });
+  listen(root, 'focusin', () => { focused = true; });
+  listen(root, 'focusout', () => { focused = false; });
+  function scheduleAutoplay() {
+    clearTimeout(autoTimer);
+    const seconds = Number(cfg.autoplay) || 0;
+    if (disposed || seconds <= 0 || reducedMotion) return;
+    autoTimer = setTimeout(() => {
+      // A reader holding the carousel keeps the card they are on.
+      if (onScreen && !motion.dragging && !(hovered && !cfg.preview) && !focused) go(1, false);
+      scheduleAutoplay();
+    }, seconds * 1000);
+  }
+  cleanups.push(() => clearTimeout(autoTimer));
+
+  const observer = typeof IntersectionObserver === 'function'
+    ? new IntersectionObserver((entries) => {
+      onScreen = entries.some((entry) => entry.isIntersecting);
+      if (onScreen) scene?.invalidate();
+    })
+    : null;
+  observer?.observe(root);
+  cleanups.push(() => observer?.disconnect());
+
+  // --- scene ---------------------------------------------------------------
+
+  function fail() {
+    if (disposed) return;
+    root.setAttribute('data-fc-fallback', '');
+  }
+
+  function createScene(THREE) {
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ alpha: true, antialias: false, powerPreference: 'high-performance' });
+    } catch {
+      fail();
+      return null;
+    }
+    // The shaders write display values straight through, so the output is left
+    // unconverted rather than switching colour management off for every other
+    // three.js scene on the page.
+    renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+    const canvas = renderer.domElement;
+    canvas.className = 'fc-canvas';
+    canvas.setAttribute('aria-hidden', 'true');
+    stage.replaceChildren(canvas);
+
+    const world = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.05, 200);
+    camera.position.set(0, 0, CAMERA_Z);
+    const target = new THREE.WebGLRenderTarget(1, 1, { samples: 4, depthBuffer: true });
+
+    const clear = new THREE.Color();
+    const bgUniform = new THREE.Vector3();
+    const clearStage = { value: 0 };
+    function applyBackground() {
+      // A transparent stage clears to zero alpha; the post pass then keeps
+      // coverage in alpha so the page shows through around the cards.
+      const transparent = String(cfg.background ?? '').trim().toLowerCase() === 'transparent';
+      const [r, g, b] = transparent ? [0, 0, 0] : parseColor(cfg.background);
+      clear.setRGB(r / 255, g / 255, b / 255, THREE.LinearSRGBColorSpace);
+      renderer.setClearColor(clear, transparent ? 0 : 1);
+      bgUniform.set(r / 255, g / 255, b / 255);
+      clearStage.value = transparent ? 1 : 0;
+    }
+    applyBackground();
+
+    const post = new THREE.Mesh(
+      new THREE.BufferGeometry().setAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3)
+      ),
+      new THREE.ShaderMaterial({
+        uniforms: {
+          tDiffuse: { value: target.texture },
+          resolution: { value: new THREE.Vector2(1, 1) },
+          strength: { value: 1 },
+          haze: { value: 1 },
+          edgeScale: { value: 1 },
+          centre: { value: new THREE.Vector2(0.500001, 0.499999) },
+          bg: { value: bgUniform },
+          clearStage
+        },
+        vertexShader: POST_VERTEX,
+        fragmentShader: POST_FRAGMENT,
+        depthTest: false,
+        depthWrite: false
+      })
+    );
+    post.frustumCulled = false;
+    const postScene = new THREE.Scene();
+    postScene.add(post);
+    const postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+    function buildGeometry() {
+      const cols = SEGMENTS + 1;
+      const g = new THREE.BufferGeometry();
+      const uv = new Float32Array(cols * 4);
+      const idx = [];
+      for (let i = 0; i < cols; i++) {
+        const u = i / SEGMENTS;
+        uv.set([u, 1, u, 0], i * 4);
+        if (i < SEGMENTS) {
+          const a = i * 2;
+          idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+        }
+      }
+      g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(cols * 6), 3).setUsage(THREE.DynamicDrawUsage));
+      g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+      g.setAttribute('smear', new THREE.BufferAttribute(new Float32Array(cols * 2), 1).setUsage(THREE.DynamicDrawUsage));
+      g.setIndex(idx);
+      return g;
+    }
+
+    const pt = [0, 0, 0];
+    function updateMesh(mesh, s) {
+      const g = mesh.geometry;
+      const pos = g.attributes.position.array;
+      const smear = g.attributes.smear.array;
+      const halfH = CARD_H / 2;
+      for (let i = 0; i <= SEGMENTS; i++) {
+        cardPoint(s, i / SEGMENTS, pt);
+        const o = i * 6;
+        pos[o] = pt[0]; pos[o + 1] = halfH; pos[o + 2] = pt[1];
+        pos[o + 3] = pt[0]; pos[o + 4] = -halfH; pos[o + 5] = pt[1];
+        smear[i * 2] = smear[i * 2 + 1] = pt[2];
+      }
+      g.attributes.position.needsUpdate = true;
+      g.attributes.smear.needsUpdate = true;
+    }
+
+    // One slot per card: its canvas, texture and mesh live as long as the
+    // carousel, and an edit only repaints the faces whose content changed.
+    const slots = [];
+    const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+    function makeSlot() {
+      const canvas2d = document.createElement('canvas');
+      canvas2d.width = TEX_W;
+      canvas2d.height = TEX_H;
+      const texture = new THREE.CanvasTexture(canvas2d);
+      texture.anisotropy = maxAnisotropy;
+      texture.minFilter = THREE.LinearMipmapLinearFilter;
+      texture.generateMipmaps = true;
+      const material = new THREE.ShaderMaterial({
+        uniforms: {
+          map: { value: texture },
+          radius: { value: 0.0360001 },
+          smearAmount: { value: 0.0119999 * cfg.smear }
+        },
+        vertexShader: CARD_VERTEX,
+        fragmentShader: CARD_FRAGMENT,
+        side: THREE.DoubleSide,
+        transparent: true,
+        depthWrite: true
+      });
+      const mesh = new THREE.Mesh(buildGeometry(), material);
+      mesh.frustumCulled = false;
+      mesh.visible = false;
+      world.add(mesh);
+      return { canvas: canvas2d, ctx: canvas2d.getContext('2d'), texture, material, mesh, key: null, src: null, image: null, ready: false, token: 0 };
+    }
+    function disposeSlot(slot) {
+      world.remove(slot.mesh);
+      slot.mesh.geometry.dispose();
+      slot.material.dispose();
+      slot.texture.dispose();
+    }
+
+    let fontsReady = null;
+    function paintSlot(slot, card) {
+      const key = cardKey(card);
+      if (slot.key === key) return;
+      slot.key = key;
+      const token = ++slot.token;
+      const srcChanged = slot.src !== card.src;
+      fontsReady ??= waitForFonts();
+      Promise.all([srcChanged ? loadImage(card.src) : Promise.resolve(slot.image), fontsReady]).then(([image]) => {
+        if (disposed || token !== slot.token || !slot.ctx) return;
+        slot.src = card.src;
+        slot.image = image;
+        drawCardFace(slot.ctx, card, image);
+        // A picture served without CORS taints the canvas, and a tainted
+        // canvas cannot be uploaded to the GPU; the face keeps its type on a
+        // plain ground instead.
+        try { slot.ctx.getImageData(0, 0, 1, 1); } catch { drawCardFace(slot.ctx, card, null); }
+        slot.texture.needsUpdate = true;
+        slot.ready = true;
+        invalidate();
+      });
+    }
+
+    function syncCards() {
+      const cards = cfg.cards;
+      while (slots.length < cards.length) slots.push(makeSlot());
+      while (slots.length > cards.length) disposeSlot(slots.pop());
+      cards.forEach((card, i) => {
+        paintSlot(slots[i], card);
+        slots[i].material.uniforms.smearAmount.value = 0.0119999 * cfg.smear;
+      });
+    }
+    syncCards();
+
+    let layout = layoutFor(1, 1);
+    let dpr = 1;
+    let clipBox = null;
+    let sizeKey = '';
+    let settleFrame = 0;
+    const bleeds = () => clearStage.value > 0.499999 || cfg.bleed === true;
+    function measureBleed(W, H) {
+      if (!bleeds() || !clipBox) return { left: 0, top: 0, right: 0, bottom: 0 };
+      const rect = root.getBoundingClientRect();
+      const clip = clipBox.getBoundingClientRect();
+      // Pixels past the window are never seen.
+      const seen = {
+        left: Math.max(clip.left, 0),
+        top: Math.max(clip.top, 0),
+        right: Math.min(clip.right, window.innerWidth),
+        bottom: Math.min(clip.bottom, window.innerHeight)
+      };
+      return bleedFor(rect, seen, rect.width / W, W, H);
+    }
+    function measure() {
+      const W = Math.max(1, root.clientWidth);
+      const H = Math.max(1, root.clientHeight);
+      const bleed = measureBleed(W, H);
+      return { W, H, bleed, key: [W, H, bleed.left, bleed.top, bleed.right, bleed.bottom].join() };
+    }
+    // A host's fit transform can land a frame after the boxes resize, and a
+    // transform never fires a ResizeObserver: re-measure for a few frames and
+    // resize again only if the bleed moved.
+    function settle(frames = 6) {
+      cancelAnimationFrame(settleFrame);
+      settleFrame = 0;
+      if (!clipBox) return;
+      settleFrame = requestAnimationFrame(() => {
+        settleFrame = 0;
+        if (measure().key !== sizeKey) resize();
+        else if (frames > 1) settle(frames - 1);
+      });
+    }
+    function resize() {
+      const { W, H, bleed, key } = measure();
+      sizeKey = key;
+      const CW = W + bleed.left + bleed.right;
+      const CH = H + bleed.top + bleed.bottom;
+      // The stage keeps the layout; the canvas only reaches past it.
+      Object.assign(stage.style, {
+        left: `${-bleed.left}px`,
+        top: `${-bleed.top}px`,
+        right: `${-bleed.right}px`,
+        bottom: `${-bleed.bottom}px`
+      });
+      // A bled canvas spends no more pixels than the bare stage at 2x.
+      dpr = Math.min(window.devicePixelRatio || 1, 2, Math.sqrt((4 * W * H) / (CW * CH)));
+      renderer.setPixelRatio(dpr);
+      renderer.setSize(CW, CH, false);
+      layout = layoutFor(W, H);
+      camera.aspect = W / H;
+      camera.fov = layout.fov;
+      camera.setViewOffset(W, H, -bleed.left, layout.offsetY - bleed.top, CW, CH);
+      camera.updateProjectionMatrix();
+      const bw = Math.round(CW * dpr);
+      const bh = Math.round(CH * dpr);
+      target.setSize(bw, bh);
+      const uniforms = post.material.uniforms;
+      uniforms.resolution.value.set(bw, bh);
+      // The optics are measured from the stage centre in stage-relative x.
+      uniforms.edgeScale.value = layout.edgeScale * (CW / W);
+      uniforms.centre.value.set((bleed.left + W / 2) / CW, (bleed.bottom + H / 2) / CH);
+      applyOptics();
+      invalidate();
+      settle();
+    }
+    const onScroll = () => settle(1);
+    function applyOptics() {
+      post.material.uniforms.strength.value = layout.fringe * dpr * cfg.fringe;
+      post.material.uniforms.haze.value = layout.haze * dpr * cfg.haze;
+    }
+    const resizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(resize) : null;
+    resizeObserver?.observe(root);
+    // The clipping box can change size (fullscreen, a resized preview) and
+    // the editor's fit transform can change without the stage box resizing.
+    function watchClipBox() {
+      const next = bleeds() ? clipBoxOf(root) : null;
+      if (next === clipBox) return;
+      if (clipBox) resizeObserver?.unobserve(clipBox);
+      clipBox = next;
+      if (clipBox) resizeObserver?.observe(clipBox);
+    }
+    watchClipBox();
+    window.addEventListener('resize', resize);
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true });
+
+    function render() {
+      const n = slots.length;
+      for (let i = 0; i < n; i++) {
+        const slot = slots[i];
+        const s = offsetOf(i, motion.pos, n);
+        const visible = slot.ready && Math.abs(s) < VISIBLE_SPAN;
+        slot.mesh.visible = visible;
+        if (visible) {
+          updateMesh(slot.mesh, s);
+          // Draw the flat, nearest cards last.
+          slot.mesh.renderOrder = -Math.round(Math.abs(s) * 100);
+        }
+      }
+      renderer.setRenderTarget(target);
+      renderer.render(world, camera);
+      renderer.setRenderTarget(null);
+      renderer.render(postScene, postCamera);
+    }
+
+    // Frames are drawn only while something moves: a settled carousel costs
+    // nothing, and one scrolled out of view stops until it returns.
+    let frame = 0;
+    let last = 0;
+    function tick(now) {
+      frame = 0;
+      if (disposed) return;
+      const dt = last ? Math.min((now - last) / 1000, 0.1) : 1 / 60;
+      last = now;
+      const omega = reducedMotion ? 22 : cfg.settle;
+      if (!motion.dragging) {
+        [motion.pos, motion.vel] = springStep(motion.pos, motion.vel, motion.target, dt, omega);
+      }
+      if (onScreen) render();
+      const moving = motion.dragging || motion.pos !== motion.target || motion.vel !== 0;
+      if (moving && onScreen) frame = requestAnimationFrame(tick);
+      else last = 0;
+    }
+    function invalidate() {
+      if (!frame && !disposed) frame = requestAnimationFrame(tick);
+    }
+
+    const lost = (e) => { e.preventDefault(); cancelAnimationFrame(frame); frame = 0; };
+    const restored = () => {
+      for (const slot of slots) slot.texture.needsUpdate = true;
+      invalidate();
+    };
+    canvas.addEventListener('webglcontextlost', lost);
+    canvas.addEventListener('webglcontextrestored', restored);
+
+    resize();
+    root.setAttribute('data-fc-ready', '');
+
+    return {
+      invalidate,
+      slotPx: () => layout.slotPx,
+      renderNow: render,
+      update() {
+        applyBackground();
+        watchClipBox();
+        resize();
+        syncCards();
+        invalidate();
+      },
+      destroy() {
+        cancelAnimationFrame(frame);
+        cancelAnimationFrame(settleFrame);
+        resizeObserver?.disconnect();
+        window.removeEventListener('resize', resize);
+        window.removeEventListener('scroll', onScroll, { capture: true });
+        canvas.removeEventListener('webglcontextlost', lost);
+        canvas.removeEventListener('webglcontextrestored', restored);
+        slots.forEach(disposeSlot);
+        slots.length = 0;
+        post.geometry.dispose();
+        post.material.dispose();
+        target.dispose();
+        renderer.dispose();
+        // Free the context now rather than whenever the collector gets to it:
+        // an editor that rebuilds would otherwise run into the browser's cap.
+        renderer.forceContextLoss();
+        canvas.remove();
+      }
+    };
+  }
+
+  import('three')
+    .then((THREE) => {
+      if (disposed) return;
+      scene = createScene(THREE);
+      if (scene) {
+        announce();
+        scheduleAutoplay();
+      }
+    })
+    .catch(fail);
+
+  return {
+    setConfig(next) {
+      if (disposed) return;
+      const previousAutoplay = cfg.autoplay;
+      cfg = { ...ENGINE_DEFAULTS, ...next };
+      if (cfg.autoplay !== previousAutoplay) scheduleAutoplay();
+      scene?.update();
+    },
+    go,
+    goTo,
+    // Places the strip at an exact position without animating — for captures
+    // and for hosts that drive the carousel from their own scroll.
+    setPosition(position) {
+      if (disposed || !Number.isFinite(position)) return;
+      motion.pos = motion.target = position;
+      motion.vel = 0;
+      scene?.renderNow();
+    },
+    get position() { return motion.pos; },
+    get index() { return wrapIndex(Math.round(motion.target), count()); },
+    destroy() {
+      disposed = true;
+      cleanups.forEach((cleanup) => cleanup());
+      cleanups.length = 0;
+      scene?.destroy();
+      scene = null;
+      root.removeAttribute('data-fc-ready');
+      root.removeAttribute('data-dragging');
+    }
+  };
+}
+
+const root = document.querySelector('#sluzby .fc-root');
+const carousel = buildFoldCarousel(root, {
+ "cards": [
+  {
+   "src": "{{ A }}kalous/cards/olej.webp",
+   "title": "",
+   "subtitle": "",
+   "tag": "",
+   "caption": ""
+  },
+  {
+   "src": "{{ A }}kalous/cards/brzdy.webp",
+   "title": "",
+   "subtitle": "",
+   "tag": "",
+   "caption": ""
+  },
+  {
+   "src": "{{ A }}kalous/cards/diagnostika.webp",
+   "title": "",
+   "subtitle": "",
+   "tag": "",
+   "caption": ""
+  },
+  {
+   "src": "{{ A }}kalous/cards/pneu.webp",
+   "title": "",
+   "subtitle": "",
+   "tag": "",
+   "caption": ""
+  },
+  {
+   "src": "{{ A }}kalous/cards/stk.webp",
+   "title": "",
+   "subtitle": "",
+   "tag": "",
+   "caption": ""
+  },
+  {
+   "src": "{{ A }}kalous/cards/rozvody.webp",
+   "title": "",
+   "subtitle": "",
+   "tag": "",
+   "caption": ""
+  }
+ ],
+ "background": "#090b0f",
+ "startIndex": 0,
+ "settle": 10.5,
+ "autoplay": 0,
+ "wheel": "off",
+ "draggable": false,
+ "fringe": 1,
+ "haze": 1,
+ "smear": 1,
+ "preview": false,
+ "bleed": false
+});
+window.__fold = carousel;
+window.dispatchEvent(new Event('fold-ready'));
+window.addEventListener('pagehide', () => carousel.destroy(), { once: true });
+</script>
+<p class="pz-credit">Návrh webu: <a href="{{ owner_site }}" rel="noopener">{{ owner_name }}</a> · Fotografie: Unsplash</p>
+{% if show_banner %}<div class="pz-pv" id="pz-pv" role="note"><span>Nezávazný návrh nového webu pro <strong>{{ name }}</strong> · připravil {{ owner_name }}</span>
+<a class="pz-cta" href="{{ want_url }}">Chci tento web</a>{% if wa_url %}<a class="pz-cta" href="{{ wa_url }}" rel="noopener" target="_blank">WhatsApp</a>{% endif %}
+<button data-pz-skryt="" type="button">Skrýt</button></div>{% endif %}
+<script id="pz-js">(function(){
+var pv=document.getElementById('pz-pv');if(pv){var x=pv.querySelector('[data-pz-skryt]');x&&x.addEventListener('click',function(){pv.classList.add('pz-skryt');});}
+var HOOK="{{ form_webhook_url }}",LEAD="{{ lead_id }}";
+function lab(f,el){var l=el.id&&f.querySelector('label[for="'+el.id+'"]');if(!l)l=el.closest('label');var s=(l?l.textContent:'')||el.name||'';return s.replace(/\s+/g,' ').replace(/\*/g,'').trim();}
+document.addEventListener('submit',function(e){var f=e.target;if(!f||f.tagName!=='FORM'||f.hasAttribute('data-pz-ignore')||!HOOK)return;
+  var d={lead_id:LEAD,source:'preview',name:'',email:'',phone:'',message:''},rest=[],seen={};
+  Array.prototype.forEach.call(f.elements,function(el){ if(!el.name||el.type==='submit'||el.type==='button')return; if((el.type==='checkbox'||el.type==='radio')&&!el.checked)return;
+   var v=(el.value||'').trim(); if(!v)return; var n=el.name.toLowerCase();
+   if(/^(jmeno|name|jmeno_prijmeni)$/.test(n))d.name=v; else if(/^(email|e-mail)$/.test(n))d.email=v; else if(/^(telefon|phone|tel)$/.test(n))d.phone=v;
+   else {var k=lab(f,el)||el.name; if(seen[k]){seen[k].push(v);}else{seen[k]=[v];rest.push(k);}} });
+  d.message=rest.map(function(k){return k+': '+seen[k].join(', ');}).join('\n');
+  setTimeout(function(){ if(f.querySelector('[aria-invalid="true"],.chyba,.is-invalid'))return; if(!f.hasAttribute('novalidate')&&!f.checkValidity())return; if(!d.name&&!d.email&&!d.phone)return;
+   try{fetch(HOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch(err){}
+  },0);
+},true);
+})();</script></body>
+</html>

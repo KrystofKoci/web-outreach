@@ -1,0 +1,6 @@
+<div class="pv" id="pv" role="note" aria-label="{{ t.banner_aria }}">
+  <span>{{ t.banner_text_before }} <strong>{{ lead.name }}</strong> · {{ t.banner_prepared }} {{ owner_name }}</span>
+  <a class="pv-cta" href="{{ want_url }}">{{ t.banner_want }}</a>
+  {% if wa_url %}<a class="pv-cta" href="{{ wa_url }}" rel="noopener" target="_blank">{{ t.banner_wa }}</a>{% endif %}
+  <button class="pv-x" type="button" data-pv-close>{{ t.banner_hide }}</button>
+</div>

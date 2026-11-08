@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+
+<html lang="cs">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>{{ page_title }}</title>
+<script>
+  (function(){var q=new URLSearchParams(location.search),h=document.documentElement;
+  h.dataset.tema=(q.get('tema')==='tmava'||location.hash==='#tmava')?'tmava':'svetla';
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&q.get('pohyb')!=='0')h.classList.add('pohyb');})();
+</script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&amp;family=Karla:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="{{ A }}zaklad.css" rel="stylesheet"/>
+<style>
+  /* V04 Celoplošná fotka, malý nadpis – restaurace Ořech
+     Prostřený stůl se svíčkami přes celé hero, nadpis malý vlevo dole, drobné údaje v rozích fotky.
+     Podpisový pohyb: papírový lístek s jídly vyjede při scrollu přes stojící fotku, cestou se narovná a fotka za ním potemní.
+     Řízeno scrollem, běží i s „omezit animace“ (bez natočení zůstává jen posun stránky).
+     Světlá: denní fotka prostřeného stolu u okna v rámu s oblými rohy, text v ořechové na světlém závoji, lišta na papíře.
+     Tmavá: večerní fotka stolu se svíčkami od okraje k okraji, svíčky dostanou vlastní teplou záři (bez mihotání)
+     a hrana lístku chytá jejich světlo. */
+  :root {
+    --pozadi:#F6EEE3; --papir:#FBF6EE; --text:#3B2416; --tlumeny:#76604F; --linka:rgba(59,36,22,.16);
+    --akcent:#D2452B; --akcent-text:#FFFFFF; --stopa:#F0D9BE;
+    --na-foto:#3B2416; --na-foto-tlumeny:#523C2E;
+    --ram: 76px 12px 12px; --zaobleni: 26px; --lista-text: var(--text);
+    --foto: brightness(1.02) saturate(.94); --svicky: 0; --hrana: 0 -1px 0 rgba(59,36,22,.06);
+    --ramec-bg: #EFE5D8; --zakryti: #F6EEE3; --zakryti-sila: .5;
+    /* světlý závoj: zdola pod nadpisem a vpravo nahoře pod údaji */
+    --zavoj-ramec: radial-gradient(34% 30% at 100% 0%, rgba(246,238,227,.78), rgba(246,238,227,0) 100%),
+      linear-gradient(0deg, rgba(246,238,227,.96) 0%, rgba(246,238,227,.8) 22%, rgba(246,238,227,.3) 40%, rgba(246,238,227,0) 56%);
+    --stin-textu: none;
+  }
+  html[data-tema="tmava"] {
+    --pozadi:#1A110B; --papir:#22170F; --text:#F3E8DA; --tlumeny:#BBA894; --linka:rgba(243,232,218,.14);
+    --akcent:#E8603F; --akcent-text:#1A110B; --stopa:#A0613D;
+    --na-foto:#F6ECDF; --na-foto-tlumeny:#E9DBC8;
+    --ram: 0px; --zaobleni: 0px; --lista-text: var(--na-foto); --rohy-top: 96px;
+    --foto: brightness(.78) contrast(1.08) saturate(.92); --svicky: 1; --hrana: 0 -1px 0 rgba(255,190,140,.28);
+    --ramec-bg: #2a1b11; --zakryti: #140c07; --zakryti-sila: .55;
+    --zavoj-ramec: radial-gradient(46% 40% at 100% 0%, rgba(20,11,6,.92), rgba(20,11,6,.62) 45%, rgba(20,11,6,0) 100%),
+      linear-gradient(0deg, rgba(26,14,8,.78) 0%, rgba(26,14,8,.38) 26%, rgba(26,14,8,0) 52%), linear-gradient(180deg, rgba(26,14,8,.32) 0%, rgba(26,14,8,0) 22%);
+    --stin-textu: 0 1px 12px rgba(0,0,0,.55);
+  }
+  body { background: var(--pozadi); color: var(--text); font-family: "Karla", system-ui, sans-serif; }
+  .serif { font-family: "DM Serif Display", Georgia, serif; font-weight: 400; }
+  .doplnit { color: var(--tlumeny); }
+
+  /* ---------- lišta: logo, odkazy, rezervace telefonem ---------- */
+  .lista { position: fixed; inset: 0 0 auto 0; z-index: 30; height: 76px; display: flex; align-items: center; gap: 36px; padding: 0 clamp(22px, 3.2vw, 48px); color: var(--lista-text); }
+  .logo { font-family: "DM Serif Display", serif; font-size: 30px; line-height: 1; letter-spacing: -.01em; }
+  .odkazy { display: flex; gap: 26px; font-size: 15px; margin-right: auto; }
+  .odkazy a { opacity: .78; }
+  .odkazy a:hover { opacity: 1; }
+  .tel { font-size: 15px; }
+  .tel .doplnit { color: inherit; opacity: .85; }
+  .tema-prepinac { color: inherit; }
+  .menu-tl { display: none; height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); align-items: center; gap: 9px; font-size: 14px; }
+  .menu-tl i { display: block; width: 15px; height: 1.5px; background: currentColor; box-shadow: 0 5px 0 currentColor; transform: translateY(-2.5px); }
+  .menu-panel { display: none; }
+  /* lišta po odjetí fotky: dostane papírový podklad */
+  .lista.pod { background: color-mix(in srgb, var(--pozadi) 86%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); color: var(--text); }
+
+  /* ---------- scéna: stojící fotka + lístek, který přes ni vyjede ---------- */
+  .scena { position: relative; overflow-x: clip; }
+  .hero { position: sticky; top: 0; height: max(100svh, 640px); padding: var(--ram); --stopa-z: 4; }
+  .ramec { position: relative; height: 100%; border-radius: var(--zaobleni); overflow: hidden; isolation: isolate; background: var(--ramec-bg); }
+  /* fotka podle tématu: světlá = den, tmavá = večer */
+  html[data-tema="svetla"] .ramec .noc, html[data-tema="tmava"] .ramec .den { display: none; }
+  .ramec img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; filter: var(--foto);
+    transform: scale(calc(1 + var(--p, 0) * .06)); transform-origin: 70% 55%; will-change: transform; }
+  .ramec::after { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: var(--zavoj-ramec); }
+  /* za vyjíždějícím lístkem fotka ustoupí: ve světlé zesvětlí do papíru, v tmavé potemní */
+  .ztmaveni { position: absolute; inset: 0; z-index: 3; background: var(--zakryti); opacity: calc(var(--p, 0) * var(--zakryti-sila)); pointer-events: none; }
+  /* svíčky na stole: vlastní světlo tmavé verze */
+  .svicky { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: var(--svicky); mix-blend-mode: screen;
+    background: radial-gradient(14% 18% at 92% 51%, rgba(255,170,90,.42), transparent 70%), radial-gradient(10% 13% at 70% 40%, rgba(255,160,80,.32), transparent 70%),
+                radial-gradient(30% 30% at 82% 48%, rgba(255,140,60,.14), transparent 75%); }
+
+  .pata { position: absolute; z-index: 5; left: clamp(22px, 3vw, 44px); right: clamp(22px, 3vw, 44px); bottom: clamp(26px, 4.4vh, 44px); color: var(--na-foto); text-shadow: var(--stin-textu);
+    display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; }
+  .hero h1 { font-family: "DM Serif Display", serif; font-weight: 400; font-size: clamp(2.3rem, 3.7vw, 3.6rem); line-height: 1.02; letter-spacing: -.012em; max-width: 11em; }
+  .hero h1 em { font-style: italic; color: var(--na-foto-tlumeny); }
+  .hero h1 .sl-w { clip-path: inset(-.36em -.1em -.28em -.1em); }
+  .pod-nadpisem { display: flex; align-items: center; gap: 22px; margin-top: 22px; }
+  .pod-nadpisem p { max-width: 17em; font-size: 15.5px; line-height: 1.5; color: var(--na-foto-tlumeny); }
+  .cta { display: inline-flex; align-items: center; height: 54px; padding: 0 6px 0 24px; border-radius: 999px; background: var(--akcent); color: var(--akcent-text); font-size: 15.5px; font-weight: 600; white-space: nowrap; --fokus: var(--na-foto); text-shadow: none; }
+  .cta [data-magnet-vnitrek] { align-items: center; gap: 14px; }
+  .cta .kruh { width: 42px; height: 42px; border-radius: 99px; display: grid; place-items: center; background: color-mix(in srgb, var(--akcent-text) 18%, transparent); }
+  .cta .kruh svg { width: 16px; height: 16px; }
+  .rohy { position: absolute; z-index: 5; right: clamp(22px, 3vw, 44px); top: var(--rohy-top, 26px); text-align: right; font-size: 14px; line-height: 1.7; color: var(--na-foto-tlumeny); text-shadow: var(--stin-textu); }
+  .rohy b { color: var(--na-foto); font-weight: 600; margin-right: 8px; }
+  .rohy .doplnit { color: var(--na-foto-tlumeny); }
+
+  /* lístek */
+  .listek { position: relative; z-index: 6; width: min(780px, 50vw); margin: -156px clamp(20px, 4vw, 64px) 0 auto;
+    background: var(--papir); color: var(--text); border-radius: 22px 22px 0 0; padding: clamp(30px, 4vw, 54px) clamp(24px, 4vw, 60px) clamp(40px, 5vw, 70px);
+    box-shadow: var(--hrana), 0 -30px 70px -30px rgba(20,10,4,.55);
+    transform-origin: 100% 0; transform: translate3d(0, var(--lt, 0px), 0) rotate(var(--lr, 0deg)); will-change: transform; }
+  .listek-hlava { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; padding-bottom: 22px; border-bottom: 1px solid var(--linka); }
+  .listek h2 { font-family: "DM Serif Display", serif; font-weight: 400; font-size: clamp(2rem, 3vw, 2.8rem); line-height: 1.05; }
+  .listek-hlava p { color: var(--tlumeny); font-size: 15px; text-align: right; max-width: 18em; }
+  .jidla li { padding: 24px 0 22px; border-bottom: 1px solid var(--linka); }
+  .jidla .radek { display: flex; align-items: baseline; gap: 12px; }
+  .jidla h3 { font-family: "DM Serif Display", serif; font-weight: 400; font-size: clamp(1.35rem, 2vw, 1.7rem); line-height: 1.15; }
+  .jidla .tecky { flex: 1; border-bottom: 1px dotted color-mix(in srgb, var(--text) 35%, transparent); transform: translateY(-5px); min-width: 24px; }
+  .jidla .cena { font-size: 15px; white-space: nowrap; }
+  .jidla p { margin-top: 6px; color: var(--tlumeny); line-height: 1.5; max-width: 36em; }
+  .listek-pata { margin-top: 26px; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; font-size: 15px; }
+  .listek-pata a { border-bottom: 1px solid currentColor; padding-bottom: 2px; }
+  .listek-pata a:hover { color: var(--tlumeny); }
+  .dalsi { height: 18vh; }
+
+  /* ---------- 761–1100 px ---------- */
+  @media (max-width: 1100px) {
+    .odkazy { display: none; }
+    .menu-tl { display: inline-flex; margin-left: auto; }
+    .menu-panel { position: absolute; top: 100%; right: clamp(22px, 3.2vw, 48px); flex-direction: column; gap: 2px; padding: 6px; border-radius: 24px; background: var(--papir); color: var(--text); min-width: 210px; border: 1px solid var(--linka); }
+    .menu-panel.otevreno { display: flex; }
+    .menu-panel a { padding: 11px 16px; border-radius: 999px; font-size: 15px; }
+    .pod-nadpisem { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .listek { width: 58vw; margin-top: -80px; }
+    .pata { bottom: 70px; right: auto; max-width: 40vw; }
+  }
+  /* ---------- mobil ---------- */
+  @media (max-width: 760px) {
+    :root { --ram: 68px 10px 10px; --zaobleni: 22px; }
+    html[data-tema="tmava"] { --ram: 0px; --zaobleni: 0px; }
+    .lista { height: 68px; gap: 10px; }
+    .tel { display: none; }
+    .rohy { display: none; }
+    .hero h1 { font-size: clamp(2.2rem, 9.6vw, 2.8rem); }
+    .pod-nadpisem p { font-size: 15px; }
+    .pata { bottom: 96px; right: 22px; max-width: none; }
+    .listek { width: calc(100% - 20px); margin: -76px 10px 0; border-radius: 20px 20px 0 0; }
+    .listek-hlava { flex-direction: column; align-items: flex-start; }
+    .listek-hlava p { text-align: left; }
+  }
+</style>
+<style>
+  /* ---------- pokračování stránky pod lístkem (rozšíření 4. 11. 2026): rezervace, nápoje, kuchyně, hodnocení, patička ----------
+     Stejná paleta a písma. Pohyb: jen jemné odhalení sekcí (data-odhalit). Tmavá verze: teplá záře jako od svíček za papírem a fotkami. */
+  :root { --pole: rgba(59,36,22,.04); --pole-okraj: rgba(59,36,22,.34); --zare: none; }
+  html[data-tema="tmava"] { --pole: rgba(243,232,218,.05); --pole-okraj: rgba(243,232,218,.34);
+    --zare: radial-gradient(48% 60% at 18% 30%, rgba(255,150,70,.10), transparent 70%), radial-gradient(40% 50% at 86% 80%, rgba(232,96,63,.08), transparent 70%); }
+  html[data-tema="tmava"] input, html[data-tema="tmava"] select, html[data-tema="tmava"] textarea { color-scheme: dark; }
+  .blok { position: relative; padding: clamp(80px, 10vw, 140px) clamp(22px, 4vw, 64px); }
+  .blok::before { content: ""; position: absolute; inset: 0; background: var(--zare); pointer-events: none; }
+  .blok > * { position: relative; }
+  .uvnitr { max-width: 1240px; margin: 0 auto; }
+  .blok h2 { font-family: "DM Serif Display", serif; font-weight: 400; font-size: clamp(2rem, 3vw, 2.8rem); line-height: 1.05; letter-spacing: -.005em; }
+  .blok h2 em { font-style: italic; color: var(--tlumeny); }
+  .uvod { margin-top: 16px; color: var(--tlumeny); font-size: 16px; line-height: 1.55; max-width: 30em; }
+
+  /* rezervace */
+  .rez { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(32px, 6vw, 96px); align-items: start; }
+  .rez-kontakt { margin-top: 34px; padding-top: 22px; border-top: 1px solid var(--linka); font-size: 15.5px; line-height: 1.7; }
+  .rez-kontakt b { font-weight: 600; margin-right: 10px; }
+  .rez-kontakt a { border-bottom: 1px solid currentColor; }
+  .formular { background: var(--papir); border-radius: 22px; padding: clamp(24px, 3.4vw, 44px); display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px 16px;
+    box-shadow: 0 1px 0 var(--linka), 0 30px 60px -40px rgba(20,10,4,.45); }
+  .formular .pole { display: grid; gap: 7px; grid-column: span 3; min-width: 0; }
+  .formular input { min-width: 0; }
+  .formular .pole.tretina { grid-column: span 2; }
+  .formular .pole.cela { grid-column: 1 / -1; }
+  .formular label { font-size: 14px; font-weight: 500; }
+  .formular input, .formular select, .formular textarea { width: 100%; font: inherit; font-size: 16px; color: var(--text); background: var(--pole); border: 1px solid var(--pole-okraj); border-radius: 14px; height: 52px; padding: 0 16px; }
+  .formular select { appearance: none; -webkit-appearance: none; background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: calc(100% - 22px) 23px, calc(100% - 17px) 23px; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 40px; }
+  .formular textarea { height: auto; min-height: 104px; padding: 14px 16px; resize: vertical; line-height: 1.5; }
+  .formular ::placeholder { color: var(--tlumeny); opacity: 1; }
+  .formular input:focus-visible, .formular select:focus-visible, .formular textarea:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; border-color: var(--text); border-radius: 14px; }
+  .formular .odeslat { grid-column: 1 / -1; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 6px; }
+  .tlacitko { display: inline-flex; align-items: center; gap: 14px; height: 54px; padding: 0 6px 0 24px; border-radius: 999px; background: var(--akcent); color: var(--akcent-text); font-size: 15.5px; font-weight: 600; white-space: nowrap; }
+  .tlacitko:hover { background: color-mix(in srgb, var(--akcent) 88%, var(--text)); }
+  .tlacitko:focus-visible { outline: 2px solid var(--text); outline-offset: 4px; border-radius: 999px; }
+  .tlacitko .kruh { width: 42px; height: 42px; border-radius: 99px; display: grid; place-items: center; background: color-mix(in srgb, var(--akcent-text) 18%, transparent); }
+  .tlacitko .kruh svg { width: 16px; height: 16px; }
+  .hlaska { font-size: 15px; color: var(--tlumeny); min-height: 1.5em; }
+  .hlaska.ukazana { color: var(--text); }
+
+  /* nápojový lístek: papír jako jídelní lístek, kategorie ve dvou sloupcích */
+  .napoje-list { margin-top: 40px; background: var(--papir); border-radius: 22px; padding: clamp(28px, 4vw, 60px); box-shadow: 0 1px 0 var(--linka), 0 30px 60px -40px rgba(20,10,4,.45);
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px clamp(36px, 6vw, 90px); }
+  html[data-tema="tmava"] .napoje-list, html[data-tema="tmava"] .formular { box-shadow: 0 -1px 0 rgba(255,190,140,.22), 0 30px 70px -30px rgba(0,0,0,.6); }
+  .kategorie { padding: 22px 0 18px; break-inside: avoid; }
+  .kategorie h3 { font-family: "DM Serif Display", serif; font-weight: 400; font-style: italic; font-size: clamp(1.45rem, 2vw, 1.75rem); line-height: 1.15; padding-bottom: 12px; border-bottom: 1px solid var(--linka); }
+  .kategorie li { padding: 14px 0 12px; border-bottom: 1px solid var(--linka); }
+  .kategorie .radek { display: flex; align-items: baseline; gap: 12px; }
+  .kategorie .nazev { font-size: 17px; font-weight: 500; }
+  .kategorie .tecky { flex: 1; border-bottom: 1px dotted color-mix(in srgb, var(--text) 35%, transparent); transform: translateY(-5px); min-width: 24px; }
+  .kategorie .cena { font-size: 15px; white-space: nowrap; }
+  .kategorie p { margin-top: 3px; font-size: 14.5px; color: var(--tlumeny); }
+
+  /* kuchyně: mozaika 8 fotek */
+  .kuchyne-hlava { display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; flex-wrap: wrap; }
+  .mozaika { margin-top: 40px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: clamp(170px, 17vw, 270px); gap: clamp(10px, 1.2vw, 16px);
+    grid-template-areas: "a b b c" "a d e c" "f f g h" "f f g h"; }
+  .mozaika figure { position: relative; overflow: hidden; border-radius: 14px; background: var(--ramec-bg); }
+  .mozaika img { width: 100%; height: 100%; object-fit: cover; filter: var(--foto-k, none); }
+  html[data-tema="tmava"] .mozaika figure::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 90% at 50% 10%, rgba(255,170,90,.10), transparent 60%), linear-gradient(0deg, rgba(20,11,6,.28), transparent 45%); }
+  html[data-tema="svetla"] { --foto-k: brightness(1.05) saturate(.95); }
+  html[data-tema="tmava"] { --foto-k: brightness(.92) saturate(.92); }
+  .mozaika .m-a { grid-area: a; } .mozaika .m-b { grid-area: b; } .mozaika .m-c { grid-area: c; } .mozaika .m-d { grid-area: d; }
+  .mozaika .m-e { grid-area: e; } .mozaika .m-f { grid-area: f; } .mozaika .m-g { grid-area: g; } .mozaika .m-h { grid-area: h; }
+
+  /* hodnocení Google: na střed, pod 50 recenzí jen známka */
+  .hodnoceni { text-align: center; padding-top: clamp(40px, 6vw, 80px); padding-bottom: clamp(60px, 8vw, 110px); }
+  .hodnoceni .znamka { display: inline-flex; align-items: baseline; gap: 12px; font-family: "DM Serif Display", serif; font-size: clamp(2.4rem, 4vw, 3.4rem); line-height: 1; }
+  .hodnoceni .znamka svg { width: .7em; height: .7em; color: var(--akcent); align-self: center; }
+  .hodnoceni .znamka .z5 { font-size: .45em; color: var(--tlumeny); font-family: "Karla", sans-serif; }
+  .hodnoceni p { margin-top: 12px; color: var(--tlumeny); font-size: 15.5px; }
+
+  /* patička */
+  .paticka { border-top: 1px solid var(--linka); padding: clamp(48px, 6vw, 80px) clamp(22px, 4vw, 64px) 40px; }
+  .paticka .uvnitr { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 32px; align-items: start; }
+  .paticka .logo { font-size: 40px; color: var(--text); }
+  .paticka h3 { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .paticka p { font-size: 15px; line-height: 1.6; color: var(--tlumeny); }
+  .paticka a.odkaz { color: var(--text); border-bottom: 1px solid currentColor; }
+  .paticka a.odkaz:hover { color: var(--tlumeny); }
+  .paticka .spodek { max-width: 1240px; margin: 48px auto 0; padding-top: 20px; border-top: 1px solid var(--linka); font-size: 14px; color: var(--tlumeny); }
+
+  .menu-panel .panel-tel { display: none; }
+  @media (max-width: 1100px) {
+    .rez { grid-template-columns: 1fr; }
+    .mozaika { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: clamp(150px, 30vw, 300px); grid-template-areas: "a b" "a c" "d e" "f f" "g h" "g h"; }
+    .paticka .uvnitr { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 760px) {
+    .menu-panel .panel-tel { display: block; }
+    .formular { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 12px; }
+    .formular .pole, .formular .pole.tretina { grid-column: 1 / -1; }
+    .napoje-list { grid-template-columns: 1fr; padding: 22px 20px 26px; }
+    .mozaika { gap: 8px; grid-auto-rows: 44vw; }
+    .mozaika figure { border-radius: 10px; }
+    .paticka .uvnitr { grid-template-columns: 1fr; gap: 24px; }
+  }
+</style>
+<style id="pz-css">
+.pz-hod{padding:clamp(56px,9vw,104px) 24px;text-align:center;color:inherit;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-hod .pz-in{max-width:560px;margin:0 auto}
+.pz-hod .pz-cislo{font-size:clamp(44px,7vw,72px);line-height:1;margin:0;font-weight:500;letter-spacing:-.02em}
+.pz-hod .pz-cislo span{font-size:.32em;opacity:.7;letter-spacing:0;margin-left:.3em}
+.pz-hod .pz-hv{position:relative;display:inline-block;font-size:22px;letter-spacing:4px;margin:14px 0 8px;color:color-mix(in srgb,currentColor 22%,transparent)}
+.pz-hod .pz-hv b{position:absolute;inset:0 auto 0 0;overflow:hidden;white-space:nowrap;color:var(--akcent,var(--accent,#E3A008));font-weight:400}
+.pz-hod .pz-pod{margin:0 0 14px;opacity:.78}
+.pz-hod a{color:inherit}
+.pz-pata{padding:28px 24px 34px;text-align:center;font-size:14px;opacity:.85;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-pata p{margin:4px 0}.pz-pata a{color:inherit}
+.pz-credit{font-size:12px;opacity:.7;text-align:center;padding:0 24px 22px}
+.pz-credit a{color:inherit}
+.pz-pv{position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;background:#111827;color:#fff;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;
+ padding:10px 14px;border-radius:14px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.pz-pv a{color:#fff}.pz-pv .pz-cta{background:#fff;color:#111827;text-decoration:none;font-weight:700;padding:.4em .85em;border-radius:999px}
+.pz-pv button{background:none;border:0;color:#fff;opacity:.8;cursor:pointer;font:inherit;text-decoration:underline}
+.pz-pv.pz-skryt{display:none}
+@media print{.pz-pv{display:none}}
+</style></head>
+<body>
+<header class="lista">
+<a aria-label="{{ brand }}, restaurace – úvod" class="logo" href="#">{{ brand }}</a>
+<nav aria-label="Hlavní navigace" class="odkazy">
+<a href="#listek">Lístek</a>
+<a href="#napoje">Nápoje</a>
+<a href="#kuchyne">Kuchyně</a>
+<a href="#rezervace">Rezervace</a>
+<a href="#kontakt">Kontakt</a>
+</nav>
+{% if phone %}<a class="tel" href="tel:{{ phone_href }}">Tel. {{ phone }}</a>{% endif %}
+<button aria-controls="menu-panel" aria-expanded="false" class="menu-tl" data-menu-zaklad="" type="button"><i></i>Menu</button>
+<button aria-label="Přepnout na tmavý režim" aria-pressed="false" class="tema-prepinac" data-prepnout-tema="" type="button">
+<svg class="ikona-slunce" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+<svg class="ikona-mesic" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg>
+</button>
+<nav aria-label="Menu" class="menu-panel" id="menu-panel">
+<a href="#listek">Lístek</a><a href="#napoje">Nápoje</a><a href="#kuchyne">Kuchyně</a><a href="#rezervace">Rezervace</a><a href="#kontakt">Kontakt</a>{% if phone %}<a class="panel-tel" href="tel:{{ phone_href }}">Tel. {{ phone }}</a>{% endif %}
+</nav>
+</header>
+<main>
+<div class="scena">
+<section class="hero">
+<div class="ramec">
+<picture class="den">
+<source height="1423" media="(max-width: 760px)" srcset="{{ A }}img/V04-restaurace-den-m.webp" width="1100"/>
+<img alt="Prostřený dřevěný stůl u okna v denním světle: talíře s příbory na pletených podložkách, sklenice a dvě keramické misky" fetchpriority="high" height="1600" src="{{ A }}img/V04-restaurace-den.webp" width="2400"/>
+</picture>
+<picture class="noc">
+<source height="1430" media="(max-width: 760px)" srcset="{{ A }}img/V04-restaurace-stul-m.webp" width="1100"/>
+<img alt="Prostřený stůl z tmavého dřeva se složeným ubrouskem na talíři a svíčkami ve sklenicích, v pozadí večerní restaurace" height="1500" loading="lazy" src="{{ A }}img/V04-restaurace-stul.webp" width="2400"/>
+</picture>
+<div aria-hidden="true" class="svicky"></div>
+<div aria-hidden="true" class="ztmaveni"></div>
+<div class="pata">
+<div>
+<h1 data-slozit="">Sezónní kuchyně<br/><em>bez zbytečných ozdob.</em></h1>
+<div class="pod-nadpisem" data-po-nadpisu="0.1">
+<a class="cta" data-magnet="" href="#rezervace"><span data-magnet-vnitrek="">Rezervovat stůl<span aria-hidden="true" class="kruh"><svg fill="none" stroke="currentColor" stroke-width="1.6" viewbox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></span></span></a>
+<p>Lístek se mění s ročním obdobím, talíře zůstávají jednoduché.</p>
+</div>
+</div>
+</div>
+<p class="rohy" data-po-nadpisu="0.3">{% if hours_today %}<span><b>Otevřeno</b>{{ hours_today }}</span>{% endif %}<br/>{% if address %}<span><b>Adresa</b>{{ address }}</span>{% endif %}</p>
+</div>
+</section>
+<section aria-labelledby="listek-h" class="listek" id="listek">
+<div class="listek-hlava">
+<h2 id="listek-h">Z našeho lístku</h2>
+<p>Čtyři chody, jak jdou po sobě.</p>
+</div>
+<ul class="jidla" data-odhalit="deti">
+
+
+
+
+</ul>
+<div class="listek-pata"><a href="#">Celý lístek</a><a href="#">Polední menu</a></div>
+</section>
+<div aria-hidden="true" class="dalsi"></div>
+</div>
+
+<section aria-labelledby="rez-h" class="blok" id="rezervace">
+<div class="uvnitr rez">
+<div data-odhalit="">
+<h2 id="rez-h">Rezervace stolu</h2>
+<p class="uvod">Napište nám, kdy přijdete a kolik vás bude. Nebo zavolejte.</p>
+<p class="rez-kontakt">{% if phone %}<span><b>Telefon</b><a href="tel:{{ phone_href }}">{{ phone }}</a></span>{% endif %}<br/>{% if hours_today %}<span><b>Otevřeno</b>{{ hours_today }}</span>{% endif %}</p>
+</div>
+<form aria-describedby="rez-hlaska" class="formular" data-odhalit="" novalidate="">
+<div class="pole"><label for="r-jmeno">Jméno</label><input autocomplete="name" id="r-jmeno" name="jmeno" required="" type="text"/></div>
+<div class="pole"><label for="r-telefon">Telefon</label><input autocomplete="tel" id="r-telefon" inputmode="tel" name="telefon" required="" type="tel"/></div>
+<div class="pole tretina"><label for="r-datum">Datum</label><input id="r-datum" name="datum" required="" type="date"/></div>
+<div class="pole tretina"><label for="r-cas">Čas</label><input id="r-cas" name="cas" required="" step="900" type="time"/></div>
+<div class="pole tretina"><label for="r-osoby">Počet osob</label>
+<select id="r-osoby" name="osoby"><option>1</option><option selected="">2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option value="vic">Víc než 8</option></select></div>
+<div class="pole cela"><label for="r-poznamka">Poznámka <span style="font-weight:400;color:var(--tlumeny)">(nepovinné)</span></label><textarea id="r-poznamka" name="poznamka" placeholder="Například dětská židlička nebo stůl u okna" rows="3"></textarea></div>
+<div class="odeslat">
+<button class="tlacitko" type="submit">Odeslat rezervaci<span aria-hidden="true" class="kruh"><svg fill="none" stroke="currentColor" stroke-width="1.6" viewbox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></span></button>
+<p aria-live="polite" class="hlaska" id="rez-hlaska" role="status"></p>
+</div>
+</form>
+</div>
+</section>
+<section aria-labelledby="napoje-h" class="blok" id="napoje">
+<div class="uvnitr">
+<div data-odhalit="">
+<h2 id="napoje-h">Nápojový lístek</h2>
+
+</div>
+<div class="napoje-list" data-odhalit="">
+<div class="kategorie">
+<h3>Pivo z čepu</h3>
+<ul>
+
+
+</ul>
+</div>
+<div class="kategorie">
+<h3>Víno rozlévané</h3>
+<ul>
+
+
+</ul>
+</div>
+<div class="kategorie">
+<h3>Víno lahvové</h3>
+<ul>
+
+
+</ul>
+</div>
+<div class="kategorie">
+<h3>Nealko</h3>
+<ul>
+
+
+
+</ul>
+</div>
+<div class="kategorie">
+<h3>Káva a čaj</h3>
+<ul>
+
+
+
+</ul>
+</div>
+<div class="kategorie">
+<h3>Digestiv</h3>
+<ul>
+
+
+</ul>
+</div>
+</div>
+</div>
+</section>
+<section aria-labelledby="kuchyne-h" class="blok" id="kuchyne">
+<div class="uvnitr">
+<div class="kuchyne-hlava" data-odhalit="">
+<div>
+<h2 id="kuchyne-h">Z kuchyně</h2>
+<p class="uvod">Co se děje, než talíř dojde ke stolu.</p>
+</div>
+</div>
+<div class="mozaika" data-odhalit="">
+<figure class="m-a"><img alt="Kuchař u plotny, z pánve šlehají plameny" height="1300" loading="lazy" src="{{ A }}img/V04-restaurace-k-plamen.webp" width="1040"/></figure>
+<figure class="m-b"><img alt="Dušená masová kost se zeleninou a kaší v tmavém hlubokém talíři na dřevěném podnosu" height="911" loading="lazy" src="{{ A }}img/V04-restaurace-k-talir.webp" width="1400"/></figure>
+<figure class="m-c"><img alt="Kuchař v zástěře dokončuje řadu talířů s malými porcemi a klíčky" height="1300" loading="lazy" src="{{ A }}img/V04-restaurace-k-kuchar.webp" width="922"/></figure>
+<figure class="m-d"><img alt="Ruka pokládá dvěma lžícemi kuličku na talíř s tenkými plátky" height="1300" loading="lazy" src="{{ A }}img/V04-restaurace-k-lzice.webp" width="1083"/></figure>
+<figure class="m-e"><img alt="Těstoviny posypané strouhankou v keramické misce, pohled shora" height="1300" loading="lazy" src="{{ A }}img/V04-restaurace-k-testoviny.webp" width="1254"/></figure>
+<figure class="m-f"><img alt="Kuchař s tetovanýma rukama upravuje lžičkou zeleninu na talíři" height="934" loading="lazy" src="{{ A }}img/V04-restaurace-k-ruce.webp" width="1400"/></figure>
+<figure class="m-g"><img alt="Dva kuchaři u výdeje pod měděnou lampou plní hluboké talíře" height="1170" loading="lazy" src="{{ A }}img/V04-restaurace-k-vydej.webp" width="1300"/></figure>
+<figure class="m-h"><img alt="Kuchař dochucuje talíře na výdeji, vedle mlýnek na pepř a kovové formičky" height="1006" loading="lazy" src="{{ A }}img/V04-restaurace-k-pass.webp" width="1300"/></figure>
+</div>
+</div>
+</section>
+
+{# SEKCE_PATCH_V1 #}{% include "_onas.html.j2" %}
+<section class="pz-mapa-sec" style="padding:0 0 clamp(40px,6vw,80px)">{% include "_mapa.html.j2" %}</section>
+{% include "_recenze.html.j2" %}
+{% if rating %}<section aria-labelledby="hod-h" class="blok hodnoceni" data-odhalit="">
+<h2 class="sr-only" id="hod-h">Hodnocení na Googlu</h2>
+<p class="znamka"><svg aria-hidden="true" fill="currentColor" viewbox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"></path></svg>{{ rating_txt }}<span class="z5">z 5</span></p>
+<p>Hodnocení na Googlu<span class="pocet"> · {{ rating_txt }} recenzí</span></p>
+</section>{% endif %}
+</main>
+<footer class="paticka" id="kontakt">
+<div class="uvnitr">
+<div><p class="logo">{{ brand }}</p><p style="margin-top:10px">Restaurace</p></div>
+{% if address %}<div><h3>Adresa</h3><p>{{ address }}<br/><a class="odkaz" href="#">Otevřít v mapě</a></p></div>{% endif %}
+{% if hours_today %}<div><h3>Otevírací doba</h3><p>{{ hours_today }}</p></div>{% endif %}
+{% if phone %}<div><h3>Rezervace</h3><p><a class="odkaz" href="tel:{{ phone_href }}">{{ phone }}</a><br/><a class="odkaz" href="#rezervace">Formulář rezervace</a></p></div>{% endif %}
+</div>
+<p class="spodek">© {{ brand }}</p>
+</footer>
+<script>
+  (function(){ var b=document.querySelector('.menu-tl'), p=document.getElementById('menu-panel');
+    b.addEventListener('click', function(){ var o=p.classList.toggle('otevreno'); b.setAttribute('aria-expanded', o?'true':'false'); }); })();
+</script>
+<script>
+  /* rezervace je ukázka: formulář nic neodesílá */
+  (function(){ var f=document.querySelector('.formular'), h=document.getElementById('rez-hlaska');
+    f.addEventListener('submit', function(e){ e.preventDefault(); h.textContent='Děkujeme, rezervaci vám potvrdíme.'; h.classList.add('ukazana'); }); })();
+</script>
+<script defer="" src="{{ A }}zaklad.js"></script>
+<script>
+  /* Podpisový pohyb V04: lístek vyjede přes stojící fotku.
+     p = jak daleko je horní hrana lístku od spodku okna k ~12 % výšky okna (0 → 1).
+     Lístek se cestou narovná (−3,2° → 0) a jde o kus pomaleji než stránka (zpoždění 60 px → 0), fotka za ním se nepatrně přiblíží a potemní.
+     Řízeno scrollem, běží i s „omezit animace“; ?pohyb=0 nechá lístek rovný. Lišta dostane podklad, až fotka odjede. */
+  (function () {
+    var q = new URLSearchParams(location.search), staticky = q.get('pohyb') === '0';
+    var listek = document.querySelector('.listek'), hero = document.querySelector('.hero'), lista = document.querySelector('.lista');
+    var bezi = false;
+    function hl(t) { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); }
+    function kresli() {
+      bezi = false;
+      var H = window.innerHeight, r = listek.getBoundingClientRect();
+      var p = hl((H - r.top + (parseFloat(getComputedStyle(listek).getPropertyValue('--lt')) || 0)) / (H * 0.88));
+      hero.style.setProperty('--p', p.toFixed(4));
+      if (!staticky) {
+        listek.style.setProperty('--lr', (-3.2 * (1 - p)).toFixed(3) + 'deg');
+        listek.style.setProperty('--lt', ((innerWidth < 761 ? 16 : 60) * (1 - p)).toFixed(1) + 'px');
+      }
+      lista.classList.toggle('pod', r.top < 80);
+    }
+    function pozadej() { if (!bezi) { bezi = true; requestAnimationFrame(kresli); } }
+    addEventListener('scroll', pozadej, { passive: true }); addEventListener('resize', pozadej);
+    kresli();
+    window.V04 = { stav: function () { return getComputedStyle(hero).getPropertyValue('--p'); } };
+  })();
+</script>
+<p class="pz-credit">Návrh webu: <a href="{{ owner_site }}" rel="noopener">{{ owner_name }}</a> · Fotografie: Unsplash</p>
+{% if show_banner %}<div class="pz-pv" id="pz-pv" role="note"><span>Nezávazný návrh nového webu pro <strong>{{ name }}</strong> · připravil {{ owner_name }}</span>
+<a class="pz-cta" href="{{ want_url }}">Chci tento web</a>{% if wa_url %}<a class="pz-cta" href="{{ wa_url }}" rel="noopener" target="_blank">WhatsApp</a>{% endif %}
+<button data-pz-skryt="" type="button">Skrýt</button></div>{% endif %}
+<script id="pz-js">(function(){
+var pv=document.getElementById('pz-pv');if(pv){var x=pv.querySelector('[data-pz-skryt]');x&&x.addEventListener('click',function(){pv.classList.add('pz-skryt');});}
+var HOOK="{{ form_webhook_url }}",LEAD="{{ lead_id }}";
+function lab(f,el){var l=el.id&&f.querySelector('label[for="'+el.id+'"]');if(!l)l=el.closest('label');var s=(l?l.textContent:'')||el.name||'';return s.replace(/\s+/g,' ').replace(/\*/g,'').trim();}
+document.addEventListener('submit',function(e){var f=e.target;if(!f||f.tagName!=='FORM'||f.hasAttribute('data-pz-ignore')||!HOOK)return;
+  var d={lead_id:LEAD,source:'preview',name:'',email:'',phone:'',message:''},rest=[],seen={};
+  Array.prototype.forEach.call(f.elements,function(el){ if(!el.name||el.type==='submit'||el.type==='button')return; if((el.type==='checkbox'||el.type==='radio')&&!el.checked)return;
+   var v=(el.value||'').trim(); if(!v)return; var n=el.name.toLowerCase();
+   if(/^(jmeno|name|jmeno_prijmeni)$/.test(n))d.name=v; else if(/^(email|e-mail)$/.test(n))d.email=v; else if(/^(telefon|phone|tel)$/.test(n))d.phone=v;
+   else {var k=lab(f,el)||el.name; if(seen[k]){seen[k].push(v);}else{seen[k]=[v];rest.push(k);}} });
+  d.message=rest.map(function(k){return k+': '+seen[k].join(', ');}).join('\n');
+  setTimeout(function(){ if(f.querySelector('[aria-invalid="true"],.chyba,.is-invalid'))return; if(!f.hasAttribute('novalidate')&&!f.checkValidity())return; if(!d.name&&!d.email&&!d.phone)return;
+   try{fetch(HOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch(err){}
+  },0);
+},true);
+})();</script></body>
+</html>

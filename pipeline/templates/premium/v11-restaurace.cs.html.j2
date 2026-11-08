@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+
+<html lang="cs">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>{{ page_title }}</title>
+<script>
+  (function(){var q=new URLSearchParams(location.search),h=document.documentElement;
+  h.dataset.tema=(q.get('tema')==='tmava'||location.hash==='#tmava')?'tmava':'svetla';
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&q.get('pohyb')!=='0')h.classList.add('pohyb');})();
+</script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&amp;family=Karla:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="{{ A }}zaklad.css" rel="stylesheet"/>
+<style>
+  /* V11 Nadpis + pás karet – restaurace Ořech
+     Wordmark OŘECH přes celou šířku, pod ním řada s větou a CTA, dole fotopás (stůl u okna, kuchař, omáčka, těstoviny, talíř s vínem).
+     Podpisový pohyb: scroll posouvá pás do strany jako talíře na výdeji, každá fotka má vlastní hloubku (jde jinou rychlostí nahoru)
+     a písmena wordmarku se rozjedou různou rychlostí. Řízeno scrollem, běží i s „omezit animace“.
+     Světlá: slonová kost, wordmark v ořechové. Tmavá: noční restaurace, nad pásem svítí teplé lampy výdeje a fotky jsou jimi tónované. */
+  :root {
+    --pozadi:#F6EEE3; --text:#3B2416; --tlumeny:#76604F; --linka:rgba(59,36,22,.16);
+    --akcent:#D2452B; --akcent-text:#FFFFFF; --stopa:#E9C9A8;
+    /* světlá: všech pět fotek do společného teplého tónu (sjednocení studených bílých talířů a teplých oken) */
+    --lampy: 0; --foto: saturate(.88) sepia(.12) contrast(1.02); --foto-ton: rgba(214,150,90,.22);
+  }
+  html[data-tema="tmava"] {
+    --pozadi:#1A110B; --text:#F3E8DA; --tlumeny:#BBA894; --linka:rgba(243,232,218,.14);
+    --akcent:#E8603F; --akcent-text:#1A110B; --stopa:#A0613D;
+    --lampy: 1; --foto: brightness(.86) saturate(.9) contrast(1.06); --foto-ton: rgba(160,80,30,.22);
+  }
+  body { background: var(--pozadi); color: var(--text); font-family: "Karla", system-ui, sans-serif; }
+  .doplnit { color: var(--tlumeny); }
+
+  /* ---------- lišta: odkazy vlevo, rezervace vpravo (logo = wordmark) ---------- */
+  .lista { position: relative; z-index: 20; height: 72px; display: flex; align-items: center; gap: 28px; padding: 0 clamp(20px, 3vw, 44px); font-size: 15px; }
+  .lista nav { display: flex; gap: 26px; margin-right: auto; }
+  .lista nav a { color: var(--tlumeny); }
+  .lista nav a:hover, .lista nav a[aria-current] { color: var(--text); }
+  .lista .tel:hover { color: var(--tlumeny); }
+  .menu-tl { display: none; height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); align-items: center; gap: 9px; font-size: 14px; margin-right: auto; }
+  .menu-tl i { display: block; width: 15px; height: 1.5px; background: currentColor; box-shadow: 0 5px 0 currentColor; transform: translateY(-2.5px); }
+  .lista .menu-panel { display: none; }
+
+  /* ---------- hero ---------- */
+  .hero { position: relative; min-height: max(calc(100svh - 72px), 600px); overflow: hidden; isolation: isolate; display: flex; flex-direction: column; --stopa-z: 4;
+    padding: 0 clamp(20px, 3vw, 44px) clamp(24px, 3.4vh, 36px); }
+  .wordmark { font-family: "DM Serif Display", serif; font-weight: 400; line-height: .78; letter-spacing: -.02em; white-space: nowrap;
+    font-size: var(--wm, 24.6vw); padding-top: .17em; margin-left: -.035em; text-align: center; }
+  .wordmark .pis { display: inline-block; position: relative; }
+  /* písmena vyjíždějí zespodu jen nad linkou (spodní hrana ořezu = účaří) */
+  .wordmark .sl-w { clip-path: inset(-.5em -.1em 0 -.1em); }
+  /* háček nad Ř: vlastní, blíž k písmenu (výchozí háček DM Serif Display visí vysoko a čte se jako samostatná značka) */
+  .wordmark .hacek { position: absolute; left: 50%; top: var(--hacek-y, -.4em); transform: translateX(-50%) scale(.82); transform-origin: 50% 100%; line-height: 1; pointer-events: none; }
+  .rada { display: flex; align-items: center; justify-content: space-between; gap: 32px; margin-top: clamp(12px, 2.2vh, 24px); padding-top: 16px; border-top: 1px solid var(--linka); position: relative; z-index: 5; background: var(--pozadi); }
+  .veta { font-family: "DM Serif Display", serif; font-size: clamp(1.4rem, 2vw, 1.9rem); line-height: 1.15; max-width: 22em; }
+  .veta em { font-style: italic; color: var(--tlumeny); }
+  .rada-vpravo { display: flex; align-items: center; gap: 26px; }
+  .rada-vpravo p { font-size: 14px; line-height: 1.6; color: var(--tlumeny); text-align: right; }
+  .rada-vpravo b { color: var(--text); font-weight: 600; margin-right: 6px; }
+  .cta { display: inline-flex; align-items: center; height: 56px; padding: 0 7px 0 26px; border-radius: 999px; background: var(--akcent); color: var(--akcent-text); font-size: 16px; font-weight: 600; white-space: nowrap; }
+  .cta [data-magnet-vnitrek] { align-items: center; gap: 14px; }
+  .cta .kruh { width: 42px; height: 42px; border-radius: 99px; display: grid; place-items: center; background: color-mix(in srgb, var(--akcent-text) 18%, transparent); }
+  .cta .kruh svg { width: 16px; height: 16px; }
+
+  /* fotopás: výdej */
+  .vydej { position: relative; flex: 1; min-height: 340px; margin-top: clamp(16px, 2.6vh, 28px); }
+  .pas { position: absolute; left: 0; top: 0; bottom: 0; display: flex; gap: 14px; align-items: stretch; transform: translate3d(var(--px, 0px), 0, 0); will-change: transform; }
+  .pas figure { position: relative; height: 100%; flex: none; translate: 0 var(--fy, 0px); will-change: translate; }
+  .pas .foto { position: relative; height: calc(100% - 28px); border-radius: 14px; overflow: hidden; background: #2a1b11; }
+  .pas img { height: 100%; width: auto; max-width: none; object-fit: cover; filter: var(--foto); }
+  .pas .foto::after { content: ""; position: absolute; inset: 0; background: var(--foto-ton); mix-blend-mode: soft-light; pointer-events: none; }
+  .pas figcaption { margin-top: 8px; font-size: 13px; color: var(--tlumeny); white-space: nowrap; }
+  /* lampy výdeje (tmavá): teplé kužele nad pásem */
+  .lampy { position: absolute; left: 0; right: 0; top: 0; height: 46%; z-index: 2; pointer-events: none; opacity: calc(var(--lampy) * .9); mix-blend-mode: screen;
+    background: radial-gradient(11% 70% at 12% 0%, rgba(255,170,96,.30), transparent 72%), radial-gradient(11% 70% at 36% 0%, rgba(255,170,96,.26), transparent 72%),
+                radial-gradient(11% 70% at 60% 0%, rgba(255,170,96,.28), transparent 72%), radial-gradient(11% 70% at 84% 0%, rgba(255,170,96,.26), transparent 72%); }
+  .lampy-sviti { position: absolute; left: 0; right: 0; top: -1px; height: 2px; z-index: 2; opacity: var(--lampy); pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgba(255,190,130,.55) 12%, transparent 22%, rgba(255,190,130,.5) 36%, transparent 46%, rgba(255,190,130,.55) 60%, transparent 70%, rgba(255,190,130,.5) 84%, transparent 94%); }
+
+  /* ---------- nabídka: řádky menu, karusel Axle Bloom (HorizonX) střídavě vpravo a vlevo ---------- */
+  .nabidka { padding: clamp(80px, 9vw, 128px) clamp(20px, 3vw, 44px) 120px; max-width: 1352px; margin: 0 auto; }
+  .nabidka h2 { font-family: "DM Serif Display", serif; font-weight: 400; font-size: clamp(2.2rem, 3.6vw, 3.3rem); line-height: 1.04; margin-bottom: clamp(28px, 4vw, 52px); }
+  .menu-radek { display: grid; grid-template-columns: minmax(260px, 5fr) 7fr; column-gap: clamp(28px, 5vw, 80px); align-items: center;
+    padding: clamp(18px, 2vw, 28px) 0; border-top: 1px solid var(--linka); scroll-margin-top: 24px; }
+  .menu-radek:last-child { border-bottom: 1px solid var(--linka); }
+  .menu-text h3 { font-family: "DM Serif Display", serif; font-weight: 400; font-size: clamp(1.9rem, 2.8vw, 2.6rem); line-height: 1.05; }
+  .menu-text > p { margin-top: 12px; color: var(--tlumeny); line-height: 1.6; max-width: 30em; }
+  .menu-udaje { margin-top: 22px; display: grid; gap: 0; max-width: 26em; }
+  .menu-udaje div { display: flex; align-items: baseline; gap: 12px; padding: 9px 0; border-top: 1px solid var(--linka); font-size: 15px; }
+  .menu-udaje dt { color: var(--text); font-weight: 600; }
+  .menu-udaje .tecky { flex: 1; min-width: 20px; border-bottom: 1px dotted color-mix(in srgb, var(--text) 35%, transparent); transform: translateY(-4px); }
+  .menu-udaje dd { white-space: nowrap; }
+  /* Kolo 5 (majitel): kolo o 7 % větší a o 10 % blíž k textu.
+     Komponenta kreslí kolo podle kratší strany plochy (tady výška) → výška plochy ×1,07 (dřív clamp(320px, 30vw, 430px)) = kolo ×1,07
+     i se stejnými okraji, takže se nic neořízne. Mezera textový sloupec → kolo −10 %: plocha posunutá doleva o 2,6 % své výšky
+     (na 1440 px 12 px; zbytek zkrácení mezery dělá samo zvětšení kola). Šířka plochy i text zůstávají. */
+  .menu-foto { --vyska: clamp(342.4px, 32.1vw, 460.1px); height: var(--vyska); margin-inline: calc(var(--vyska) * -.026) calc(var(--vyska) * .026); }
+  .menu-foto .ab-root { width: 100%; height: 100%; border-radius: 18px; }
+  /* Kolo 8 (majitel): řádky na přeskáčku – 1., 3., 5. karusel vpravo / text vlevo; 2. a 4. karusel vlevo / text vpravo.
+     Posun plochy k textu (−10 % mezery) zrcadlově: u sudých řádků doprava. */
+  .menu-radek:nth-child(even) { grid-template-columns: 7fr minmax(260px, 5fr); }
+  .menu-radek:nth-child(even) .menu-foto { grid-column: 1; grid-row: 1; margin-inline: calc(var(--vyska) * .026) calc(var(--vyska) * -.026); }
+  .menu-radek:nth-child(even) .menu-text { grid-column: 2; grid-row: 1; }
+  /* tmavá: vlastní světlo – teplá záře za kolem, jako lampa nad stolem */
+  html[data-tema="tmava"] .menu-foto .ab-root { background: radial-gradient(46% 62% at 50% 52%, rgba(232,140,70,.16), transparent 72%), var(--ab-bg); }
+
+  /* Axle Bloom – CSS z oficiálního exportu HorizonX (HorizonX Tools License), upraveno: písmo stránky, fallback = statická první fotka */
+  .ab-root{--ab-bg:var(--pozadi);--ab-ink:var(--text);--ab-aspect:0.8;position:relative;overflow:hidden;background:var(--ab-bg);color:var(--ab-ink);font-family:inherit;touch-action:pan-y;user-select:none;-webkit-user-select:none;container-type:size;isolation:isolate;outline:none}
+  .ab-root[data-draggable]{cursor:grab}.ab-root[data-dragging]{cursor:grabbing}
+  .ab-root:focus-visible{outline:2px solid var(--ab-ink);outline-offset:-3px}
+  .ab-canvas{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none}
+  .ab-fallback{position:absolute;inset:0;display:grid;place-items:center}
+  .ab-fallback img{height:72cqh;width:calc(72cqh * var(--ab-aspect));max-width:none;object-fit:cover;border-radius:12px}
+  .ab-root[data-ready] .ab-fallback{visibility:hidden}
+  .ab-step{position:absolute;z-index:2;right:16px;width:44px;height:44px;border:1px solid currentColor;border-radius:50%;background:var(--ab-bg);color:inherit;font:18px/1 system-ui;cursor:pointer;opacity:0;transition:opacity .15s}
+  .ab-prev{top:calc(50% - 50px)}.ab-next{top:calc(50% + 6px)}
+  .ab-root:hover .ab-step,.ab-step:focus-visible,.ab-root:focus-visible .ab-step{opacity:1}
+  .ab-step:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+  .ab-live{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .ab-root:not([data-ready]) .ab-step{display:none}
+  @media(hover:none){.ab-step{opacity:1}}
+  @media(prefers-reduced-motion:reduce){.ab-step{transition:none}}
+
+  @media (max-width: 1100px) {
+    .lista nav { display: none; }
+    .menu-tl { display: inline-flex; }
+    .lista .menu-panel { position: absolute; top: 100%; left: clamp(20px, 3vw, 44px); flex-direction: column; gap: 2px; padding: 6px; border-radius: 24px; background: var(--pozadi); border: 1px solid var(--linka); min-width: 220px; z-index: 30; }
+    .lista .menu-panel.otevreno { display: flex; }
+    .lista .menu-panel a { padding: 11px 16px; border-radius: 999px; font-size: 15px; }
+    .rada-vpravo p { display: none; }
+  }
+  @media (max-width: 760px) {
+    .lista { height: 64px; }
+    .lista .tel { display: none; }
+    .lista .menu-panel a.rez { margin-top: 6px; border: 1px solid var(--text); font-weight: 600; }
+    .hero { min-height: calc(100svh - 64px); }
+    .rada { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .veta { font-size: 1.35rem; }
+    .vydej { min-height: 260px; }
+    .pas { gap: 10px; }
+    .menu-radek, .menu-radek:nth-child(even) { grid-template-columns: 1fr; row-gap: 18px; }
+    .menu-radek:nth-child(even) .menu-text, .menu-radek:nth-child(even) .menu-foto { grid-column: auto; grid-row: auto; }
+    .menu-radek:nth-child(even) .menu-foto { margin-inline: 0; }
+    /* mobil: výška 340 → 363,8 px (×1,07); na úzkých telefonech je plocha užší než vysoká, proto se o 7 % rozšíří i do strany
+       (max. o ~11 px do okraje stránky), aby bylo kolo ×1,07 na každé šířce. Kolo je pod názvem, vodorovný posun tu není. */
+    .menu-foto { --vyska: 363.8px; width: max(100%, min(107%, var(--vyska))); justify-self: center; margin-inline: 0; }
+  }
+</style>
+<style id="pz-css">
+.pz-hod{padding:clamp(56px,9vw,104px) 24px;text-align:center;color:inherit;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-hod .pz-in{max-width:560px;margin:0 auto}
+.pz-hod .pz-cislo{font-size:clamp(44px,7vw,72px);line-height:1;margin:0;font-weight:500;letter-spacing:-.02em}
+.pz-hod .pz-cislo span{font-size:.32em;opacity:.7;letter-spacing:0;margin-left:.3em}
+.pz-hod .pz-hv{position:relative;display:inline-block;font-size:22px;letter-spacing:4px;margin:14px 0 8px;color:color-mix(in srgb,currentColor 22%,transparent)}
+.pz-hod .pz-hv b{position:absolute;inset:0 auto 0 0;overflow:hidden;white-space:nowrap;color:var(--akcent,var(--accent,#E3A008));font-weight:400}
+.pz-hod .pz-pod{margin:0 0 14px;opacity:.78}
+.pz-hod a{color:inherit}
+.pz-pata{padding:28px 24px 34px;text-align:center;font-size:14px;opacity:.85;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-pata p{margin:4px 0}.pz-pata a{color:inherit}
+.pz-credit{font-size:12px;opacity:.7;text-align:center;padding:0 24px 22px}
+.pz-credit a{color:inherit}
+.pz-pv{position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;background:#111827;color:#fff;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;
+ padding:10px 14px;border-radius:14px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.pz-pv a{color:#fff}.pz-pv .pz-cta{background:#fff;color:#111827;text-decoration:none;font-weight:700;padding:.4em .85em;border-radius:999px}
+.pz-pv button{background:none;border:0;color:#fff;opacity:.8;cursor:pointer;font:inherit;text-decoration:underline}
+.pz-pv.pz-skryt{display:none}
+@media print{.pz-pv{display:none}}
+</style></head>
+<body>
+<header class="lista">
+<nav aria-label="Hlavní navigace">
+<a aria-current="page" href="#nabidka">Lístek</a>
+<a href="#menu-poledni">Polední menu</a>
+<a href="#">Akce a oslavy</a>
+<a href="#">Kontakt</a>
+</nav>
+<button aria-controls="menu-panel" aria-expanded="false" class="menu-tl" data-menu-zaklad="" type="button"><i></i>Menu</button>
+{% if phone %}<a class="tel" href="tel:{{ phone_href }}">Rezervace {{ phone }}</a>{% endif %}
+<button aria-label="Přepnout na tmavý režim" aria-pressed="false" class="tema-prepinac" data-prepnout-tema="" type="button">
+<svg class="ikona-slunce" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+<svg class="ikona-mesic" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg>
+</button>
+<nav aria-label="Menu" class="menu-panel" id="menu-panel">
+<a href="#nabidka">Lístek</a><a href="#menu-poledni">Polední menu</a><a href="#">Akce a oslavy</a><a href="#">Kontakt</a>{% if phone %}<a class="rez" href="tel:{{ phone_href }}">Rezervace {{ phone }}</a>{% endif %}
+</nav>
+</header>
+<main>
+<section class="hero">
+<h1 aria-label="{{ name }}" class="wordmark" data-slozit="">{{ brand_up }}</h1>
+<div class="rada">
+<p class="veta" data-po-nadpisu="0.05">Poctivé jídlo z jedné kuchyně, <em>od oběda až do večera.</em></p>
+<div class="rada-vpravo" data-po-nadpisu="0.15">
+<p>{% if hours_today %}<b>Otevřeno</b>{{ hours_today }}{% endif %}<br/>{% if address %}<b>Adresa</b>{{ address }}{% endif %}</p>
+<a class="cta" data-magnet="" href="#rezervace"><span data-magnet-vnitrek="">Rezervovat stůl<span aria-hidden="true" class="kruh"><svg fill="none" stroke="currentColor" stroke-width="1.6" viewbox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></span></span></a>
+</div>
+</div>
+<div class="vydej" data-po-nadpisu="0.25">
+<div aria-hidden="true" class="lampy"></div>
+<div class="pas">
+<figure data-h="0.6"><div class="foto"><img alt="Prostřený stůl pro dva u vysokého okna, lampička a sklenice" fetchpriority="high" height="1200" src="{{ A }}img/V11-restaurace-okno.webp" width="900"/></div><figcaption>Stůl u okna</figcaption></figure>
+<figure data-h="1.0"><div class="foto"><img alt="Kuchař pinzetou dokončuje jídlo na šedém talíři" height="1170" src="{{ A }}img/V11-restaurace-kuchar.webp" width="900"/></div><figcaption>Z kuchyně</figcaption></figure>
+<figure data-h="0.75"><div class="foto"><img alt="Kuchař lije lžící omáčku na maso s bramborovým gratinem" height="1125" src="{{ A }}img/V11-restaurace-omacka.webp" width="900"/></div><figcaption>Poslední lžíce omáčky</figcaption></figure>
+<figure data-h="1.15"><div class="foto"><img alt="Žloutkové špagety s křupavou slaninou na černém talíři" height="1140" src="{{ A }}img/V11-restaurace-testoviny.webp" width="900"/></div><figcaption>Těstoviny</figcaption></figure>
+<figure data-h="0.85"><div class="foto"><img alt="Hluboký talíř s mořskými plody v šafránové omáčce, ve stínu sklenka bílého vína" height="860" src="{{ A }}img/V11-restaurace-talir.webp" width="1200"/></div><figcaption>K tomu víno</figcaption></figure>
+</div>
+<div aria-hidden="true" class="lampy-sviti"></div>
+</div>
+</section>
+<section class="nabidka" id="nabidka">
+<h2 data-odhalit="">Na lístku</h2>
+<div class="menu-radky">
+<article class="menu-radek" data-odhalit="" id="menu-poledni">
+<div class="menu-text">
+<h3 id="nazev-poledni">Polední menu</h3>
+<p>Polévka a hlavní jídlo na polední pauzu ve všední dny.</p>
+
+</div>
+<div class="menu-foto">
+<div aria-label="Ilustrační fotky: Polední menu. Táhněte nebo použijte šipky." aria-roledescription="karusel" class="ab-root" data-ab-alty="Kouřící polévka v bordó misce na dřevěném stole|Krémová polévka v hlubokém talíři|Smažený řízek s opečenými brambory|Dušené maso s kostkami brambor|Dušené maso v hliněné míse|Řízek s bylinkovým máslem" data-ab-fotky="{{ A }}img/V11-restaurace-menu-poledni-1.webp,{{ A }}img/V11-restaurace-menu-poledni-2.webp,{{ A }}img/V11-restaurace-menu-poledni-3.webp,{{ A }}img/V11-restaurace-menu-poledni-4.webp,{{ A }}img/V11-restaurace-menu-poledni-5.webp,{{ A }}img/V11-restaurace-menu-poledni-6.webp" role="region" tabindex="0">
+<canvas aria-hidden="true" class="ab-canvas"></canvas>
+<div class="ab-fallback"><img alt="Kouřící polévka v bordó misce na dřevěném stole" draggable="false" height="900" loading="lazy" src="{{ A }}img/V11-restaurace-menu-poledni-1.webp" width="720"/></div>
+<button aria-label="Předchozí fotka" class="ab-step ab-prev" type="button">↑</button>
+<button aria-label="Další fotka" class="ab-step ab-next" type="button">↓</button>
+<span aria-atomic="true" aria-live="polite" class="ab-live"></span>
+</div>
+</div>
+</article>
+<article class="menu-radek" data-odhalit="" id="menu-denni">
+<div class="menu-text">
+<h3 id="nazev-denni">Denní menu</h3>
+<p>Jídla, která se mění den ode dne. Co je na řadě dnes, najdete tady.</p>
+
+</div>
+<div class="menu-foto">
+<div aria-label="Ilustrační fotky: Denní menu. Táhněte nebo použijte šipky." aria-roledescription="karusel" class="ab-root" data-ab-alty="Maso v rajčatové omáčce s rýží|Grilovaná ryba, za ní sklenka vína|Rybí filet na šedém talíři|Kuřecí prso s těstovinami|Jídlo v černém talíři na bílém ubrusu|Losos se zeleninou a sklenky vína" data-ab-fotky="{{ A }}img/V11-restaurace-menu-denni-1.webp,{{ A }}img/V11-restaurace-menu-denni-2.webp,{{ A }}img/V11-restaurace-menu-denni-3.webp,{{ A }}img/V11-restaurace-menu-denni-4.webp,{{ A }}img/V11-restaurace-menu-denni-5.webp,{{ A }}img/V11-restaurace-menu-denni-6.webp" role="region" tabindex="0">
+<canvas aria-hidden="true" class="ab-canvas"></canvas>
+<div class="ab-fallback"><img alt="Maso v rajčatové omáčce s rýží" draggable="false" height="900" loading="lazy" src="{{ A }}img/V11-restaurace-menu-denni-1.webp" width="720"/></div>
+<button aria-label="Předchozí fotka" class="ab-step ab-prev" type="button">↑</button>
+<button aria-label="Další fotka" class="ab-step ab-next" type="button">↓</button>
+<span aria-atomic="true" aria-live="polite" class="ab-live"></span>
+</div>
+</div>
+</article>
+<article class="menu-radek" data-odhalit="" id="menu-stala">
+<div class="menu-text">
+<h3 id="nazev-stala">Stálá nabídka</h3>
+<p>Jídla, která na lístku zůstávají. Kdykoli přijdete.</p>
+
+</div>
+<div class="menu-foto">
+<div aria-label="Ilustrační fotky: Stálá nabídka. Táhněte nebo použijte šipky." aria-roledescription="karusel" class="ab-root" data-ab-alty="Steak s hranolky|Steak na litinové pánvi a sklenka červeného|Plátky steaku na litinovém talíři|Pečená drůbež zlatě opečená|Steak s pečenými brambory|Pečené maso s rýží" data-ab-fotky="{{ A }}img/V11-restaurace-menu-stala-1.webp,{{ A }}img/V11-restaurace-menu-stala-2.webp,{{ A }}img/V11-restaurace-menu-stala-3.webp,{{ A }}img/V11-restaurace-menu-stala-4.webp,{{ A }}img/V11-restaurace-menu-stala-5.webp,{{ A }}img/V11-restaurace-menu-stala-6.webp" role="region" tabindex="0">
+<canvas aria-hidden="true" class="ab-canvas"></canvas>
+<div class="ab-fallback"><img alt="Steak s hranolky" draggable="false" height="900" loading="lazy" src="{{ A }}img/V11-restaurace-menu-stala-1.webp" width="720"/></div>
+<button aria-label="Předchozí fotka" class="ab-step ab-prev" type="button">↑</button>
+<button aria-label="Další fotka" class="ab-step ab-next" type="button">↓</button>
+<span aria-atomic="true" aria-live="polite" class="ab-live"></span>
+</div>
+</div>
+</article>
+<article class="menu-radek" data-odhalit="" id="menu-dezerty">
+<div class="menu-text">
+<h3 id="nazev-dezerty">Dezerty</h3>
+<p>Na konec něco sladkého, ke kávě nebo jen tak.</p>
+
+</div>
+<div class="menu-foto">
+<div aria-label="Ilustrační fotky: Dezerty. Táhněte nebo použijte šipky." aria-roledescription="karusel" class="ab-root" data-ab-alty="Čokoládový dortík se šlehačkou a třešní|Čokoládová bábovka polévaná čokoládou|Dezert s kakaem na talíři|Malý čokoládový dortík s ostružinou|Čokoládový dezert v keramické misce|Řez s kakaem a hoblinkami čokolády" data-ab-fotky="{{ A }}img/V11-restaurace-menu-dezerty-1.webp,{{ A }}img/V11-restaurace-menu-dezerty-2.webp,{{ A }}img/V11-restaurace-menu-dezerty-3.webp,{{ A }}img/V11-restaurace-menu-dezerty-4.webp,{{ A }}img/V11-restaurace-menu-dezerty-5.webp,{{ A }}img/V11-restaurace-menu-dezerty-6.webp" role="region" tabindex="0">
+<canvas aria-hidden="true" class="ab-canvas"></canvas>
+<div class="ab-fallback"><img alt="Čokoládový dortík se šlehačkou a třešní" draggable="false" height="900" loading="lazy" src="{{ A }}img/V11-restaurace-menu-dezerty-1.webp" width="720"/></div>
+<button aria-label="Předchozí fotka" class="ab-step ab-prev" type="button">↑</button>
+<button aria-label="Další fotka" class="ab-step ab-next" type="button">↓</button>
+<span aria-atomic="true" aria-live="polite" class="ab-live"></span>
+</div>
+</div>
+</article>
+<article class="menu-radek" data-odhalit="" id="menu-drinky">
+<div class="menu-text">
+<h3 id="nazev-drinky">Drinky a koktejly</h3>
+<p>Míchané nápoje k jídlu i po něm.</p>
+
+</div>
+<div class="menu-foto">
+<div aria-label="Ilustrační fotky: Drinky a koktejly. Táhněte nebo použijte šipky." aria-roledescription="karusel" class="ab-root" data-ab-alty="Barman nalévá drink přes led|Koktejl s pomerančovou kůrou na baru|Koktejl se sušenými pomeranči|Rozzářený koktejl v broušené sklenici|Koktejl s pomerančem na kamenném pultu|Koktejl ve světle lampy na baru" data-ab-fotky="{{ A }}img/V11-restaurace-menu-drinky-1.webp,{{ A }}img/V11-restaurace-menu-drinky-2.webp,{{ A }}img/V11-restaurace-menu-drinky-3.webp,{{ A }}img/V11-restaurace-menu-drinky-4.webp,{{ A }}img/V11-restaurace-menu-drinky-5.webp,{{ A }}img/V11-restaurace-menu-drinky-6.webp" role="region" tabindex="0">
+<canvas aria-hidden="true" class="ab-canvas"></canvas>
+<div class="ab-fallback"><img alt="Barman nalévá drink přes led" draggable="false" height="900" loading="lazy" src="{{ A }}img/V11-restaurace-menu-drinky-1.webp" width="720"/></div>
+<button aria-label="Předchozí fotka" class="ab-step ab-prev" type="button">↑</button>
+<button aria-label="Další fotka" class="ab-step ab-next" type="button">↓</button>
+<span aria-atomic="true" aria-live="polite" class="ab-live"></span>
+</div>
+</div>
+</article>
+</div>
+</section>
+{# SEKCE_PATCH_V1 #}{% include "_onas.html.j2" %}
+<section class="pz-mapa-sec" style="padding:0 0 clamp(40px,6vw,80px)">{% include "_mapa.html.j2" %}</section>
+
+</main>
+{% include "_recenze.html.j2" %}
+{% if rating %}<section aria-label="Hodnocení na Googlu" class="pz-hod"><div class="pz-in">
+<p class="pz-cislo">{{ rating_txt }}<span>z 5</span></p>
+<p aria-hidden="true" class="pz-hv">★★★★★<b style="width:{{ rating_pct }}%">★★★★★</b></p>
+<p class="pz-pod">Hodnocení na Googlu{% if show_count %} · {{ rating_count }} recenzí{% endif %}</p>
+{% if maps_url %}<p><a href="{{ maps_url }}" rel="noopener" target="_blank">Zobrazit na Mapách Google</a></p>{% endif %}
+</div></section>{% endif %}<footer class="pz-pata"><p><strong>{{ name }}</strong></p>
+{% if address %}<p>{{ address }}</p>{% endif %}
+<p>{% if phone %}<a href="tel:{{ phone_href }}">{{ phone }}</a>{% endif %}{% if phone and email %} · {% endif %}{% if email %}<a href="mailto:{{ email }}">{{ email }}</a>{% endif %}</p></footer><script>
+  (function(){ var b=document.querySelector('.menu-tl'), p=document.getElementById('menu-panel');
+    b.addEventListener('click', function(){ var o=p.classList.toggle('otevreno'); b.setAttribute('aria-expanded', o?'true':'false'); });
+    /* wordmark přesně na šířku obsahu */
+    var wm=document.querySelector('.wordmark'), hero=document.querySelector('.hero');
+    function fit(){ var cs=getComputedStyle(hero), w=hero.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+      var t=document.createElement('span'); t.style.cssText='position:absolute;visibility:hidden;white-space:nowrap;font:400 100px "DM Serif Display",serif;letter-spacing:-.02em'; t.textContent='{{ brand_up }}';
+      document.body.appendChild(t); var k=t.getBoundingClientRect().width/100; t.remove();
+      wm.style.setProperty('--wm', (w/k*0.995).toFixed(1)+'px'); }
+    fit(); addEventListener('resize', fit); if(document.fonts) document.fonts.ready.then(fit); })();
+</script>
+<script defer="" src="{{ A }}zaklad.js"></script>
+<script>
+  /* Podpisový pohyb V11: výdej.
+     Postup p = posun stránky přes hero (0 → 1). Pás jede doleva jako talíře na výdeji: o přesah + dvě další fotky
+     (na konci pásu jsou dvě kopie prvních fotek, aby za posledním talířem nezůstalo prázdno). Fotky se cestou postupně
+     zvedají jedna po druhé (data-h = hloubka). Wordmark stojí. Řízeno scrollem, běží i s „omezit animace“;
+     ?pohyb=0 nechá pás v klidu. Jen transform/translate v rAF. */
+  (function () {
+    if (new URLSearchParams(location.search).get('pohyb') === '0') return;
+    var hero = document.querySelector('.hero'), pas = document.querySelector('.pas'), vydej = document.querySelector('.vydej');
+    var orig = Array.prototype.slice.call(pas.querySelectorAll('figure'));
+    orig.slice(0, 2).forEach(function (f) {
+      var k = f.cloneNode(true); k.setAttribute('aria-hidden', 'true'); k.querySelector('img').alt = ''; k.querySelector('img').removeAttribute('fetchpriority'); pas.appendChild(k);
+    });
+    var figs = Array.prototype.slice.call(pas.querySelectorAll('figure'));
+    var preshoot = 0, drah = 1, bezi = false, akt = 0;
+    function mer() { preshoot = Math.max(0, pas.scrollWidth - vydej.clientWidth); drah = Math.max(300, hero.offsetHeight * 0.9); }
+    function hl(t) { t = Math.min(1, Math.max(0, t)); return t * t * (3 - 2 * t); }
+    function kresli() {
+      bezi = false;
+      var cil = Math.min(1, Math.max(0, window.scrollY / drah));
+      akt += (cil - akt) * 0.18; if (Math.abs(cil - akt) < 0.0004) akt = cil;
+      pas.style.setProperty('--px', (-preshoot * akt).toFixed(1) + 'px');
+      var n = figs.length;
+      figs.forEach(function (f, i) {
+        var t = hl(akt * 1.5 - i / n * 0.6);
+        f.style.setProperty('--fy', (-(+f.getAttribute('data-h')) * 64 * t).toFixed(1) + 'px');
+      });
+      if (akt !== cil) pozadej();
+    }
+    function pozadej() { if (!bezi) { bezi = true; requestAnimationFrame(kresli); } }
+    addEventListener('scroll', pozadej, { passive: true });
+    addEventListener('resize', function () { mer(); pozadej(); });
+    pas.querySelectorAll('img').forEach(function (i) { if (!i.complete) i.addEventListener('load', function () { mer(); pozadej(); }); });
+    mer(); pozadej();
+    window.V11 = { stav: function () { return { p: akt, preshoot: preshoot }; } };
+  })();
+</script>
+<script>
+/* Nabídka menu – karusel „Axle Bloom“ z HorizonX (oficiální export, HorizonX Tools License, placený plán majitele).
+   Kód komponenty níže je převzatý z exportu; úpravy AI_FIRMA jsou označené komentářem (jednorázové přehrání `play`,
+   nastavitelná velikost textury, česká hlášení, fallback = statická první fotka, data-ready až po načtení fotek).
+   Chování na stránce: v klidu stojí na první fotce. Pohyb myši nad řádkem, dotyk nebo fokus klávesnicí → kolo se samo
+   přetočí přes všechny fotky (2,3 s na fotku) a skončí zase na první. Další přehrání až po dalším pohybu myši po doběhnutí.
+   Funguje i s „omezit animace“ (bez rozmazání). ?pohyb=0 → stojí na první fotce. Bez WebGL → statická první fotka.
+   Výkon: instance vznikají až u viewportu (IntersectionObserver), mimo obrazovku nekreslí, textury 512 px (1×) / 1024 px (retina). */
+(function () {
+'use strict';
+// Original HorizonX code. Default artwork made for HorizonX. HorizonX Tools License.
+/**
+ * Axle Bloom: photo cards hinged on one horizontal axle and spun around it like
+ * a rolodex, seen from a quarter turn so every card reads as a parallelogram.
+ * Original HorizonX WebGL engine (no third-party code). The motion borrows the
+ * idea of Spiral Flux's speed-driven smear and colour fringe, and Tunnel Fold
+ * Slider's settle-on-a-card spring; none of their code.
+ *
+ * Self-contained on purpose: the export builder inlines this file verbatim.
+ */
+
+const TAU = Math.PI * 2;
+// The angle where a card leaves the wheel and the next picture enters: straight
+// away from the camera, behind the axle, where the swap is least visible.
+const SWAP = -Math.PI / 2;
+// How long one smear "exposure" lasts, in seconds. The streak a card point
+// leaves is its speed times this.
+const EXPOSURE = 0.0599999;
+const TEXTURE_SIZE = 1024; // výchozí; stránka Ořech posílá config.textureSize (úprava AI_FIRMA)
+// The smear takes one picture sample per this many screen pixels of streak, up
+// to MAX_TAPS; the shader loop must stay a literal of the same size.
+const TAP_PX = 2;
+const MAX_TAPS = 24;
+const RESUME_AFTER = 1.39999;
+
+/** Autoplay position after `t` seconds: one card per `interval`, slower at each card. */
+function autoplayOffset(t, interval, pulse) {
+  const x = t / interval, k = Math.floor(x), f = x - k;
+  return k + f - (pulse * Math.sin(TAU * f)) / TAU;
+}
+
+/** Autoplay speed in cards per second at `t` (the derivative of autoplayOffset). */
+function autoplaySpeed(t, interval, pulse) {
+  const f = t / interval - Math.floor(t / interval);
+  return (1 - pulse * Math.cos(TAU * f)) / interval;
+}
+
+/**
+ * How many samples the smear takes for a streak `spanPx` screen pixels long:
+ * one at rest, then enough that neighbours sit TAP_PX apart, so the streak
+ * reads as one blur instead of stacked copies of the picture.
+ */
+function smearTaps(spanPx) {
+  const n = Math.ceil((Number.isFinite(spanPx) ? Math.abs(spanPx) : 0) / TAP_PX);
+  return Math.min(MAX_TAPS, Math.max(1, n));
+}
+
+const wrapIndex = (j, length) => ((j % length) + length) % length;
+
+/**
+ * The `count` cards on the wheel at position `p` (in cards). Card j sits at
+ * angle (p - j) * step from straight up. Each one gets the picture at
+ * `j mod images`; when the picture a card would swap to differs from the one
+ * it carries, it fades out over half a step on each side of the swap angle.
+ */
+function wheelCards(p, count, images) {
+  const step = TAU / count;
+  const first = Math.ceil(p + (-SWAP - TAU) / step - 1e-9);
+  const swaps = count % images !== 0;
+  const cards = [];
+  for (let k = 0; k < count; k++) {
+    const j = first + k;
+    let phi = (p - j) * step;
+    // Keep phi inside (SWAP, SWAP + TAU].
+    while (phi <= SWAP) phi += TAU;
+    while (phi > SWAP + TAU) phi -= TAU;
+    const toSwap = Math.min(phi - SWAP, SWAP + TAU - phi);
+    const fade = swaps ? smooth(Math.min(1, toSwap / (step * 0.5))) : 1;
+    cards.push({ j, phi, image: wrapIndex(j, images), alpha: fade });
+  }
+  return cards;
+}
+
+const smooth = (x) => x * x * (3 - 2 * x);
+
+/** Critically damped spring step toward `target`; exact for any dt. */
+function springStep(p, v, target, omega, dt) {
+  const x0 = p - target, e = Math.exp(-omega * dt), c = v + omega * x0;
+  return [target + (x0 + c * dt) * e, (v - omega * c * dt) * e];
+}
+
+/** Pitch-then-yaw rotation as rows, the camera's quarter-turn view of the axle. */
+function viewRotation(yawDeg, pitchDeg) {
+  const a = (yawDeg * Math.PI) / 180, b = (pitchDeg * Math.PI) / 180;
+  const c = Math.cos(a), s = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b);
+  return [
+    [c, 0, s],
+    [sb * s, cb, -sb * c],
+    [-cb * s, sb, cb * c]
+  ];
+}
+
+const VERT = `
+attribute vec2 aUv;
+uniform mat3 uRot;
+uniform float uPhi, uW, uH, uGap, uDist;
+uniform vec2 uScale, uDepth;
+varying vec2 vUv;
+varying vec3 vN, vPos;
+void main() {
+  vec3 dir = vec3(0.0, cos(uPhi), sin(uPhi));
+  vec3 p = vec3((aUv.x - 0.5) * uW, 0.0, 0.0) + dir * (uGap + aUv.y * uH);
+  vec3 v = uRot * p;
+  v.z -= uDist;
+  vUv = aUv;
+  vN = uRot * vec3(0.0, -sin(uPhi), cos(uPhi));
+  vPos = v;
+  gl_Position = vec4(v.x * uScale.x, v.y * uScale.y, uDepth.x * v.z + uDepth.y, -v.z);
+}`;
+
+const FRAG = `
+precision highp float;
+uniform sampler2D uTex;
+uniform float uHasTex, uW, uH, uGap, uRadius, uVel, uSmear, uFringe, uFlare, uSheen, uSeam, uFade, uAlpha, uBgOpaque, uAA, uSide, uTaps, uPx;
+uniform vec3 uBg, uBlank;
+varying vec2 vUv;
+varying vec3 vN, vPos;
+vec3 spectrum(float k) {
+  return vec3(smoothstep(-0.7, 0.5, k), 1.0 - min(abs(k) * 1.3, 0.85), smoothstep(0.7, -0.5, k));
+}
+void main() {
+  vec2 halfSize = vec2(uW, uH) * 0.5;
+  vec2 q = (vUv - 0.5) * vec2(uW, uH);
+  float rad = uRadius * min(uW, uH);
+  vec2 e = abs(q) - halfSize + rad;
+  float d = length(max(e, 0.0)) + min(max(e.x, e.y), 0.0) - rad;
+#ifdef HAS_DERIV
+  float aa = max(fwidth(d), 1e-4);
+#else
+  float aa = uAA;
+#endif
+  float cover = 1.0 - smoothstep(-aa, aa, d);
+  if (cover <= 0.001) discard;
+  // The back of a card shows its picture the right way round.
+  vec2 uv = vec2(gl_FrontFacing ? vUv.x : 1.0 - vUv.x, 1.0 - vUv.y);
+  // A point on the card moves along v at angular speed times its radius.
+  float s = uVel * (uGap + vUv.y * uH) / uH;
+  vec3 col = uBlank;
+  if (uHasTex > 0.5) {
+    float span = s * uSmear * 2.0;
+    float gapPx = abs(span) * uPx / uTaps;
+    float bias = clamp(log2(max(gapPx, 1e-4) / ${TAP_PX}.0), 0.0, 4.0);
+    float jit = uTaps < 1.5 ? 0.5 : fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))));
+    vec3 acc = vec3(0.0), wsum = vec3(0.0);
+    for (int i = 0; i < ${MAX_TAPS}; i++) {
+      if (float(i) >= uTaps) break;
+      float k = (float(i) + jit) / uTaps - 0.5;
+      vec3 w = mix(vec3(1.0), spectrum(k * 2.0), uFringe);
+      acc += texture2D(uTex, uv + vec2(0.0, span * k), bias).rgb * w;
+      wsum += w;
+    }
+    col = acc / wsum;
+  }
+  vec3 n = normalize(vN);
+  if (!gl_FrontFacing) n = -n;
+  vec3 V = normalize(-vPos);
+  vec3 L = normalize(vec3(-0.45, 0.65, 0.6));
+  vec3 Hv = normalize(L + V);
+  float nh = max(dot(n, Hv), 0.0);
+  col *= 0.86 + 0.14 * max(dot(n, L), 0.0);
+  col += uSheen * (0.5 * pow(nh, 60.0) + 0.07 * pow(nh, 6.0));
+  // Warm light leaking out of the axle onto the hinge edge.
+  col += vec3(1.0, 0.8, 0.5) * exp(-(uGap + vUv.y * uH) / 0.035) * uSeam * 0.3;
+  // Spectral rim while the wheel turns: blue on one side, amber on the other.
+  float speed = clamp(abs(uVel) * 5.0, 0.0, 1.0);
+  float rim = exp(d / 0.02);
+  vec3 rimCol = mix(vec3(0.31, 0.66, 1.0), vec3(1.0, 0.70, 0.28), mix(vUv.x, 1.0 - vUv.x, uSide));
+  col = mix(col, rimCol, clamp(rim * uFlare * speed * 0.6, 0.0, 1.0));
+  float a = cover * uAlpha;
+  if (uBgOpaque > 0.5) col = mix(col, uBg, uFade);
+  else a *= 1.0 - uFade;
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0) * a, a);
+}`;
+
+const SPRITE_VERT = `
+attribute vec2 aUv;
+uniform vec2 uCenter, uAxisX, uAxisY;
+varying vec2 vQ;
+void main() {
+  vQ = aUv * 1.99999 - 1.00001;
+  gl_Position = vec4(uCenter + vQ.x * uAxisX + vQ.y * uAxisY, 0.0, 1.0);
+}`;
+
+const SPRITE_FRAG = `
+precision mediump float;
+uniform float uKind, uStrength;
+varying vec2 vQ;
+void main() {
+  vec3 col;
+  float a;
+  if (uKind < 0.5) {
+    float r2 = dot(vQ, vQ);
+    a = exp(-r2 * 3.2) * smoothstep(1.0, 0.55, sqrt(r2)) * uStrength;
+    col = vec3(0.0);
+  } else {
+    float x = vQ.y, core = exp(-x * x * 40.0), glow = exp(-x * x * 4.0);
+    a = (core * 0.95 + glow * 0.3) * smoothstep(1.0, 0.72, abs(vQ.x)) * uStrength;
+    col = mix(vec3(0.95, 0.66, 0.3), vec3(1.0, 0.97, 0.9), core);
+  }
+  a = clamp(a, 0.0, 1.0);
+  gl_FragColor = vec4(col * a, a);
+}`;
+
+function hexRgb(hex) {
+  const h = String(hex).replace('#', '');
+  const full = h.length === 3 ? h.replace(/./g, (c) => c + c) : h;
+  const n = parseInt(full, 16);
+  return Number.isFinite(n) && full.length === 6 ? [(n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255] : [0.925001, 0.924999, 0.924999];
+}
+
+function compile(gl, type, source) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(shader) || 'shader');
+  return shader;
+}
+
+function program(gl, vert, frag, names) {
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl, gl.VERTEX_SHADER, vert));
+  gl.attachShader(prog, compile(gl, gl.FRAGMENT_SHADER, frag));
+  gl.bindAttribLocation(prog, 0, 'aUv');
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog) || 'link');
+  const u = {};
+  for (const name of names) u[name] = gl.getUniformLocation(prog, name);
+  return { prog, u };
+}
+
+function createAxleBloom(root, initial) {
+  const canvas = root.querySelector('.ab-canvas');
+  const live = root.querySelector('.ab-live');
+  const reduced = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+  let config = { ...initial };
+  let gl = null, cardProg = null, spriteProg = null, quad = null, deriv = false, aniso = null, maxAniso = 1;
+  function setup() {
+    try {
+      gl = canvas.getContext('webgl', { alpha: true, antialias: true, premultipliedAlpha: true });
+      if (gl) {
+        deriv = !!gl.getExtension('OES_standard_derivatives');
+        aniso = gl.getExtension('EXT_texture_filter_anisotropic') || gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic');
+        if (aniso) maxAniso = Math.min(8, gl.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT) || 1);
+        const head = deriv ? '#extension GL_OES_standard_derivatives : enable\n#define HAS_DERIV 1\n' : '';
+        cardProg = program(gl, VERT, head + FRAG, ['uRot', 'uPhi', 'uW', 'uH', 'uGap', 'uDist', 'uScale', 'uDepth', 'uTex', 'uHasTex',
+          'uRadius', 'uVel', 'uSmear', 'uFringe', 'uFlare', 'uSheen', 'uSeam', 'uFade', 'uAlpha', 'uBgOpaque', 'uAA', 'uSide', 'uTaps', 'uPx', 'uBg', 'uBlank']);
+        spriteProg = program(gl, SPRITE_VERT, SPRITE_FRAG, ['uCenter', 'uAxisX', 'uAxisY', 'uKind', 'uStrength']);
+        quad = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1]), gl.STATIC_DRAW);
+      }
+    } catch {
+      gl = null;
+    }
+  }
+  setup();
+
+  let p = 0, v = 0, target = 0, mode = 'auto', autoBase = 0, autoT = 0;
+  let idle = RESUME_AFTER, wheelSnap = 0, drag = null, last = 0, raf = 0, visible = true, destroyed = false;
+  let held = 0, announced = null;
+  // Úprava AI_FIRMA: jednorázové přehrání (mode 'play') – přes všechny fotky zpět na první, pak stojí.
+  let playBase = 0, playT = 0, playLen = 0;
+  let width = 0, height = 0, dpr = 1;
+  const textures = new Map();
+  let croppedAspect = 0;
+
+  const direction = () => (config.direction === 'up' ? -1 : 1);
+  const autoplayOn = () => config.autoplay && !(reduced && reduced.matches);
+  const loaded = () => config.images.every((src) => textures.get(src)?.state !== 'loading');
+
+  function texture(src) {
+    let entry = textures.get(src);
+    if (entry) return entry;
+    entry = { state: 'loading', tex: null, img: new Image() };
+    textures.set(src, entry);
+    if (/^https?:/i.test(src)) entry.img.crossOrigin = 'anonymous';
+    entry.img.decoding = 'async';
+    entry.img.onload = () => {
+      if (destroyed) return;
+      entry.state = 'ready';
+      upload(entry);
+      markLoaded();
+      wake();
+    };
+    entry.img.onerror = () => { entry.state = 'failed'; markLoaded(); wake(); };
+    entry.img.src = src;
+    return entry;
+  }
+
+  function upload(entry) {
+    if (!gl || entry.state !== 'ready') return;
+    const aspect = config.aspect;
+    const pad = document.createElement('canvas');
+    const TS = config.textureSize || TEXTURE_SIZE;
+    pad.width = pad.height = TS;
+    const ctx = pad.getContext('2d');
+    const iw = entry.img.naturalWidth, ih = entry.img.naturalHeight;
+    let sw = iw, sh = iw / aspect;
+    if (sh > ih) { sh = ih; sw = ih * aspect; }
+    ctx.drawImage(entry.img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, 0, 0, TS, TS);
+    try {
+      entry.tex = entry.tex || gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, entry.tex);
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, pad);
+      gl.generateMipmap(gl.TEXTURE_2D);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      if (aniso) gl.texParameterf(gl.TEXTURE_2D, aniso.TEXTURE_MAX_ANISOTROPY_EXT, maxAniso);
+    } catch {
+      entry.state = 'failed';
+    }
+  }
+
+  function markLoaded() {
+    if (loaded()) root.setAttribute('data-ab-loaded', '');
+  }
+
+  function syncTextures() {
+    root.removeAttribute('data-ab-loaded');
+    for (const src of config.images) texture(src);
+    if (croppedAspect !== config.aspect) {
+      croppedAspect = config.aspect;
+      for (const entry of textures.values()) upload(entry);
+    }
+    markLoaded();
+  }
+
+  function resize() {
+    const box = root.getBoundingClientRect();
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    width = Math.max(1, Math.round(box.width * dpr));
+    height = Math.max(1, Math.round(box.height * dpr));
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+    wake();
+  }
+
+  function camera() {
+    const rows = viewRotation(config.yaw, config.pitch);
+    const H = 1, W = config.aspect, R = config.gap + H;
+    const dist = config.depth;
+    const fill = 0.740001 * (config.size / 100);
+    const f = (fill * dist) / R;
+    const minDim = Math.min(width, height);
+    const scale = [(f * minDim) / width, (f * minDim) / height];
+    const near = Math.max(0.05, dist - 2.49999 * R), far = dist + 2.5 * R;
+    const depth = [-(far + near) / (far - near), (-2 * far * near) / (far - near)];
+    const project = (x, y, z) => {
+      const vx = rows[0][0] * x + rows[0][1] * y + rows[0][2] * z;
+      const vy = rows[1][0] * x + rows[1][1] * y + rows[1][2] * z;
+      const vz = rows[2][0] * x + rows[2][1] * y + rows[2][2] * z - dist;
+      return [(vx * scale[0]) / -vz, (vy * scale[1]) / -vz, vz];
+    };
+    return { rows, H, W, R, dist, scale, depth, project, minDim };
+  }
+
+  function drawSprite(kind, center, axisX, axisY, strength) {
+    const { u } = spriteProg;
+    gl.useProgram(spriteProg.prog);
+    gl.uniform2fv(u.uCenter, center);
+    gl.uniform2fv(u.uAxisX, axisX);
+    gl.uniform2fv(u.uAxisY, axisY);
+    gl.uniform1f(u.uKind, kind);
+    gl.uniform1f(u.uStrength, strength);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+
+  function render() {
+    if (!gl || gl.isContextLost()) return;
+    const cam = camera();
+    const { rows, H, W, dist, scale, depth, project, minDim } = cam;
+    gl.viewport(0, 0, width, height);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clearDepth(1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    // Úprava AI_FIRMA: dokud není žádná fotka v textuře (načítání, nebo file:// kde prohlížeč fotky do WebGL nepustí),
+    // kolo se nekreslí a zůstává vidět statická první fotka (fallback) – žádné šedé prázdné karty.
+    if (!config.images.some((src) => textures.get(src)?.state === 'ready' && textures.get(src).tex)) { root.removeAttribute('data-ready'); return; }
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.disable(gl.CULL_FACE);
+
+    gl.disable(gl.DEPTH_TEST);
+    const ndcPx = [2 / width, 2 / height];
+    const unit = (scale[1] * height) / 2 / dist;
+    if (config.shadow > 0) {
+      const c = project(0, -(cam.R * 1.22001), 0);
+      drawSprite(0, [c[0], c[1]], [unit * 0.949999 * ndcPx[0], 0], [0, unit * 0.110001 * ndcPx[1]], config.shadow * 0.319999);
+    }
+
+    const omega = v * (TAU / config.cards);
+    const vel = Math.max(-0.350001, Math.min(0.35, omega * EXPOSURE)) * (reduced?.matches ? 0 : 1);
+    const cards = wheelCards(p, config.cards, config.images.length).map((card) => {
+      const mid = config.gap + H / 2;
+      const y = Math.cos(card.phi) * mid, z = Math.sin(card.phi) * mid;
+      const vz = rows[2][1] * y + rows[2][2] * z;
+      return { ...card, vz, back: Math.max(0, Math.min(1, -vz / mid)) };
+    }).sort((a, b) => a.vz - b.vz);
+
+    gl.enable(gl.DEPTH_TEST);
+    gl.depthFunc(gl.LEQUAL);
+    gl.depthMask(true);
+    const { u } = cardProg;
+    gl.useProgram(cardProg.prog);
+    const m = rows;
+    gl.uniformMatrix3fv(u.uRot, false, [m[0][0], m[1][0], m[2][0], m[0][1], m[1][1], m[2][1], m[0][2], m[1][2], m[2][2]]);
+    gl.uniform1f(u.uW, W);
+    gl.uniform1f(u.uH, H);
+    gl.uniform1f(u.uGap, config.gap);
+    gl.uniform1f(u.uDist, dist);
+    gl.uniform2fv(u.uScale, scale);
+    gl.uniform2fv(u.uDepth, depth);
+    gl.uniform1f(u.uRadius, config.radius);
+    gl.uniform1f(u.uVel, vel);
+    gl.uniform1f(u.uTaps, smearTaps(Math.abs(vel) * ((config.gap + H) / H) * config.smear * 2 * unit));
+    gl.uniform1f(u.uPx, unit);
+    gl.uniform1f(u.uSmear, config.smear);
+    gl.uniform1f(u.uFringe, config.fringe);
+    gl.uniform1f(u.uFlare, config.flare);
+    gl.uniform1f(u.uSheen, config.sheen);
+    gl.uniform1f(u.uSeam, config.seam);
+    gl.uniform1f(u.uAA, 1.50001 / Math.max(1, unit * dpr * 0.2));
+    gl.uniform1f(u.uSide, config.yaw < 0 ? 0 : 1);
+    const opaque = config.background !== 'transparent';
+    gl.uniform1f(u.uBgOpaque, opaque ? 1 : 0);
+    gl.uniform3fv(u.uBg, opaque ? hexRgb(config.background) : [0, 0, 0]);
+    gl.uniform3fv(u.uBlank, [0.820001, 0.820001, 0.819999]);
+    gl.uniform1i(u.uTex, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    for (const card of cards) {
+      if (card.alpha <= 0.001) continue;
+      const entry = textures.get(config.images[card.image]);
+      const ready = entry?.state === 'ready' && entry.tex;
+      if (ready) gl.bindTexture(gl.TEXTURE_2D, entry.tex);
+      gl.uniform1f(u.uHasTex, ready ? 1 : 0);
+      gl.uniform1f(u.uPhi, card.phi);
+      gl.uniform1f(u.uAlpha, card.alpha);
+      gl.uniform1f(u.uFade, config.backFade * card.back * card.back);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
+
+    if (config.seam > 0) {
+      gl.disable(gl.DEPTH_TEST);
+      const a = project(-W / 2, 0, 0), b = project(W / 2, 0, 0);
+      const ax = [(b[0] - a[0]) / 2 * 1.06, (b[1] - a[1]) / 2 * 1.05999];
+      const px = [ax[0] / ndcPx[0], ax[1] / ndcPx[1]];
+      const len = Math.hypot(px[0], px[1]) || 1;
+      const thick = Math.max(1.50001, minDim * 0.006);
+      const ay = [(-px[1] / len) * thick * ndcPx[0], (px[0] / len) * thick * ndcPx[1]];
+      const speed = Math.min(1, Math.abs(omega) / 2);
+      drawSprite(1, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], ax, ay, config.seam * (0.7 + 0.300001 * speed));
+    }
+    if (loaded() && config.images.some((src) => textures.get(src)?.state === 'ready')) root.setAttribute('data-ready', '');
+  }
+
+  function announce() {
+    if (!live || drag) return;
+    const index = wrapIndex(Math.round(p), config.images.length);
+    if (index === announced) return;
+    announced = index;
+    if (mode !== 'auto' && mode !== 'play') live.textContent = `Fotka ${index + 1} z ${config.images.length}` + (config.alts?.[index] ? `: ${config.alts[index]}` : '');
+  }
+
+  function advance(dt) {
+    if (mode === 'play') {
+      if (loaded() || held > 1.50001) playT += dt;
+      else held += dt;
+      if (playT >= playLen * config.interval) {
+        // konec: přesně na první fotce, pozice se vrátí na 0 (stejný obraz kola), pak stojí
+        p = target = 0; v = 0; mode = 'spring'; idle = 0; wheelSnap = 0;
+        announced = 0;
+        config.onEnd?.();
+        return true;
+      }
+      p = playBase + autoplayOffset(playT, config.interval, config.pulse);
+      v = autoplaySpeed(playT, config.interval, config.pulse);
+      return true;
+    }
+    if (mode === 'auto') {
+      if (!autoplayOn()) {
+        mode = 'spring';
+        target = Math.round(p);
+      } else {
+        if (loaded() || held > 1.50001) autoT += dt;
+        else held += dt;
+        p = autoBase + direction() * autoplayOffset(autoT, config.interval, config.pulse);
+        v = direction() * autoplaySpeed(autoT, config.interval, config.pulse);
+        return true;
+      }
+    }
+    if (mode === 'drag') return true;
+    idle += dt;
+    if (wheelSnap > 0) {
+      wheelSnap -= dt;
+      if (wheelSnap <= 0) target = Math.round(target);
+    }
+    if (reduced?.matches) {
+      p = target;
+      v = 0;
+    } else {
+      [p, v] = springStep(p, v, target, config.smoothing, dt);
+    }
+    const settled = Math.abs(p - target) < 1e-3 && Math.abs(v) < 1e-2 && wheelSnap <= 0;
+    if (settled) {
+      p = target;
+      v = 0;
+      announce();
+      if (autoplayOn() && idle >= RESUME_AFTER) {
+        mode = 'auto';
+        autoBase = target;
+        autoT = 0;
+        return true;
+      }
+      return autoplayOn();
+    }
+    return true;
+  }
+
+  function frame(now) {
+    raf = 0;
+    if (destroyed) return;
+    const dt = last ? Math.min(0.0499999, Math.max(0, (now - last) / 1000)) : 0;
+    last = now;
+    const moving = advance(dt);
+    render();
+    if (moving && visible) raf = requestAnimationFrame(frame);
+    else last = 0;
+  }
+
+  function wake() {
+    if (!raf && !destroyed && visible) raf = requestAnimationFrame(frame);
+  }
+
+  function takeOver() {
+    if (mode === 'auto' || mode === 'play') {
+      if (mode === 'play') config.onEnd?.();
+      mode = 'spring';
+      target = p;
+    }
+    idle = 0;
+  }
+
+  function stepBy(n) {
+    takeOver();
+    target = Math.round(target) + n;
+    wheelSnap = 0;
+    wake();
+  }
+
+  const stride = () => Math.max(60, (Math.min(width, height) / dpr) * 0.32) / config.sensitivity;
+
+  function onPointerDown(event) {
+    if (!config.draggable || event.button !== 0 || event.target.closest?.('.ab-step')) return;
+    if (event.pointerType === 'touch' && mode === 'play') return;
+    takeOver();
+    mode = 'drag';
+    drag = { id: event.pointerId, x: event.clientX, y: event.clientY, p, t: event.timeStamp, samples: [] };
+    root.setPointerCapture?.(event.pointerId);
+    root.setAttribute('data-dragging', '');
+    wake();
+  }
+
+  function onPointerMove(event) {
+    if (!drag || event.pointerId !== drag.id) return;
+    const delta = (event.clientY - drag.y - (event.clientX - drag.x) * 0.6) / stride();
+    const next = drag.p + delta;
+    drag.samples.push([event.timeStamp, next]);
+    while (drag.samples.length > 2 && event.timeStamp - drag.samples[0][0] > 90) drag.samples.shift();
+    const [t0, p0] = drag.samples[0];
+    const span = (event.timeStamp - t0) / 1000;
+    if (span > 0.00400001) v = (next - p0) / span;
+    p = next;
+    wake();
+  }
+
+  function onPointerUp(event) {
+    if (!drag || event.pointerId !== drag.id) return;
+    root.releasePointerCapture?.(event.pointerId);
+    root.removeAttribute('data-dragging');
+    const quiet = event.timeStamp - (drag.samples.at(-1)?.[0] ?? drag.t) > 90;
+    if (quiet) v = 0;
+    drag = null;
+    mode = 'spring';
+    idle = 0;
+    const throwCards = Math.max(-config.cards, Math.min(config.cards, v * 0.220001));
+    target = Math.round(p + throwCards);
+    wake();
+  }
+
+  function onWheel(event) {
+    if (config.wheel === 'off') return;
+    const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY);
+    if (config.wheel === 'horizontal' && !horizontal) return;
+    event.preventDefault();
+    const px = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 400 : 1;
+    const delta = (horizontal ? -event.deltaX : event.deltaY) * px;
+    takeOver();
+    target += (delta / stride()) * 0.700001;
+    wheelSnap = 0.160001;
+    wake();
+  }
+
+  function onKey(event) {
+    const forward = ['ArrowDown', 'ArrowRight', 'PageDown'].includes(event.key);
+    const back = ['ArrowUp', 'ArrowLeft', 'PageUp'].includes(event.key);
+    if (!forward && !back) return;
+    event.preventDefault();
+    stepBy(forward ? 1 : -1);
+  }
+
+  const prev = root.querySelector('.ab-prev'), next = root.querySelector('.ab-next');
+  const onPrev = () => stepBy(-1), onNext = () => stepBy(1);
+  prev?.addEventListener('click', onPrev);
+  next?.addEventListener('click', onNext);
+  root.addEventListener('pointerdown', onPointerDown);
+  root.addEventListener('pointermove', onPointerMove);
+  root.addEventListener('pointerup', onPointerUp);
+  root.addEventListener('pointercancel', onPointerUp);
+  root.addEventListener('wheel', onWheel, { passive: false });
+  root.addEventListener('keydown', onKey);
+  const onMotion = () => wake();
+  reduced?.addEventListener?.('change', onMotion);
+  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(resize) : null;
+  ro?.observe(root);
+  const io = typeof IntersectionObserver === 'function'
+    ? new IntersectionObserver((entries) => {
+      visible = entries.some((entry) => entry.isIntersecting);
+      if (visible) wake();
+    })
+    : null;
+  io?.observe(root);
+  const onLost = (event) => { event.preventDefault(); root.removeAttribute('data-ready'); };
+  canvas.addEventListener('webglcontextlost', onLost);
+  const onRestored = () => {
+    setup();
+    for (const entry of textures.values()) { entry.tex = null; upload(entry); }
+    wake();
+  };
+  canvas.addEventListener('webglcontextrestored', onRestored);
+
+  function apply(next) {
+    config = { ...next };
+    root.toggleAttribute('data-draggable', !!config.draggable);
+    root.toggleAttribute('data-preview', !!config.preview);
+    if (!autoplayOn() && mode === 'auto') { mode = 'spring'; target = Math.round(p); }
+    if (autoplayOn() && mode === 'spring' && idle >= RESUME_AFTER) { mode = 'auto'; autoBase = Math.round(p); autoT = 0; }
+    if (gl) syncTextures();
+    else root.setAttribute('data-ab-loaded', '');
+    announced = null;
+    wake();
+  }
+
+  apply(config);
+  resize();
+
+  return {
+    update(next) { apply(next); },
+    /** Úprava AI_FIRMA: jedno přehrání od aktuální fotky přes všechny až na první (interval s/fotku). Běží i s „omezit animace“, jen bez rozmazání. */
+    play() {
+      if (destroyed || mode === 'play' || mode === 'drag') return false;
+      const n = config.images.length;
+      playBase = Math.round(p);
+      const k = wrapIndex(playBase, n);
+      playLen = k === 0 ? n : n - k;
+      p = target = playBase; v = 0; playT = 0; held = 0; mode = 'play';
+      wake();
+      return true;
+    },
+    get playing() { return mode === 'play'; },
+    get position() { return p; },
+    get hasGL() { return !!gl; },
+    seek(seconds) {
+      mode = autoplayOn() ? 'auto' : 'spring';
+      autoBase = 0;
+      autoT = Math.max(0, seconds);
+      held = 2;
+      if (mode === 'auto') {
+        p = direction() * autoplayOffset(autoT, config.interval, config.pulse);
+        v = direction() * autoplaySpeed(autoT, config.interval, config.pulse);
+      }
+      else { p = target = 0; v = 0; }
+      render();
+      wake();
+    },
+    destroy() {
+      destroyed = true;
+      if (raf) cancelAnimationFrame(raf);
+      prev?.removeEventListener('click', onPrev);
+      next?.removeEventListener('click', onNext);
+      root.removeEventListener('pointerdown', onPointerDown);
+      root.removeEventListener('pointermove', onPointerMove);
+      root.removeEventListener('pointerup', onPointerUp);
+      root.removeEventListener('pointercancel', onPointerUp);
+      root.removeEventListener('wheel', onWheel);
+      root.removeEventListener('keydown', onKey);
+      reduced?.removeEventListener?.('change', onMotion);
+      canvas.removeEventListener('webglcontextlost', onLost);
+      canvas.removeEventListener('webglcontextrestored', onRestored);
+      ro?.disconnect();
+      io?.disconnect();
+      if (gl) {
+        for (const entry of textures.values()) if (entry.tex) gl.deleteTexture(entry.tex);
+        gl.getExtension('WEBGL_lose_context')?.loseContext();
+      }
+      textures.clear();
+    }
+  };
+}
+
+
+const POHYB = new URLSearchParams(location.search).get('pohyb') !== '0';
+const barvy = () => { const cs = getComputedStyle(document.documentElement);
+  return { background: cs.getPropertyValue('--pozadi').trim() || '#F6EEE3', ink: cs.getPropertyValue('--text').trim() || '#3B2416' }; };
+const ZAKLAD = { cards: 6, aspect: 0.8, radius: 0.0350001, size: 118, yaw: -38, pitch: 10, depth: 5, gap: 0.0119999,
+  interval: 2.3, pulse: 0.799999, smoothing: 8, sensitivity: 1, sheen: 0.499999, seam: 1, shadow: 0.499999, backFade: 0.119999,
+  smear: 0.700001, fringe: 0.6, flare: 0.799999, autoplay: false, direction: 'down', wheel: 'off', draggable: true, preview: false,
+  cornerControl: false,
+  // textura musí být mocnina dvou (WebGL1 mipmapy); 512 stačí pro obrazovky 1×, 1024 pro retina
+  textureSize: (window.devicePixelRatio || 1) > 1.25 ? 1024 : 512 };
+const kola = [];
+function zaloz(root) {
+  const radek = root.closest('.menu-radek');
+  const cfg = { ...ZAKLAD, ...barvy(), images: root.dataset.abFotky.split(','), alts: (root.dataset.abAlty || '').split('|'),
+    size: +(root.dataset.abVelikost || ZAKLAD.size), onEnd: () => {} };
+  const kolo = createAxleBloom(root, cfg);
+  const zaznam = { root, kolo, cfg };
+  kola.push(zaznam);
+  if (!POHYB) return;
+  const spust = () => kolo.play();
+  // jeden pohyb myši (nebo pera) nad řádkem stačí
+  radek.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'touch') spust(); });
+  radek.addEventListener('pointermove', (e) => { if (e.pointerType !== 'touch' && !e.buttons) spust(); });
+  // dotyk: klepnutí nebo posun prstem přes řádek
+  radek.addEventListener('pointerup', (e) => { if (e.pointerType === 'touch') spust(); });
+  radek.addEventListener('pointercancel', (e) => { if (e.pointerType === 'touch') spust(); });
+  // fokus klávesnicí
+  root.addEventListener('focusin', (e) => { if (e.target.matches(':focus-visible')) spust(); });
+}
+const roots = Array.from(document.querySelectorAll('.menu-foto .ab-root'));
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver((entries) => entries.forEach((en) => {
+    if (en.isIntersecting) { io.unobserve(en.target); zaloz(en.target); }
+  }), { rootMargin: '300px 0px' });
+  roots.forEach((r) => io.observe(r));
+} else roots.forEach(zaloz);
+// přepnutí tématu → barvy pozadí/inkoustu do komponenty
+document.addEventListener('zmena-tematu', () => setTimeout(() => {
+  const b = barvy(); kola.forEach((z) => { Object.assign(z.cfg, b); z.kolo.update(z.cfg); });
+}, 0));
+const dispose = () => kola.forEach((z) => z.kolo.destroy());
+window.addEventListener('pagehide', dispose, { once: true });
+window.V11Menu = { kola: () => kola.map((z) => ({ id: z.root.closest('.menu-radek').id, hraje: z.kolo.playing, p: z.kolo.position, gl: z.kolo.hasGL, ready: z.root.hasAttribute('data-ready') })) };
+})();
+</script>
+<p class="pz-credit">Návrh webu: <a href="{{ owner_site }}" rel="noopener">{{ owner_name }}</a> · Fotografie: Unsplash</p>
+{% if show_banner %}<div class="pz-pv" id="pz-pv" role="note"><span>Nezávazný návrh nového webu pro <strong>{{ name }}</strong> · připravil {{ owner_name }}</span>
+<a class="pz-cta" href="{{ want_url }}">Chci tento web</a>{% if wa_url %}<a class="pz-cta" href="{{ wa_url }}" rel="noopener" target="_blank">WhatsApp</a>{% endif %}
+<button data-pz-skryt="" type="button">Skrýt</button></div>{% endif %}
+<script id="pz-js">(function(){
+var pv=document.getElementById('pz-pv');if(pv){var x=pv.querySelector('[data-pz-skryt]');x&&x.addEventListener('click',function(){pv.classList.add('pz-skryt');});}
+var HOOK="{{ form_webhook_url }}",LEAD="{{ lead_id }}";
+function lab(f,el){var l=el.id&&f.querySelector('label[for="'+el.id+'"]');if(!l)l=el.closest('label');var s=(l?l.textContent:'')||el.name||'';return s.replace(/\s+/g,' ').replace(/\*/g,'').trim();}
+document.addEventListener('submit',function(e){var f=e.target;if(!f||f.tagName!=='FORM'||f.hasAttribute('data-pz-ignore')||!HOOK)return;
+  var d={lead_id:LEAD,source:'preview',name:'',email:'',phone:'',message:''},rest=[],seen={};
+  Array.prototype.forEach.call(f.elements,function(el){ if(!el.name||el.type==='submit'||el.type==='button')return; if((el.type==='checkbox'||el.type==='radio')&&!el.checked)return;
+   var v=(el.value||'').trim(); if(!v)return; var n=el.name.toLowerCase();
+   if(/^(jmeno|name|jmeno_prijmeni)$/.test(n))d.name=v; else if(/^(email|e-mail)$/.test(n))d.email=v; else if(/^(telefon|phone|tel)$/.test(n))d.phone=v;
+   else {var k=lab(f,el)||el.name; if(seen[k]){seen[k].push(v);}else{seen[k]=[v];rest.push(k);}} });
+  d.message=rest.map(function(k){return k+': '+seen[k].join(', ');}).join('\n');
+  setTimeout(function(){ if(f.querySelector('[aria-invalid="true"],.chyba,.is-invalid'))return; if(!f.hasAttribute('novalidate')&&!f.checkValidity())return; if(!d.name&&!d.email&&!d.phone)return;
+   try{fetch(HOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch(err){}
+  },0);
+},true);
+})();</script></body>
+</html>

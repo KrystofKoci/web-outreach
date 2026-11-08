@@ -1,0 +1,32 @@
+services:
+  pg-marketing:
+    image: postgres:16-alpine
+    networks: [internal]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: marketing
+      POSTGRES_PASSWORD: ${MARKETING_DB_PASSWORD}
+      POSTGRES_DB: listmonk
+    volumes:
+      - pg-marketing:/var/lib/postgresql/data
+      - ./marketing-init.sql:/docker-entrypoint-initdb.d/01-umami.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marketing -d listmonk"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-v2.13.2
+    networks: [internal]
+    restart: unless-stopped
+    depends_on:
+      pg-marketing:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://marketing:${MARKETING_DB_PASSWORD}@pg-marketing:5432/umami
+      APP_SECRET: ${UMAMI_APP_SECRET}
+      DISABLE_TELEMETRY: 1
+networks:
+  internal: {}
+volumes:
+  pg-marketing:

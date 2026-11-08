@@ -1,0 +1,5 @@
+--
+{{owner_name}}, IČO: {{owner_ico}}, sídlo: {{owner_address}}, e-mail: {{sender_email}}, web: {{owner_site}}
+Toto je obchodní sdělení – individuální, jednorázová nabídka zaslaná na veřejně uvedený firemní kontakt. Žádné hromadné rozesílání, žádný seznam.
+Pokud si další e-mail nepřejete, klikněte na {{unsubscribe_url}} nebo odpovězte slovy NEMÁM ZÁJEM – okamžitě vás vyřadím a už nenapíšu. Slibuji.
+Jak nakládám s údaji: https://krystofkoci.com/ochrana-udaju

@@ -1,0 +1,18 @@
+{{greeting}},
+
+{{custom_intro}}
+
+procházel jsem firmy ve vašem okolí a narazil i na {{name}}. Zatím nemáte vlastní web – a právě tam dnes zákazníci hledají informace, než se rozhodnou, komu zavolají.
+
+{{reviews_line}}
+
+Dovolil jsem si proto připravit nezávaznou ukázku, jak by vaše stránka mohla vypadat:
+
+{{preview_url}}
+
+Je na ní to podstatné: co děláte, kde vás najít, otevírací doba a tlačítko pro poptávku. Texty i fotky jsou pracovní verze – finální podobu uděláme společně podle vás. A kdybyste časem chtěli víc, umím stránku rozšířit o další sekce i jemné animace. Weby dělám sám, ne přes agenturu.
+
+Kdyby vás ukázka zaujala, neváhejte mě kontaktovat. Je nezávazná – a klidně ji nejdřív upravím podle vašich představ, ať vidíte výsledek ještě před rozhodnutím.
+
+{{owner_name}}
+{{owner_site}}

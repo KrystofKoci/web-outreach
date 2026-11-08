@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Hodnocení spolupráce · Kryštof Kočí</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/fonts/fonts-a37d213e52.css">
+<style>
+:root{--bg:#F6F4EF;--fg:#14161B;--acc:#1546D9;--onacc:#F6F4EF;--line:#DAD7CF;--mute:#6E6F76;--card:#FFFFFF;--err:#B42318;--ok:#1F7A4D;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 Figtree,system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:6px}
+nav{max-width:640px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;height:64px;font-size:.92rem}
+nav a{text-decoration:none;font-weight:600;display:flex;align-items:center;gap:9px}
+nav a i{width:8px;height:8px;border-radius:50%;background:var(--acc)}
+nav span{color:var(--mute)}
+main{max-width:640px;margin:0 auto;padding-block:24px 72px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:clamp(22px,4vw,40px);display:flex;flex-direction:column;gap:24px}
+h1{font-family:"Instrument Serif",Georgia,serif;font-style:italic;font-weight:400;font-size:clamp(2.1rem,6vw,3rem);line-height:1.04;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.lead{margin:10px 0 0;color:var(--mute)}
+.theirs{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:12px 16px;flex-wrap:wrap}
+.theirs b{font-weight:600} .theirs span{color:var(--mute);font-size:.9rem}
+form{display:flex;flex-direction:column;gap:22px}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+legend,label.l{font-weight:600;font-size:.94rem;margin-bottom:8px;display:block}
+.rate{display:flex;gap:8px;flex-wrap:wrap}
+.rate button{width:50px;height:50px;border-radius:12px;border:1px solid var(--line);background:var(--bg);cursor:pointer;display:grid;place-items:center;transition:transform .15s}
+.rate button svg{width:24px;height:24px;color:var(--line)}
+.rate button.on svg{color:var(--fg)}
+.rate button:hover{transform:translateY(-2px)}
+.rate-txt{font-size:.88rem;color:var(--mute);margin-top:6px;min-height:1.4em}
+textarea,input[type=text]{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:12px 14px;font:inherit;color:inherit}
+textarea{min-height:130px;resize:vertical}
+textarea:focus,input[type=text]:focus{outline:2px solid var(--acc);outline-offset:1px;border-color:transparent}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.hint{font-size:.84rem;color:var(--mute);margin-top:6px}
+.check{display:flex;gap:12px;align-items:flex-start;font-size:.94rem;cursor:pointer}
+.check input{width:20px;height:20px;margin-top:3px;accent-color:var(--acc);flex:none}
+.send{align-self:flex-start;border:0;background:var(--acc);color:var(--onacc);font:inherit;font-weight:600;padding:14px 28px;border-radius:999px;cursor:pointer}
+.send[disabled]{opacity:.6;cursor:default}
+.err{color:var(--err);font-size:.9rem;min-height:1.3em;margin:-10px 0 0}
+.ic{width:54px;height:54px;border-radius:50%;background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok);display:grid;place-items:center;font-size:1.4rem}
+.priv{font-size:.82rem;color:var(--mute);margin:0}
+@media (max-width:520px){.two{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.rate button{transition:none}}
+</style>
+</head>
+<body>
+<nav><a href="/"><i></i>Kryštof Kočí</a><span id="navt">Hodnocení spolupráce</span></nav>
+<main><div class="card" id="card"><p class="lead" id="loading">…</p></div></main>
+<script>
+(function(){
+  var API='https://n8n.krystofkoci.com/webhook';
+  var T={
+    cs:{nav:'Hodnocení spolupráce',h:'Jak se vám se mnou pracovalo?',lead:'Zabere to asi minutu. Díky za každé slovo, i to kritické.',handed:'předáno',stars:'Celkové hodnocení',pick:'Vyberte 1 až 5 hvězdiček',words:['','Nespokojen/a','Spíš nespokojen/a','Ušlo to','Spokojen/a','Velmi spokojen/a'],
+        txt:'Co byste řekl/a ostatním majitelům firem?',ph:'Třeba co se po spuštění webu změnilo, jak probíhala spolupráce…',cnt:'znaků · stačí 2–3 věty',name:'Jméno a role',firm:'Firma a město',
+        ok:'Souhlasím, aby Kryštof Kočí zveřejnil toto hodnocení s mým jménem, firmou a náhledem webu na krystofkoci.com. Souhlas můžu kdykoli odvolat e-mailem na info@krystofkoci.com.',
+        send:'Odeslat hodnocení',sending:'Odesílám…',e1:'Vyberte prosím počet hvězdiček.',e2:'Napište prosím aspoň jednu větu.',e3:'Odeslání se nepovedlo. Zkuste to prosím za chvíli znovu, nebo napište na info@krystofkoci.com.',
+        thx:'Děkuji moc!',thxP:'Hodnocení jsem dostal. Až ho projdu, objeví se v referencích na krystofkoci.com.',thxN:'Hodnocení jsem dostal. Bez souhlasu ho nikde nezveřejním.',
+        done:'Hodnocení už mám, děkuji!',doneP:'Pokud byste chtěl/a něco změnit, napište mi na info@krystofkoci.com.',bad:'Odkaz nefunguje',badP:'Odkaz je neplatný nebo neúplný. Zkopírujte ho prosím z e-mailu celý, případně napište na info@krystofkoci.com.',
+        priv:'Údaje zpracovávám podle <a href="/ochrana-osobnich-udaju.html">zásad ochrany osobních údajů</a>.'},
+    en:{nav:'Review',h:'How was it working with me?',lead:'It takes about a minute. Thank you for every word, critical ones too.',handed:'delivered',stars:'Overall rating',pick:'Choose 1 to 5 stars',words:['','Unhappy','Rather unhappy','It was OK','Happy','Very happy'],
+        txt:'What would you tell other business owners?',ph:'For example what changed after the website went live, how the work went…',cnt:'characters · 2–3 sentences are enough',name:'Name and role',firm:'Company and city',
+        ok:'I agree that Kryštof Kočí may publish this review with my name, company and a preview of my website on krystofkoci.com. I can withdraw my consent at any time by e-mail to info@krystofkoci.com.',
+        send:'Send review',sending:'Sending…',e1:'Please choose a number of stars.',e2:'Please write at least one sentence.',e3:'Sending failed. Please try again in a moment or write to info@krystofkoci.com.',
+        thx:'Thank you very much!',thxP:'I have received your review. Once I have read it, it will appear among the references on krystofkoci.com.',thxN:'I have received your review. Without your consent I will not publish it anywhere.',
+        done:'I already have your review, thank you!',doneP:'If you would like to change something, write to info@krystofkoci.com.',bad:'This link does not work',badP:'The link is invalid or incomplete. Please copy the whole link from the e-mail, or write to info@krystofkoci.com.',
+        priv:'I process your data according to the <a href="/ochrana-osobnich-udaju.html#en">privacy notice</a>.'},
+    es:{nav:'Valoración',h:'¿Qué tal ha sido trabajar conmigo?',lead:'Le llevará un minuto. Gracias por cada palabra, también las críticas.',handed:'entregada',stars:'Valoración general',pick:'Elija de 1 a 5 estrellas',words:['','Insatisfecho/a','Más bien insatisfecho/a','Correcto','Satisfecho/a','Muy satisfecho/a'],
+        txt:'¿Qué les diría a otros dueños de negocios?',ph:'Por ejemplo, qué cambió tras lanzar la web, cómo fue la colaboración…',cnt:'caracteres · bastan 2–3 frases',name:'Nombre y cargo',firm:'Empresa y ciudad',
+        ok:'Acepto que Kryštof Kočí publique esta valoración con mi nombre, mi empresa y una vista previa de mi web en krystofkoci.com. Puedo retirar mi consentimiento en cualquier momento escribiendo a info@krystofkoci.com.',
+        send:'Enviar valoración',sending:'Enviando…',e1:'Elija un número de estrellas, por favor.',e2:'Escriba al menos una frase, por favor.',e3:'No se pudo enviar. Inténtelo de nuevo en un momento o escriba a info@krystofkoci.com.',
+        thx:'¡Muchas gracias!',thxP:'He recibido su valoración. Cuando la revise, aparecerá entre las referencias de krystofkoci.com.',thxN:'He recibido su valoración. Sin su consentimiento no la publicaré en ningún sitio.',
+        done:'Ya tengo su valoración, ¡gracias!',doneP:'Si quiere cambiar algo, escriba a info@krystofkoci.com.',bad:'El enlace no funciona',badP:'El enlace no es válido o está incompleto. Copie el enlace completo del correo o escriba a info@krystofkoci.com.',
+        priv:'Trato sus datos según el <a href="/ochrana-osobnich-udaju.html#en">aviso de privacidad</a>.'},
+    de:{nav:'Bewertung',h:'Wie war die Zusammenarbeit mit mir?',lead:'Es dauert etwa eine Minute. Danke für jedes Wort, auch für kritische.',handed:'übergeben',stars:'Gesamtbewertung',pick:'Wählen Sie 1 bis 5 Sterne',words:['','Unzufrieden','Eher unzufrieden','In Ordnung','Zufrieden','Sehr zufrieden'],
+        txt:'Was würden Sie anderen Unternehmern sagen?',ph:'Zum Beispiel, was sich nach dem Start der Website geändert hat, wie die Zusammenarbeit lief…',cnt:'Zeichen · 2–3 Sätze genügen',name:'Name und Funktion',firm:'Firma und Ort',
+        ok:'Ich bin einverstanden, dass Kryštof Kočí diese Bewertung mit meinem Namen, meiner Firma und einer Vorschau meiner Website auf krystofkoci.com veröffentlicht. Ich kann die Einwilligung jederzeit per E-Mail an info@krystofkoci.com widerrufen.',
+        send:'Bewertung senden',sending:'Wird gesendet…',e1:'Bitte wählen Sie eine Anzahl Sterne.',e2:'Bitte schreiben Sie mindestens einen Satz.',e3:'Senden fehlgeschlagen. Bitte versuchen Sie es gleich noch einmal oder schreiben Sie an info@krystofkoci.com.',
+        thx:'Vielen Dank!',thxP:'Ich habe Ihre Bewertung erhalten. Sobald ich sie gelesen habe, erscheint sie bei den Referenzen auf krystofkoci.com.',thxN:'Ich habe Ihre Bewertung erhalten. Ohne Ihre Einwilligung veröffentliche ich sie nirgends.',
+        done:'Ihre Bewertung liegt mir schon vor, danke!',doneP:'Wenn Sie etwas ändern möchten, schreiben Sie an info@krystofkoci.com.',bad:'Der Link funktioniert nicht',badP:'Der Link ist ungültig oder unvollständig. Bitte kopieren Sie den ganzen Link aus der E-Mail oder schreiben Sie an info@krystofkoci.com.',
+        priv:'Ich verarbeite Ihre Daten gemäß der <a href="/ochrana-osobnich-udaju.html#en">Datenschutzerklärung</a>.'}
+  };
+  var STAR='<svg viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M10 1.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8L10 14.9l-5.2 2.7 1-5.8L1.6 7.7l5.8-.8z"/></svg>';
+  var card=document.getElementById('card'), t=new URLSearchParams(location.search).get('t')||'', L=T.cs;
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function setLang(l){L=T[l]||T.cs;document.documentElement.lang=T[l]?l:'cs';document.getElementById('navt').textContent=L.nav;document.title=L.nav+' · Kryštof Kočí';}
+  function msg(h,p,icon){card.innerHTML=(icon?'<div class="ic">✓</div>':'')+'<div><h1>'+esc(h)+'</h1><p class="lead">'+esc(p)+'</p></div>';}
+  if(!/^[a-z0-9]{24}$/.test(t)){msg(T.cs.bad,T.cs.badP);return;}
+  fetch(API+'/hodnoceni-info?t='+encodeURIComponent(t)).then(function(r){return r.json()}).then(function(d){
+    if(!d||!d.ok){msg(T.cs.bad,T.cs.badP);return;}
+    setLang(d.jazyk);
+    if(d.done){msg(L.done,L.doneP,true);return;}
+    form(d);
+  }).catch(function(){msg(T.cs.bad,T.cs.e3);});
+
+  function form(d){
+    var host='';try{host=new URL(d.web).hostname.replace(/^www\./,'')}catch(e){host=d.web||''}
+    var when=d.predano?new Date(d.predano+'T12:00:00Z').toLocaleDateString(document.documentElement.lang,{day:'numeric',month:'numeric',year:'numeric'}):'';
+    card.innerHTML='<div><h1>'+esc(L.h)+'</h1><p class="lead">'+esc(L.lead)+'</p></div>'+
+      '<div class="theirs"><b>'+esc(d.firma)+'</b><span>'+esc(host)+(when?' · '+esc(L.handed)+' '+esc(when):'')+'</span></div>'+
+      '<form id="f" novalidate><fieldset><legend>'+esc(L.stars)+'</legend><div class="rate" id="rate" role="radiogroup" aria-label="'+esc(L.stars)+'"></div><div class="rate-txt" id="rt">'+esc(L.pick)+'</div></fieldset>'+
+      '<div><label class="l" for="txt">'+esc(L.txt)+'</label><textarea id="txt" maxlength="600" placeholder="'+esc(L.ph)+'"></textarea><div class="hint"><span id="cnt">0</span> / 600 '+esc(L.cnt)+'</div></div>'+
+      '<div class="two"><div><label class="l" for="nm">'+esc(L.name)+'</label><input type="text" id="nm" maxlength="120" value="'+esc(d.jmeno)+'"></div><div><label class="l" for="fm">'+esc(L.firm)+'</label><input type="text" id="fm" maxlength="120" value="'+esc([d.firma,d.mesto].filter(Boolean).join(', '))+'"></div></div>'+
+      '<label class="check"><input type="checkbox" id="pub"> <span>'+esc(L.ok)+'</span></label>'+
+      '<p class="err" id="err" role="alert"></p><button class="send" type="submit" id="send">'+esc(L.send)+'</button><p class="priv">'+L.priv+'</p></form>';
+    var rate=document.getElementById('rate'),rt=document.getElementById('rt'),val=0;
+    for(var i=1;i<=5;i++)(function(i){var b=document.createElement('button');b.type='button';b.innerHTML=STAR;b.setAttribute('role','radio');b.setAttribute('aria-checked','false');b.setAttribute('aria-label',i+' / 5');
+      b.onclick=function(){val=i;paint(i);[].forEach.call(rate.children,function(x,k){x.setAttribute('aria-checked',String(k===i-1))});rt.textContent=i+' / 5 · '+L.words[i];};
+      b.onmouseenter=function(){paint(i)};b.onmouseleave=function(){paint(val)};rate.appendChild(b);})(i);
+    function paint(n){[].forEach.call(rate.children,function(x,k){x.classList.toggle('on',k<n)})}
+    var txt=document.getElementById('txt');txt.addEventListener('input',function(){document.getElementById('cnt').textContent=txt.value.length});
+    document.getElementById('f').addEventListener('submit',function(e){e.preventDefault();var err=document.getElementById('err'),btn=document.getElementById('send');
+      if(!val){err.textContent=L.e1;return;} if(txt.value.trim().length<10){err.textContent=L.e2;txt.focus();return;}
+      var pub=document.getElementById('pub').checked;btn.disabled=true;btn.textContent=L.sending;err.textContent='';
+      var body=new URLSearchParams({t:t,hvezdy:String(val),text:txt.value.trim(),jmeno:document.getElementById('nm').value.trim(),firma_mesto:document.getElementById('fm').value.trim(),souhlas:pub?'ano':'ne'});
+      fetch(API+'/hodnoceni',{method:'POST',body:body}).then(function(r){return r.json()}).then(function(d){
+        if(d&&d.ok){msg(L.thx,pub?L.thxP:L.thxN,true);return;}
+        if(d&&d.duplicate){msg(L.done,L.doneP,true);return;}
+        throw 0;
+      }).catch(function(){err.textContent=L.e3;btn.disabled=false;btn.textContent=L.send;});
+    });
+  }
+})();
+</script>
+</body>
+</html>

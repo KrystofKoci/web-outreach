@@ -1,0 +1,1529 @@
+{
+  "updatedAt": "2026-11-07T02:43:43.515Z",
+  "createdAt": "2026-10-25T18:39:04.148Z",
+  "id": "weboutreachwf002",
+  "name": "02 Audit a náhled – pipeline /process",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 02 · Audit a stavba náhledu\n**Co dělá:** každých 20 minut vezme max. 8 řádků se stavem `new`, označí je `processing`, pro každý zavolá pipeline `/process` (audit webu nebo zjištění „bez webu“, stavba náhledu na nahled.krystofkoci.com/<slug>/ + compare.png) a zapíše výsledek: branch, skóre, důvody (v jazyce leadu + česky), odkazy, e-mail, právní režim.\n\n**Stavy po zpracování:** veřejný e-mail nalezen → `awaiting_approval`; `redesign` bez e-mailu → `needs_email`; `no_website` bez e-mailu → `skipped` (firmy oslovujeme jen e-mailem, nikdy telefonem ani WhatsAppem); `skip` → `skipped`; `blocked` → `blocked`; chyba → `error` (důvod v notes).\n\n**Test:** vlož do `leads` jeden řádek ručně (id `test-1`, name, city, country `CZ`, website tvého známého, status `new`, lang `cs`, market `cz`) a spusť ručně.",
+        "height": 360,
+        "width": 420,
+        "color": 1
+      },
+      "id": "721febcc-9826-405e-9120-9d25cff498d1",
+      "name": "Poznámka 1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Zkontrolovat po importu\n- Sheets uzly: znovu vybrat dokument/list, u „Aktualizovat řádek“ ověřit *Column to match on* = `id`.\n- `/process` může trvat 1–3 min (screenshoty) – timeout je 5 min, uzel při chybě pokračuje (řádek dostane `error`).\n- Kill switch `OUTREACH_ENABLED` zastaví i audit (šetří Places/LLM kredit).",
+        "height": 200,
+        "width": 420,
+        "color": 3
+      },
+      "id": "ce145773-129e-4794-a6d8-47ab91589876",
+      "name": "Poznámka 2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -460,
+        350
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 20
+            }
+          ]
+        }
+      },
+      "id": "70edeef2-1347-4b33-bd58-bfe422d221de",
+      "name": "Každých 20 minut",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5e3558b6-38bd-41a4-b725-528543566ca1",
+              "leftValue": "={{ $env.OUTREACH_ENABLED }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "95bea4e8-d30b-41c6-90a1-d91d35bf62ff",
+      "name": "Zapnuto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "options": {}
+      },
+      "id": "23d68031-a889-41e2-8505-2b5fe1c3e637",
+      "name": "Řádky new",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        460,
+        200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\nconst blocked = blockedCountries();\n// UNIQUE_CITY_V2: čekající na volnou šablonu se zkouší znovu po 6 h, max 4 za běh, přednostně\nconst WAIT_TAG = 'šablona-obsazená:';\nconst waitDue = (r) => { const m = String(r.next_action || '').match(/šablona-obsazená:(\\S+)/); const t = m ? parseISO(m[1]) : null; return !t || DateTime.now().diff(t, 'hours').hours >= 6; };\nconst waitingU = clean($input.all()).filter(r => r.id && String(r.status) === 'waiting_template' && waitDue(r))\n  .sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || ''))).slice(0, 4);\nconst rows = waitingU.concat(clean($input.all()).filter(r => r.id && ['new', 'changes_requested'].includes(String(r.status)))); // OWNER_NOTE_PATCH_V1\nrows.sort((a, b) => ((String(b.status) === 'waiting_template') - (String(a.status) === 'waiting_template')) || String(a.created_at || '').localeCompare(String(b.created_at || '')));\nconst out = [];\nfor (const r of rows) {\n  if (blocked.has(String(r.country || '').toUpperCase())) { out.push({ json: { ...r, _blocked: true } }); continue; }\n  if (out.filter(o => !o.json._blocked).length < 8) out.push({ json: r });\n}\n\n// UNIQUE_CITY_V2 – pro pipeline: které leady ve stejném městě drží šablonu\nconst RELEASE_U = new Set(['', 'new', 'processing', 'rejected', 'changes_requested', 'skipped', 'error', 'blocked', 'needs_email',\n  'waiting_template', 'lost', 'unsubscribed', 'do_not_contact', 'bounced']);\nconst NOREPLY_DAYS_U = Number($env.TEMPLATE_RELEASE_DAYS || 14) || 14;\nconst holdsU = (x) => {\n  const st = String(x.status || '');\n  if (RELEASE_U.has(st)) return false;\n  if (st === 'sent_3' && !x.last_reply_at) { const t = parseISO(x.sent_3_at); if (t && DateTime.now().diff(t, 'days').days >= NOREPLY_DAYS_U) return false; }\n  return true;\n};\nconst allU = clean($input.all());\nconst ckU = (c) => String(c || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\\s+/g, ' ').trim();\nconst pickedU = out.filter(o => !o.json._blocked).map(o => o.json);\nfor (const o of out) {\n  if (o.json._blocked) continue;\n  const c = ckU(o.json.city);\n  if (!c) continue;\n  const ids = allU.filter(x => x.id && x.id !== o.json.id && ckU(x.city) === c && holdsU(x))\n    .concat(pickedU.filter(p => p.id !== o.json.id && ckU(p.city) === c));\n  o.json._active_ids = [...new Set(ids.map(x => String(x.id)))];\n}\nreturn out;\n"
+      },
+      "id": "7870e27c-8800-41a2-86d9-3f8dc95bc576",
+      "name": "Vybrat max 8",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "067ec3e0-27b7-4168-b069-f65b4639bc82",
+      "name": "Smyčka po jednom",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        900,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "status": "={{ $json._blocked ? 'blocked' : 'processing' }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "market",
+              "displayName": "market",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lang",
+              "displayName": "lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tz",
+              "displayName": "tz",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "legal_regime",
+              "displayName": "legal_regime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "primary_type",
+              "displayName": "primary_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp",
+              "displayName": "whatsapp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp_opt_in",
+              "displayName": "whatsapp_opt_in",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "has_website",
+              "displayName": "has_website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "maps_url",
+              "displayName": "maps_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating",
+              "displayName": "rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating_count",
+              "displayName": "rating_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "branch",
+              "displayName": "branch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons",
+              "displayName": "reasons",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons_cs",
+              "displayName": "reasons_cs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "preview_url",
+              "displayName": "preview_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "compare_png_url",
+              "displayName": "compare_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "og_png_url",
+              "displayName": "og_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "batch_id",
+              "displayName": "batch_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notified_at",
+              "displayName": "notified_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_intro",
+              "displayName": "custom_intro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_subject",
+              "displayName": "custom_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "subject_variant",
+              "displayName": "subject_variant",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_1_at",
+              "displayName": "sent_1_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_2_at",
+              "displayName": "sent_2_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_3_at",
+              "displayName": "sent_3_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_message_id",
+              "displayName": "last_message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_reply_at",
+              "displayName": "last_reply_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_channel",
+              "displayName": "last_channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "auto_reply_count",
+              "displayName": "auto_reply_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "manual_takeover",
+              "displayName": "manual_takeover",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "price_quoted",
+              "displayName": "price_quoted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "next_action",
+              "displayName": "next_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "owner_note",
+              "displayName": "owner_note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "extracted_offer",
+              "displayName": "extracted_offer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "offer_photos",
+              "displayName": "offer_photos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bbef3ca7-f3b6-4d6f-9863-df37787e6b6b",
+      "name": "Označit processing",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1120,
+        320
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "98e29ea5-1578-4d3e-87f8-76231f1fba61",
+              "leftValue": "={{ $('Smyčka po jednom').item.json._blocked }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "6485e993-3316-48cd-b558-e7b409f932c6",
+      "name": "Blokovaná země?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1340,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ ($env.PIPELINE_URL || 'http://pipeline:8077') }}/process",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 300000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ lead: $('Smyčka po jednom').item.json, market: $('Smyčka po jednom').item.json.market || 'en', lang: $('Smyčka po jednom').item.json.lang || 'en', force: String($('Smyčka po jednom').item.json.status) === 'changes_requested', owner_note: String($('Smyčka po jednom').item.json.owner_note || '') }) }}"
+      },
+      "id": "007a7394-2bf1-405f-9deb-06c6e858270c",
+      "name": "Pipeline /process",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        420
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "pipeline-api",
+          "name": "Pipeline API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\nconst lead = $('Smyčka po jednom').item.json;\nconst r = $input.item.json || {};\nconst today = DateTime.now().toFormat('d.L.');\nconst out = { id: lead.id };\nconst addNote = (s) => { out.notes = [lead.notes, s].filter(Boolean).join(' | ').slice(-1000); };\nif (r.error || (!r.branch && !r.preview_url)) {\n  out.status = 'error';\n  addNote(`${today} /process chyba: ${String((r.error && (r.error.message || r.error.description)) || r.error || JSON.stringify(r)).slice(0, 200)}`);\n  return { json: out };\n}\nconst emails = Array.isArray(r.emails) ? r.emails : [];\nconst email = String(r.best_email || emails[0] || lead.email || '').trim().toLowerCase();\nconst phones = Array.isArray(r.phones) ? r.phones : [];\nconst reasonsCs = Array.isArray(r.reasons_cs) ? r.reasons_cs : [];\nconst reasonsEn = Array.isArray(r.reasons_en) ? r.reasons_en : [];\nout.branch = r.branch || 'skip';\nout.score = (r.score ?? '') === '' ? '' : Number(r.score);\nout.reasons = (lead.lang === 'cs' ? reasonsCs : (reasonsEn.length ? reasonsEn : reasonsCs)).join(' | ');\nout.reasons_cs = reasonsCs.join(' | ');\nout.preview_url = r.preview_url || '';\nout.compare_png_url = r.compare_png_url || '';\nout.og_png_url = r.og_png_url || '';\nout.extracted_offer = String(r.offer_summary || '').slice(0, 900); // OWNER_NOTE_PATCH_V1\nout.offer_photos = String(r.offer_photos || '').slice(0, 1500);\nconst rebuild = String(lead.status) === 'changes_requested';\nout.industry = r.industry || '';\nout.legal_regime = r.legal_regime || lead.legal_regime || 'unknown';\nif (r.tz) out.tz = r.tz;\nif (email && email.includes('@')) out.email = email;\nif (!lead.phone && (phones[0] || r.phone)) out.phone = phones[0] || r.phone;\nconst notes = [];\nconst waitU = out.branch === 'skip' && Array.isArray(r.warnings) && r.warnings.some(w => String(w).startsWith('SABLONA_OBSAZENA')); // UNIQUE_CITY_V2\nif (waitU) { r.warnings = String(lead.status) === 'waiting_template' ? [] : r.warnings.map(w => String(w).replace(/^SABLONA_OBSAZENA:\\s*/, '')); }\nif (Array.isArray(r.warnings) && r.warnings.length) notes.push('upozornění: ' + r.warnings.join('; '));\nif (out.legal_regime === 'blocked' || out.branch === 'blocked') { out.status = 'blocked'; notes.push(r.legal_note_cs || 'blokovaný právní režim'); }\nelse if (waitU) { out.status = 'waiting_template'; out.next_action = 'šablona-obsazená:' + DateTime.now().toISO(); }\nelse if (out.branch === 'skip') { out.status = 'skipped'; }\nelse if (out.email) { out.status = 'awaiting_approval'; out.next_action = ''; if (rebuild) { out.batch_id = ''; out.notified_at = ''; out.approved_at = ''; notes.push('přestavěno podle poznámky majitele'); } }\nelse if (out.branch === 'no_website') { out.status = 'skipped'; notes.push('bez webu a bez veřejného e-mailu – neoslovujeme'); }\nelse { out.status = 'needs_email'; out.next_action = 'doplnit e-mail'; }\nif (out.legal_regime === 'unknown' && out.status === 'awaiting_approval') notes.push('právní režim země neznámý – ověř před schválením');\nif (out.legal_regime === 'corporate_only' && out.status === 'awaiting_approval') notes.push('UK/IE: ověř, že jde o Ltd/PLC (PECR), ne sole trader');\nif (notes.length) addNote(`${today} ${notes.join('; ')}`);\nreturn { json: out };",
+        "mode": "runOnceForEachItem"
+      },
+      "id": "df642d35-bf80-4a9e-9531-be7cd8544db3",
+      "name": "Vyhodnotit výsledek",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "market",
+              "displayName": "market",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lang",
+              "displayName": "lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tz",
+              "displayName": "tz",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "legal_regime",
+              "displayName": "legal_regime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "primary_type",
+              "displayName": "primary_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp",
+              "displayName": "whatsapp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp_opt_in",
+              "displayName": "whatsapp_opt_in",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "has_website",
+              "displayName": "has_website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "maps_url",
+              "displayName": "maps_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating",
+              "displayName": "rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating_count",
+              "displayName": "rating_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "branch",
+              "displayName": "branch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons",
+              "displayName": "reasons",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons_cs",
+              "displayName": "reasons_cs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "preview_url",
+              "displayName": "preview_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "compare_png_url",
+              "displayName": "compare_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "og_png_url",
+              "displayName": "og_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "batch_id",
+              "displayName": "batch_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notified_at",
+              "displayName": "notified_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_intro",
+              "displayName": "custom_intro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_subject",
+              "displayName": "custom_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "subject_variant",
+              "displayName": "subject_variant",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_1_at",
+              "displayName": "sent_1_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_2_at",
+              "displayName": "sent_2_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_3_at",
+              "displayName": "sent_3_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_message_id",
+              "displayName": "last_message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_reply_at",
+              "displayName": "last_reply_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_channel",
+              "displayName": "last_channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "auto_reply_count",
+              "displayName": "auto_reply_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "manual_takeover",
+              "displayName": "manual_takeover",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "price_quoted",
+              "displayName": "price_quoted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "next_action",
+              "displayName": "next_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "owner_note",
+              "displayName": "owner_note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "extracted_offer",
+              "displayName": "extracted_offer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "offer_photos",
+              "displayName": "offer_photos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ce24f9cc-ff97-4b53-b291-804d77abd0bc",
+      "name": "Zapsat výsledek",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2000,
+        420
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "e841ac81-7499-4011-9da4-2386c17060f1",
+      "name": "Hotovo",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        80
+      ]
+    }
+  ],
+  "connections": {
+    "Každých 20 minut": {
+      "main": [
+        [
+          {
+            "node": "Zapnuto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zapnuto?": {
+      "main": [
+        [
+          {
+            "node": "Řádky new",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Řádky new": {
+      "main": [
+        [
+          {
+            "node": "Vybrat max 8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vybrat max 8": {
+      "main": [
+        [
+          {
+            "node": "Smyčka po jednom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smyčka po jednom": {
+      "main": [
+        [
+          {
+            "node": "Hotovo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Označit processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Označit processing": {
+      "main": [
+        [
+          {
+            "node": "Blokovaná země?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Blokovaná země?": {
+      "main": [
+        [
+          {
+            "node": "Smyčka po jednom",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pipeline /process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pipeline /process": {
+      "main": [
+        [
+          {
+            "node": "Vyhodnotit výsledek",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vyhodnotit výsledek": {
+      "main": [
+        [
+          {
+            "node": "Zapsat výsledek",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zapsat výsledek": {
+      "main": [
+        [
+          {
+            "node": "Smyčka po jednom",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Každých 20 minut": {
+      "recurrenceRules": [
+        null
+      ],
+      "recurrenceRuleSignatures": [
+        null
+      ]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "89b6b950-8e46-4501-ae0a-74c2d82f3ddd",
+  "activeVersionId": "89b6b950-8e46-4501-ae0a-74c2d82f3ddd",
+  "versionCounter": 2,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-25T18:39:04.148Z",
+      "createdAt": "2026-10-25T18:39:04.148Z",
+      "role": "workflow:owner",
+      "workflowId": "weboutreachwf002",
+      "projectId": "qlm5jIHOlquhrXmj",
+      "project": {
+        "updatedAt": "2026-10-25T18:45:57.237Z",
+        "createdAt": "2026-10-25T18:38:47.559Z",
+        "id": "qlm5jIHOlquhrXmj",
+        "name": "Krystof Koci <kontakt@krystofkoci.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "d5729b57-8469-4ca0-a7fb-0500133a81aa"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "02 Audit a náhled – pipeline /process",
+    "description": ""
+  }
+}

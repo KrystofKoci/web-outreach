@@ -1,0 +1,30 @@
+# tajemství a lokální stav
+.env
+infra/.env
+infra/backups/
+secrets/
+*.pem
+*.key
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# výstupy pipeline (náhledy se generují na serveru)
+previews/
+demo-out/
+_state/
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# z�lohy a logy
+*.bak*
+*.log
+infra/capture-krystofkoci/log.txt
+*.lock

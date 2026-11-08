@@ -1,0 +1,5 @@
+# added by krystofkoci.com deploy: serves the website through the existing Caddy
+services:
+  caddy:
+    volumes:
+      - ./site-krystofkoci:/srv/krystofkoci.com:ro

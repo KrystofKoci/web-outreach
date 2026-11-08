@@ -1,0 +1,28 @@
+{# SEKCE_PATCH_V1 – pás skutečných recenzí z Google (varianta C). Zobrazí se jen když jsou recenze s textem. #}
+{% if reviews %}
+<section class="pz-rec" aria-label="{{ 'Recenze z Google' if lang == 'cs' else 'Google reviews' }}">
+<style>
+.pz-rec{box-sizing:border-box;padding:clamp(48px,7vw,96px) clamp(16px,5vw,64px) clamp(24px,3vw,40px)}
+.pz-rec .in{max-width:1240px;margin:0 auto}
+.pz-rec h2{margin:0 0 24px;font-size:clamp(26px,3vw,40px);line-height:1.15;font-weight:inherit}
+.pz-rec .pas{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;scrollbar-width:thin}
+.pz-rec article{flex:0 0 min(320px,84vw);scroll-snap-align:start;box-sizing:border-box;padding:22px;border-radius:14px;border:1px solid color-mix(in srgb,currentColor 16%,transparent);background:color-mix(in srgb,currentColor 4%,transparent);display:flex;flex-direction:column;gap:12px}
+.pz-rec .hl{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;opacity:.75}
+.pz-rec .hv{color:#E8A317;letter-spacing:2px;font-size:15px;opacity:1}
+.pz-rec blockquote{margin:0;font-size:15.5px;line-height:1.55}
+.pz-rec .kdo{margin:auto 0 0;font-size:14px;font-weight:600}
+.pz-rec .ovl{display:flex;gap:10px;align-items:center;margin-top:18px}
+.pz-rec button{width:44px;height:44px;border-radius:50%;border:1px solid currentColor;background:transparent;color:inherit;font-size:18px;cursor:pointer}
+.pz-rec .ovl a{margin-left:auto;color:inherit;font-size:15px;font-weight:600;text-underline-offset:3px}
+</style>
+<div class="in">
+<h2>{{ 'Co o nás píšou zákazníci' if lang == 'cs' else 'What our customers say' }}</h2>
+<div class="pas" data-pas="">
+{% for r in reviews %}<article><div class="hl"><span class="hv" role="img" aria-label="{{ r.hvezdy }} {{ 'z 5 hvězd' if lang == 'cs' else 'out of 5 stars' }}">{{ '★' * r.hvezdy }}</span><span>{{ r.kdy }}</span></div>
+<blockquote>{{ r.text }}</blockquote><p class="kdo">{{ r.jmeno }} · Google</p></article>
+{% endfor %}</div>
+<div class="ovl"><button type="button" aria-label="{{ 'Předchozí recenze' if lang == 'cs' else 'Previous review' }}" data-pas-k="-1">←</button><button type="button" aria-label="{{ 'Další recenze' if lang == 'cs' else 'Next review' }}" data-pas-k="1">→</button>{% if map_link_url %}<a href="{{ map_link_url }}" rel="noopener" target="_blank">{{ 'Všechny recenze na Googlu' if lang == 'cs' else 'All reviews on Google' }}</a>{% endif %}</div>
+</div>
+<script>(function(){var s=document.currentScript.parentNode,p=s.querySelector('[data-pas]');s.querySelectorAll('[data-pas-k]').forEach(function(b){b.addEventListener('click',function(){p.scrollBy({left:(+b.getAttribute('data-pas-k'))*(p.firstElementChild.offsetWidth+18),behavior:'smooth'})})})})();</script>
+</section>
+{% endif %}

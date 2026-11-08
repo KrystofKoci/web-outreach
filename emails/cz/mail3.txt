@@ -1,0 +1,12 @@
+{{greeting}},
+
+píšu naposledy – nechci vám plnit schránku.
+
+Ukázku pro {{name}} nechám ještě pár týdnů dostupnou na {{preview_url}}, pak ji smažu.
+
+{{mail3_offer}}
+
+Pokud se ozvete, rád pomůžu. Pokud ne, přeju hodně spokojených zákazníků a omlouvám se za vyrušení.
+
+{{owner_name}}
+{{owner_site}}

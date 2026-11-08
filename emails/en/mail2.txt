@@ -1,0 +1,14 @@
+{{greeting}},
+
+a few days ago I sent you a draft of a new website for {{name}}. I know an e-mail like that gets buried easily, so just a short reminder:
+
+{{preview_url}}
+
+The biggest difference shows on a phone: a customer sees your phone number, opening hours and an enquiry button on the very first screen – no searching, no pinching.
+
+It is still a no-obligation draft; the texts and photos are a working version. If you like the direction, I will finish it from your own materials. If not, just say so and I will not bother you again.
+
+If you have any questions, simply reply to this e-mail – I will get back to you promptly.
+
+{{owner_name}}
+{{owner_site}}

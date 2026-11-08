@@ -1,0 +1,252 @@
+{
+  "id": "weboutreachwf000",
+  "name": "00 Nastavení – vytvořit CRM sešit (spustit jednou)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 00 · Nastavení (spusť jednou ručně)\n**Kdy:** po přihlášení Google účtu v credentialu „Google Sheets – outreach“ (Sign in with Google).\n**Co udělá:** v tvém Google Drive vytvoří sešit **„Web outreach CRM“** s listy `leads`, `queue`, `deals`, `weights`, `blocklist` a hlavičkami (kopie `sheets/*.csv`), naplní `queue` doporučenými městy (USA střed a hory, kanadské prérie, ČR mimo Prahu; UK/AU vypnuté; Kostarika nikdy) a pošle ti **SHEET_ID** e-mailem a na WhatsApp.\n**Pak:** na serveru jeden příkaz `bash infra/set_sheet_id.sh <SHEET_ID>` – zapíše ID do `infra/.env` (jediné místo) a restartuje n8n.\n**Pojistka:** když už je `SHEET_ID` nastavený, workflow nic nevytvoří (aby nevznikly dva sešity).",
+        "height": 320,
+        "width": 440,
+        "color": 1
+      },
+      "id": "985a0e29-6829-4158-9e76-587a80eb9fed",
+      "name": "Poznámka 1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -60
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "1d736c1b-fa6f-4bc2-9281-d79cadb431ca",
+      "name": "Spustit ručně",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const existing = String($env.SHEET_ID || '').trim();\nif (existing) throw new Error(`SHEET_ID už je nastavený (${existing}). Sešit existuje: https://docs.google.com/spreadsheets/d/${existing}/edit – pokud opravdu chceš nový, vymaž SHEET_ID v infra/.env a restartuj n8n.`);\nconst SHEETS = {\"leads\": [[\"id\", \"created_at\", \"market\", \"lang\", \"country\", \"tz\", \"legal_regime\", \"name\", \"category\", \"primary_type\", \"city\", \"address\", \"phone\", \"email\", \"whatsapp\", \"whatsapp_opt_in\", \"website\", \"has_website\", \"maps_url\", \"rating\", \"rating_count\", \"industry\", \"branch\", \"score\", \"reasons\", \"reasons_cs\", \"preview_url\", \"compare_png_url\", \"og_png_url\", \"status\", \"batch_id\", \"notified_at\", \"approved_at\", \"custom_intro\", \"custom_subject\", \"subject_variant\", \"sent_1_at\", \"sent_2_at\", \"sent_3_at\", \"thread_id\", \"last_message_id\", \"last_reply_at\", \"last_channel\", \"auto_reply_count\", \"manual_takeover\", \"price_quoted\", \"notes\", \"next_action\"]], \"queue\": [[\"country\", \"city\", \"category\", \"lang\", \"market\", \"enabled\", \"weight\"], [\"US\", \"Tulsa OK\", \"plumber\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Tulsa OK\", \"roofing\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Omaha NE\", \"electrician\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Omaha NE\", \"auto repair\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Wichita KS\", \"plumber\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Wichita KS\", \"barber shop\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Des Moines IA\", \"hair salon\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Des Moines IA\", \"roofing\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Kansas City MO\", \"electrician\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Kansas City MO\", \"physiotherapy\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Boise ID\", \"auto repair\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Boise ID\", \"beauty salon\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Billings MT\", \"plumber\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Colorado Springs CO\", \"dentist\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Albuquerque NM\", \"roofing\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"US\", \"Salt Lake City UT\", \"café\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"CA\", \"Calgary\", \"plumber\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"CA\", \"Calgary\", \"dentist\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"CA\", \"Edmonton\", \"electrician\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"CA\", \"Winnipeg\", \"roofing\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"CA\", \"Winnipeg\", \"hair salon\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"CA\", \"Saskatoon\", \"auto repair\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"CA\", \"Regina\", \"barber shop\", \"en\", \"en\", \"TRUE\", \"1.0\"], [\"CZ\", \"Brno\", \"instalatér\", \"cs\", \"cz\", \"TRUE\", \"1.0\"], [\"CZ\", \"Brno\", \"autoservis\", \"cs\", \"cz\", \"TRUE\", \"1.0\"], [\"CZ\", \"Olomouc\", \"kadeřnictví\", \"cs\", \"cz\", \"TRUE\", \"1.0\"], [\"CZ\", \"Plzeň\", \"elektrikář\", \"cs\", \"cz\", \"TRUE\", \"1.0\"], [\"CZ\", \"Hradec Králové\", \"fyzioterapie\", \"cs\", \"cz\", \"TRUE\", \"1.0\"], [\"CZ\", \"Zlín\", \"kosmetický salon\", \"cs\", \"cz\", \"TRUE\", \"1.0\"], [\"CZ\", \"České Budějovice\", \"holičství\", \"cs\", \"cz\", \"TRUE\", \"1.0\"], [\"CZ\", \"Liberec\", \"kavárna\", \"cs\", \"cz\", \"TRUE\", \"1.0\"], [\"GB\", \"Leeds\", \"plumber\", \"en\", \"en\", \"FALSE\", \"1.0\"], [\"GB\", \"Sheffield\", \"electrician\", \"en\", \"en\", \"FALSE\", \"1.0\"], [\"AU\", \"Adelaide\", \"electrician\", \"en\", \"en\", \"FALSE\", \"1.0\"], [\"AU\", \"Perth\", \"plumber\", \"en\", \"en\", \"FALSE\", \"1.0\"]], \"deals\": [[\"lead_id\", \"won_at\", \"country\", \"industry\", \"city\", \"score\", \"branch\", \"subject_variant\", \"days_to_reply\", \"days_to_close\", \"price_quoted\", \"price_final\", \"currency\", \"channel\", \"notes\"]], \"weights\": [[\"segment\", \"weight\", \"reply_rate\", \"win_rate\", \"n\"]], \"blocklist\": [[\"value\", \"type\", \"reason\", \"added_at\", \"lead_id\"]]};\nfor (const r of SHEETS.queue.slice(1)) if (String(r[0]).toUpperCase() === 'CR') throw new Error('Kostarika (CR) nesmí být ve frontě.');\nconst body = { properties: { title: 'Web outreach CRM', locale: 'cs_CZ', timeZone: String($env.OWNER_TZ || 'Europe/Prague') },\n  sheets: Object.keys(SHEETS).map((name, i) => ({ properties: { title: name, index: i, gridProperties: { frozenRowCount: 1 } } })) };\nreturn [{ json: { body, data: Object.entries(SHEETS).map(([name, values]) => ({ range: `${name}!A1`, values })) } }];"
+      },
+      "id": "b9fe9796-6941-4ca3-98d5-ced2d70e2d47",
+      "name": "Připravit sešit",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://sheets.googleapis.com/v4/spreadsheets",
+        "options": {
+          "timeout": 60000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api"
+      },
+      "id": "3304f342-c082-4531-922b-30d044dfdcba",
+      "name": "Sheets API: vytvořit sešit",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.spreadsheetId }}/values:batchUpdate",
+        "options": {
+          "timeout": 60000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ valueInputOption: 'RAW', data: $('Připravit sešit').first().json.data }) }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api"
+      },
+      "id": "101e80ff-2659-4ea9-bcaf-390793bdf2df",
+      "name": "Sheets API: hlavičky a fronta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        200
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const s = $('Sheets API: vytvořit sešit').first().json;\nconst id = s.spreadsheetId;\nconst url = s.spreadsheetUrl || `https://docs.google.com/spreadsheets/d/${id}/edit`;\nconst cmd = `bash infra/set_sheet_id.sh ${id}`;\nconst html = `<p>Sešit <b>Web outreach CRM</b> je vytvořený: <a href=\"${url}\">${url}</a></p>` +\n  `<p><b>SHEET_ID:</b> <code>${id}</code></p><p>Teď na serveru spusť:</p><pre>cd /opt/web-outreach && ${cmd}</pre>` +\n  `<p>Tím se ID zapíše do <code>infra/.env</code> a n8n se restartuje. Pak pokračuj podle VYPLN_A_SPUST.md (WhatsApp šablony, test v TEST_MODE).</p>`;\nreturn [{ json: { sheet_id: id, url, cmd, html } }];"
+      },
+      "id": "c958c7cb-0087-496c-9cef-1c41590d8f81",
+      "name": "Výsledek",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.OWNER_EMAIL }}",
+        "subject": "=✅ CRM sešit vytvořen – SHEET_ID {{ $json.sheet_id }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Outreach systém"
+        }
+      },
+      "id": "81bff63e-63fc-407e-b56e-91b3177de8e4",
+      "name": "E-mail: SHEET_ID",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1100,
+        200
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-kontakt",
+          "name": "Gmail – kontakt@krystofkoci.com"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/{{ $env.WHATSAPP_GRAPH_VERSION || 'v21.0' }}/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: String($env.OWNER_WHATSAPP || '').replace(/\\D/g, ''), type: 'template', template: { name: ($env.WHATSAPP_TEMPLATE_ESCALATION || 'escalation'), language: { code: ($env.WHATSAPP_TEMPLATE_LANG || 'cs') }, components: [{ type: 'body', parameters: (['Nastavení CRM dokončeno', 'SHEET_ID ' + $('Výsledek').first().json.sheet_id + ' – spusť set_sheet_id.sh']).map(p => ({ type: 'text', text: (String(p ?? '').replace(/[\\r\\n\\t]+/g, ' ').replace(/ {4,}/g, '   ').trim().slice(0, 900) || '-') })) }] } }) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "7f7b8c3d-16ff-4315-a5d2-3a4e034e6777",
+      "name": "WhatsApp: SHEET_ID",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "whatsapp-cloud",
+          "name": "WhatsApp Cloud API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Spustit ručně": {
+      "main": [
+        [
+          {
+            "node": "Připravit sešit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Připravit sešit": {
+      "main": [
+        [
+          {
+            "node": "Sheets API: vytvořit sešit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets API: vytvořit sešit": {
+      "main": [
+        [
+          {
+            "node": "Sheets API: hlavičky a fronta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sheets API: hlavičky a fronta": {
+      "main": [
+        [
+          {
+            "node": "Výsledek",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Výsledek": {
+      "main": [
+        [
+          {
+            "node": "E-mail: SHEET_ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "E-mail: SHEET_ID": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp: SHEET_ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "active": false,
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

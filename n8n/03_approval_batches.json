@@ -1,0 +1,2070 @@
+{
+  "updatedAt": "2026-11-08T14:51:00.177Z",
+  "createdAt": "2026-10-25T18:39:04.148Z",
+  "id": "weboutreachwf003",
+  "name": "03 Schvalování dávek – stránka, WhatsApp a e-mail",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 03 · Schvalování dávek\n**Co dělá:** ve 3 časech denně (08:00, 11:00, 14:00 v OWNER_TZ) vybere až `APPROVAL_BATCH` leadů se stavem `awaiting_approval` (nejvyšší skóre první), uloží jim `batch_id`, `notified_at` a `subject_variant` a pošle ti odkaz na **mobilní schvalovací stránku** dvěma cestami: WhatsApp šablona `batch_ready` (počet + odkaz) a e-mail na `OWNER_EMAIL`.\n\n**Stránka** `GET /webhook/approve?batch=…&t=…` – karta na lead: název, město, země, obor, compare.png, odkaz na náhled, předmět e-mailu; tlačítka ✅ Schválit / ❌ Zamítnout / ✏️ Uložit předmět + „Schválit vše“. Akce jdou na `POST /webhook/approve-action` a jsou chráněné HMAC tokenem (`APPROVAL_SECRET`) s platností 24 h.\n\n**Jak změnit časy:** uzel „Dávky 08/11/14“ → tři cron výrazy. **Dávka hned:** otevři workflow a klikni *Execute workflow*.\n\n**Test:** jednomu řádku dej status `awaiting_approval`, spusť ručně → přijde WhatsApp + e-mail, otevři odkaz v mobilu, schval.",
+        "height": 420,
+        "width": 440
+      },
+      "id": "c189fbd8-922e-4ecb-8b92-f020c99d7441",
+      "name": "Poznámka 1",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Zkontrolovat po importu\n- Gmail uzly: credential Gmail (kontakt@). HTTP „WhatsApp: …“ nemá credential – používá `Authorization: Bearer {{ $env.WHATSAPP_TOKEN }}`.\n- Šablona `batch_ready` musí být v Meta schválená (kategorie Utility, 2 parametry). Když WhatsApp selže, workflow pokračuje a e-mail odejde.\n- Po aktivaci ověř *Production URL* webhooků: `…/webhook/approve` a `…/webhook/approve-action` (stránka volá relativní adresu `approve-action`).\n- Code uzly používají `require('crypto')` (NODE_FUNCTION_ALLOW_BUILTIN).",
+        "height": 220,
+        "width": 440,
+        "color": 3
+      },
+      "id": "783b45d2-3a83-4b66-8ab5-9ebbbf8011d9",
+      "name": "Poznámka 2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            },
+            {
+              "field": "cronExpression",
+              "expression": "0 11 * * *"
+            },
+            {
+              "field": "cronExpression",
+              "expression": "0 14 * * *"
+            }
+          ]
+        }
+      },
+      "id": "fc6009eb-2d95-4aa1-b44d-b292b9163961",
+      "name": "Dávky 08/11/14",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1776,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "status",
+              "lookupValue": "awaiting_approval"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e21d08b3-4064-4cba-b383-202cee497176",
+      "name": "Čekající na schválení",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2000,
+        208
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\n// ---- předmět 1. e-mailu (stejná logika ve 03 i 04) ----\nconst SUBJECTS = {\"cs\": {\"A\": \"Nový web pro {{name}} – ukázka už je hotová\", \"B\": \"Nový web pro {{name}} – ukázka už je hotová\", \"C\": \"Nový web pro {{name}} – ukázka už je hotová\"}, \"en\": {\"A\": \"A new website for {{name}} – the draft is ready\", \"B\": \"A new website for {{name}} – the draft is ready\", \"C\": \"A new website for {{name}} – the draft is ready\"}};\nconst hashId = (s) => { let h = 7; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };\nconst variantFor = (l) => ['A', 'B', 'C'].includes(String(l.subject_variant)) ? String(l.subject_variant) : ['A', 'B', 'C'][hashId(l.id) % 3];\nconst subjectFor = (l) => {\n  if (String(l.custom_subject || '').trim()) return String(l.custom_subject).trim().slice(0, 120);\n  const lang = l.lang === 'cs' ? 'cs' : 'en';\n  let s = SUBJECTS[lang][variantFor(l)].replace(/\\{\\{(\\w+)\\}\\}/g, (_, k) => String(l[k] ?? ''));\n  return s.length > 78 ? s.slice(0, 75) + '…' : s;\n};\n\nconst tz = env('OWNER_TZ', 'Europe/Prague');\nconst now = DateTime.now().setZone(tz);\nconst size = Number(env('APPROVAL_BATCH', '10')) || 10;\nconst blocked = blockedCountries();\n// RETURN_24H_PATCH_V1: nerozhodnuté leady se po 24 h od zařazení do dávky vrátí do další dávky (přednostně)\nconst returnHours = Number(env('APPROVAL_RETURN_HOURS', '24')) || 24;\nconst isReturning = (r) => { const n = parseISO(r.notified_at); return !!(n && now.diff(n, 'hours').hours >= returnHours); };\nconst rows = clean($input.all()).filter(r => r.id && String(r.status) === 'awaiting_approval'\n  && (!String(r.notified_at || '').trim() || isReturning(r))\n  && String(r.email || '').includes('@') && !blocked.has(String(r.country || '').toUpperCase()));\nrows.sort((a, b) => (isReturning(b) - isReturning(a)) || ((Number(b.score) || 0) - (Number(a.score) || 0)));\nconst pick = rows.slice(0, size);\nif (!pick.length) return [{ json: { _none: true, waiting: rows.length } }];\nconst batchId = 'd' + now.toFormat('yyyyLLdd-HHmm');\nreturn pick.map(r => ({ json: { id: r.id, batch_id: batchId, notified_at: now.toISO(), subject_variant: variantFor(r) } }));"
+      },
+      "id": "bf1c9fbf-2e5c-4b29-8ad8-840751c81ff3",
+      "name": "Vybrat dávku",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b91d75ef-8628-441a-a888-41a1cd58d92b",
+              "leftValue": "={{ $json._none }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "1275d9b8-f6d0-475c-9565-a6be227951f6",
+      "name": "Je co schvalovat?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2448,
+        208
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "c8072572-b38f-489a-827b-b1ee06f0f682",
+      "name": "Nic ke schválení",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2656,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "market",
+              "displayName": "market",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lang",
+              "displayName": "lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tz",
+              "displayName": "tz",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "legal_regime",
+              "displayName": "legal_regime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "primary_type",
+              "displayName": "primary_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp",
+              "displayName": "whatsapp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp_opt_in",
+              "displayName": "whatsapp_opt_in",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "has_website",
+              "displayName": "has_website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "maps_url",
+              "displayName": "maps_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating",
+              "displayName": "rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating_count",
+              "displayName": "rating_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "branch",
+              "displayName": "branch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons",
+              "displayName": "reasons",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons_cs",
+              "displayName": "reasons_cs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "preview_url",
+              "displayName": "preview_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "compare_png_url",
+              "displayName": "compare_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "og_png_url",
+              "displayName": "og_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "batch_id",
+              "displayName": "batch_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notified_at",
+              "displayName": "notified_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_intro",
+              "displayName": "custom_intro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_subject",
+              "displayName": "custom_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "subject_variant",
+              "displayName": "subject_variant",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_1_at",
+              "displayName": "sent_1_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_2_at",
+              "displayName": "sent_2_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_3_at",
+              "displayName": "sent_3_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_message_id",
+              "displayName": "last_message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_reply_at",
+              "displayName": "last_reply_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_channel",
+              "displayName": "last_channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "auto_reply_count",
+              "displayName": "auto_reply_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "manual_takeover",
+              "displayName": "manual_takeover",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "price_quoted",
+              "displayName": "price_quoted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "next_action",
+              "displayName": "next_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "be5dae9c-3b4c-44ab-b9f9-9709b1881d90",
+      "name": "Zapsat dávku",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2656,
+        304
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\n// ---- předmět 1. e-mailu (stejná logika ve 03 i 04) ----\nconst SUBJECTS = {\"cs\": {\"A\": \"Nový web pro {{name}} – ukázka už je hotová\", \"B\": \"Nový web pro {{name}} – ukázka už je hotová\", \"C\": \"Nový web pro {{name}} – ukázka už je hotová\"}, \"en\": {\"A\": \"A new website for {{name}} – the draft is ready\", \"B\": \"A new website for {{name}} – the draft is ready\", \"C\": \"A new website for {{name}} – the draft is ready\"}};\nconst hashId = (s) => { let h = 7; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };\nconst variantFor = (l) => ['A', 'B', 'C'].includes(String(l.subject_variant)) ? String(l.subject_variant) : ['A', 'B', 'C'][hashId(l.id) % 3];\nconst subjectFor = (l) => {\n  if (String(l.custom_subject || '').trim()) return String(l.custom_subject).trim().slice(0, 120);\n  const lang = l.lang === 'cs' ? 'cs' : 'en';\n  let s = SUBJECTS[lang][variantFor(l)].replace(/\\{\\{(\\w+)\\}\\}/g, (_, k) => String(l[k] ?? ''));\n  return s.length > 78 ? s.slice(0, 75) + '…' : s;\n};\n\n// ---- HMAC token schvalovací stránky: t = <exp unix>.<sig>, platnost 24 h ----\nconst cryptoA = require('crypto');\nconst approvalSecret = () => { const s = env('APPROVAL_SECRET', ''); if (!s) throw new Error('Chybí env APPROVAL_SECRET.'); return s; };\nconst signBatch = (batch, exp) => cryptoA.createHmac('sha256', approvalSecret()).update(`${batch}.${exp}`).digest('hex').slice(0, 32);\nconst makeToken = (batch, hours = 24) => { const exp = Math.floor(Date.now() / 1000) + hours * 3600; return `${exp}.${signBatch(batch, exp)}`; };\nconst checkToken = (batch, t) => {\n  const m = String(t || '').match(/^(\\d{9,11})\\.([a-f0-9]{32})$/); if (!m || !batch) return { ok: false, why: 'neplatný odkaz' };\n  const exp = Number(m[1]); if (exp < Date.now() / 1000) return { ok: false, why: 'platnost odkazu (24 h) vypršela' };\n  const exp2 = signBatch(batch, exp); const B = (typeof Buffer !== 'undefined') ? Buffer : require('buffer').Buffer;\n  const ok = exp2.length === m[2].length && cryptoA.timingSafeEqual(B.from(exp2), B.from(m[2]));\n  return ok ? { ok: true, exp } : { ok: false, why: 'neplatný podpis' };\n};\nconst approvalUrl = (batch) => `${env('WEBHOOK_URL', 'https://n8n.krystofkoci.com/').replace(/\\/+$/, '')}/webhook/approve?batch=${encodeURIComponent(batch)}&t=${makeToken(batch)}`;\n\nconst picked = $('Vybrat dávku').all().map(i => i.json);\nconst byId = new Map(clean($('Čekající na schválení').all()).map(r => [String(r.id), r]));\nconst batch = picked[0].batch_id;\nconst url = approvalUrl(batch);\nconst tz = env('OWNER_TZ', 'Europe/Prague');\nconst list = picked.map(p => { const l = byId.get(String(p.id)) || {}; return `<li><b>${esc(l.name)}</b> – ${esc(l.city)}, ${esc(l.country)} · skóre ${esc(l.score)}<br><small>${esc(subjectFor({ ...l, subject_variant: p.subject_variant }))}</small></li>`; }).join('');\nconst html = `<p>Nová dávka ke schválení: <b>${picked.length}</b> návrhů webů.</p>` +\n  `<p><a href=\"${url}\" style=\"display:inline-block;background:#1a7f37;color:#fff;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:600\">Otevřít schvalovací stránku</a></p>` +\n  `<ol>${list}</ol><p style=\"color:#777;font-size:13px\">Odkaz platí 24 h. Dávka ${esc(batch)} · ${DateTime.now().setZone(tz).toFormat('d. L. HH:mm')} · ` +\n  (env('TEST_MODE', 'true') === 'true' ? 'TEST_MODE zapnutý – e-maily půjdou na tvou adresu.' : 'ostrý provoz.') + '</p>';\nreturn [{ json: { batch, url, count: picked.length, html, subject: `Ke schválení: ${picked.length} návrhů (${DateTime.now().setZone(tz).toFormat('HH:mm')})` } }];"
+      },
+      "id": "1bde1954-e67b-401d-a003-ffa9b72b6c3d",
+      "name": "Souhrn dávky",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/{{ $env.WHATSAPP_GRAPH_VERSION || 'v21.0' }}/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ messaging_product: 'whatsapp', to: String($env.OWNER_WHATSAPP || '').replace(/\\D/g, ''), type: 'template', template: { name: ($env.WHATSAPP_TEMPLATE_BATCH || 'batch_ready'), language: { code: ($env.WHATSAPP_TEMPLATE_LANG || 'cs') }, components: [{ type: 'body', parameters: ([String($json.count), $json.url]).map(p => ({ type: 'text', text: (String(p ?? '').replace(/[\\r\\n\\t]+/g, ' ').replace(/ {4,}/g, '   ').trim().slice(0, 900) || '-') })) }] } }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "bf3d5cb5-cac1-4791-b9d8-cbb6d06307c9",
+      "name": "WhatsApp: batch_ready",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3104,
+        304
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "whatsapp-cloud",
+          "name": "WhatsApp Cloud API"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $env.OWNER_EMAIL }}",
+        "subject": "={{ $('Souhrn dávky').first().json.subject }}",
+        "message": "={{ $('Souhrn dávky').first().json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Outreach systém"
+        }
+      },
+      "id": "f82bbb50-88c4-4cd6-875d-63ae7e0e031b",
+      "name": "E-mail: dávka",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        3328,
+        304
+      ],
+      "webhookId": "c0bc5be4-eee8-46f3-a776-f8f1308fc24d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gmail-kontakt",
+          "name": "Gmail – info@krystofkoci.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "approve",
+        "responseMode": "responseNode",
+        "options": {
+          "ignoreBots": true
+        }
+      },
+      "id": "621ba2aa-5fca-4ae7-b37f-66ae517fc569",
+      "name": "Stránka (GET /approve)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        1776,
+        656
+      ],
+      "webhookId": "e5819612-fed4-404b-bbb9-c6aae277e6ab"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\n// ---- HMAC token schvalovací stránky: t = <exp unix>.<sig>, platnost 24 h ----\nconst cryptoA = require('crypto');\nconst approvalSecret = () => { const s = env('APPROVAL_SECRET', ''); if (!s) throw new Error('Chybí env APPROVAL_SECRET.'); return s; };\nconst signBatch = (batch, exp) => cryptoA.createHmac('sha256', approvalSecret()).update(`${batch}.${exp}`).digest('hex').slice(0, 32);\nconst makeToken = (batch, hours = 24) => { const exp = Math.floor(Date.now() / 1000) + hours * 3600; return `${exp}.${signBatch(batch, exp)}`; };\nconst checkToken = (batch, t) => {\n  const m = String(t || '').match(/^(\\d{9,11})\\.([a-f0-9]{32})$/); if (!m || !batch) return { ok: false, why: 'neplatný odkaz' };\n  const exp = Number(m[1]); if (exp < Date.now() / 1000) return { ok: false, why: 'platnost odkazu (24 h) vypršela' };\n  const exp2 = signBatch(batch, exp); const B = (typeof Buffer !== 'undefined') ? Buffer : require('buffer').Buffer;\n  const ok = exp2.length === m[2].length && cryptoA.timingSafeEqual(B.from(exp2), B.from(m[2]));\n  return ok ? { ok: true, exp } : { ok: false, why: 'neplatný podpis' };\n};\nconst approvalUrl = (batch) => `${env('WEBHOOK_URL', 'https://n8n.krystofkoci.com/').replace(/\\/+$/, '')}/webhook/approve?batch=${encodeURIComponent(batch)}&t=${makeToken(batch)}`;\n\nconst q = ($input.first().json || {}).query || {};\nconst batch = String(q.batch || '').trim();\nconst t = String(q.t || '').trim();\nconst c = checkToken(batch, t);\nreturn [{ json: { ok: c.ok, why: c.why || '', exp: c.exp || 0, batch, t } }];"
+      },
+      "id": "04462da2-0baa-44c2-826c-8c6ba6ce3cd0",
+      "name": "Ověřit odkaz",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ed1ed67c-726c-4a66-8acb-a4d6a8b00b80",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "e857c106-9afa-4641-8075-ffc388282565",
+      "name": "Odkaz platný?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2224,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "batch_id",
+              "lookupValue": "={{ $json.batch }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "04110a3e-0c2c-4377-ae57-9fad7d666366",
+      "name": "Leady dávky",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2448,
+        608
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\n// ---- předmět 1. e-mailu (stejná logika ve 03 i 04) ----\nconst SUBJECTS = {\"cs\": {\"A\": \"Nový web pro {{name}} – ukázka už je hotová\", \"B\": \"Nový web pro {{name}} – ukázka už je hotová\", \"C\": \"Nový web pro {{name}} – ukázka už je hotová\"}, \"en\": {\"A\": \"A new website for {{name}} – the draft is ready\", \"B\": \"A new website for {{name}} – the draft is ready\", \"C\": \"A new website for {{name}} – the draft is ready\"}};\nconst hashId = (s) => { let h = 7; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };\nconst variantFor = (l) => ['A', 'B', 'C'].includes(String(l.subject_variant)) ? String(l.subject_variant) : ['A', 'B', 'C'][hashId(l.id) % 3];\nconst subjectFor = (l) => {\n  if (String(l.custom_subject || '').trim()) return String(l.custom_subject).trim().slice(0, 120);\n  const lang = l.lang === 'cs' ? 'cs' : 'en';\n  let s = SUBJECTS[lang][variantFor(l)].replace(/\\{\\{(\\w+)\\}\\}/g, (_, k) => String(l[k] ?? ''));\n  return s.length > 78 ? s.slice(0, 75) + '…' : s;\n};\n\n// ---- vykreslení schvalovací stránky (mobil první) ----  OWNER_NOTE_PATCH_V1\nconst statusLabel = { awaiting_approval: 'čeká', approved: '✅ schváleno', rejected: '❌ zamítnuto', do_not_contact: '🚫 nekontaktovat',\n  changes_requested: '🔁 k přepracování (vrátí se v další dávce)' };\nconst hrefOf = (u) => { const s = String(u || '').trim(); if (!s) return ''; return /^https?:\\/\\//i.test(s) ? s : 'http://' + s; };\nconst card = (l) => {\n  const decided = l.status !== 'awaiting_approval';\n  const sent = !!l.sent_1_at;\n  const dis = sent ? ' disabled' : '';\n  const reasons = String(l.reasons_cs || l.reasons || '').split(' | ').filter(Boolean).slice(0, 3).map(r => '<li>' + esc(r) + '</li>').join('');\n  const oldHref = hrefOf(l.website);\n  const newHref = esc(l.preview_url);\n  const img = /^https?:\\/\\//.test(String(l.compare_png_url || ''))\n    ? '<div class=\"cmp\"><img src=\"' + esc(l.compare_png_url) + '\" alt=\"Dnešní web vs. návrh\" loading=\"lazy\">' +\n      '<a class=\"half l\" href=\"' + (oldHref ? esc(oldHref) : newHref) + '\" target=\"_blank\" rel=\"noopener\" title=\"Otevřít původní web\"><span>' + (oldHref ? 'DNES ↗' : 'bez webu') + '</span></a>' +\n      '<a class=\"half r\" href=\"' + newHref + '\" target=\"_blank\" rel=\"noopener\" title=\"Otevřít nový návrh\"><span>NÁVRH ↗</span></a></div>'\n    : '<div class=\"noimg\">bez obrázku</div>';\n  const links = '<div class=\"links\">' +\n    (oldHref ? '<a class=\"lnk old\" href=\"' + esc(oldHref) + '\" target=\"_blank\" rel=\"noopener\">🌐 Původní web</a>' : '<span class=\"lnk off\">🌐 bez webu</span>') +\n    '<a class=\"lnk new\" href=\"' + newHref + '\" target=\"_blank\" rel=\"noopener\">✨ Nový návrh</a></div>';\n  const offer = String(l.extracted_offer || '').trim();\n  const stats = (offer.match(/^\\[[^\\]]*\\]/) || [''])[0];\n  const photos = String(l.offer_photos || '').split(/\\s+/).filter(u => /^https?:\\/\\//.test(u)).slice(0, 8);\n  const photosHtml = photos.length ? '<p class=\"photos\">Fotky z webu: ' + photos.map((u, i) => '<a href=\"' + esc(u) + '\" target=\"_blank\" rel=\"noopener\">' + (i + 1) + '</a>').join(' ') + '</p>' : '';\n  const offerHtml = offer ? '<details class=\"offer\"><summary>Nabídka z původního webu ' + esc(stats) + '</summary><p>' + esc(offer.replace(/^\\[[^\\]]*\\]\\s*/, '').slice(0, 700)) + '</p>' + photosHtml + '</details>'\n    : '<p class=\"offer-none\">Z původního webu se nepodařilo vytáhnout nabídku – v návrhu jsou obecné služby oboru.</p>';\n  const warn = l.legal_regime === 'unknown' ? '<p class=\"warn\">⚠️ Právní režim země neznámý – ověř před schválením.</p>'\n    : (l.legal_regime === 'corporate_only' ? '<p class=\"warn\">⚠️ UK/IE: jen firmy Ltd/PLC (PECR), ne živnostníci.</p>' : '');\n  return '<article class=\"card' + (l.status === 'approved' ? ' approved' : l.status === 'rejected' ? ' rejected' : l.status === 'changes_requested' ? ' changes' : '') +\n    '\" id=\"c-' + esc(l.id) + '\" data-id=\"' + esc(l.id) + '\">' + img +\n    '<div class=\"body\"><h2>' + esc(l.name) + '</h2>' +\n    '<p class=\"meta\">' + esc(l.city) + ', ' + esc(l.country) + ' · ' + esc(l.industry || l.category || '') + ' · ' + (l.lang === 'cs' ? 'česky' : 'anglicky') + ' · skóre ' + esc(l.score) + '</p>' +\n    links + (reasons ? '<ul class=\"reasons\">' + reasons + '</ul>' : '') + offerHtml + warn +\n    '<p class=\"row\"><span>E-mail:</span> ' + esc(l.email) + '</p>' +\n    '<label class=\"subj\">Předmět e-mailu<input type=\"text\" maxlength=\"120\" value=\"' + esc(subjectFor(l)) + '\"' + dis + '></label>' +\n    '<label class=\"note\">Poznámka k návrhu – co chybí, co je špatně, co změnit<textarea rows=\"2\" maxlength=\"600\" placeholder=\"např. přidej službu čištění klimatizace, hlavní foto je špatně, jiný název\"' + dis + '>' + esc(l.owner_note || '') + '</textarea></label>' +\n    '<div class=\"actions\">' +\n    '<button class=\"ok\" data-a=\"approve\"' + dis + '>✅ Schválit</button>' +\n    '<button class=\"no\" data-a=\"reject\"' + dis + '>❌ Zamítnout</button>' +\n    '<button class=\"ch\" data-a=\"request_changes\"' + dis + '>🔁 Upravit návrh</button>' +\n    '<button class=\"ed\" data-a=\"edit_subject\"' + dis + '>✏️ Uložit předmět</button>' +\n    '<button class=\"nt\" data-a=\"edit_note\"' + dis + '>💬 Uložit poznámku</button>' +\n    '</div><p class=\"state\">' + (sent ? 'už odesláno' : (decided ? (statusLabel[l.status] || esc(l.status)) : '')) + '</p></div></article>';\n};\nconst CLIENT = \"(function(){var B=document.body,batch=B.dataset.batch,t=B.dataset.t;\" +\n  \"function post(p){p.batch=batch;p.t=t;return fetch('approve-action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}).then(function(r){return r.json();});}\" +\n  \"function setState(id,txt){var c=document.getElementById('c-'+id);if(c){c.querySelector('.state').textContent=txt;}}\" +\n  \"document.querySelectorAll('.card button').forEach(function(b){b.addEventListener('click',function(){var c=b.closest('.card'),id=c.dataset.id,a=b.dataset.a,p={action:a,id:id};\" +\n  \"if(a==='edit_subject'){p.subject=c.querySelector('input').value;}\" +\n  \"if(a==='edit_note'||a==='request_changes'||a==='approve'){p.note=c.querySelector('textarea').value;}\" +\n  \"if(a==='request_changes'&&!p.note.trim()){setState(id,'napiš nejdřív do poznámky, co se má změnit');c.querySelector('textarea').focus();return;}\" +\n  \"b.disabled=true;setState(id,'ukládám…');\" +\n  \"post(p).then(function(r){b.disabled=false;setState(id,r.ok?r.label:('chyba: '+(r.error||'?')));if(r.ok&&a!=='edit_subject'&&a!=='edit_note'){c.classList.remove('approved','rejected','changes');c.classList.add(a==='approve'?'approved':a==='reject'?'rejected':'changes');}})\" +\n  \".catch(function(e){b.disabled=false;setState(id,'chyba sítě');});});});\" +\n  \"var all=document.getElementById('all');if(all){all.addEventListener('click',function(){if(!confirm('Schválit všechny dosud nerozhodnuté leady v dávce?'))return;all.disabled=true;\" +\n  \"post({action:'approve_all'}).then(function(r){document.getElementById('allres').textContent=r.ok?r.label:('chyba: '+(r.error||'?'));\" +\n  \"(r.ids||[]).forEach(function(id){setState(id,'✅ schváleno');var c=document.getElementById('c-'+id);if(c)c.classList.add('approved');});all.disabled=false;});});}})();\";\nconst CSS = 'body{margin:0;background:#f4f4f2;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;color:#1f1f1f;font-size:16px;line-height:1.45}' +\n  'header{position:sticky;top:0;z-index:2;background:#1f1f1f;color:#fff;padding:12px 16px}header h1{font-size:18px;margin:0 0 4px}header p{margin:0;font-size:13px;opacity:.8}' +\n  'main{max-width:640px;margin:0 auto;padding:12px 16px 40px}.bar{display:flex;gap:10px;align-items:center;margin:8px 0 16px;flex-wrap:wrap}' +\n  '#all{background:#1a7f37;color:#fff;border:0;border-radius:8px;padding:12px 16px;font-size:16px;font-weight:600}' +\n  '.card{background:#fff;border-radius:10px;overflow:hidden;margin:0 0 16px;box-shadow:0 1px 2px rgba(0,0,0,.08);border-left:5px solid #d0d0d0}' +\n  '.card.approved{border-left-color:#1a7f37}.card.rejected{border-left-color:#b42318;opacity:.75}.card.changes{border-left-color:#b7791f}.card img{display:block;width:100%;height:auto}' +\n  '.cmp{position:relative;background:#e9e9e9;min-height:120px}.cmp .half{position:absolute;top:0;bottom:0;width:50%;display:flex;align-items:flex-end;justify-content:center;padding:10px;box-sizing:border-box;text-decoration:none;background:transparent;transition:background .15s}' +\n  '.cmp .half.l{left:0}.cmp .half.r{right:0}.cmp .half:hover,.cmp .half:focus{background:rgba(26,127,55,.12)}' +\n  '.cmp .half span{background:rgba(0,0,0,.72);color:#fff;font-size:13px;font-weight:600;padding:6px 10px;border-radius:999px}' +\n  '.links{display:flex;gap:8px;margin:0 0 10px}.lnk{flex:1;text-align:center;padding:10px 8px;border-radius:8px;font-size:15px;font-weight:600;text-decoration:none;border:1px solid #ccc;color:#1f1f1f;background:#fafafa}' +\n  '.lnk.new{background:#1f1f1f;color:#fff;border-color:#1f1f1f}.lnk.off{color:#999}' +\n  '.noimg{padding:24px;text-align:center;color:#888;background:#eee}.body{padding:12px 14px}h2{font-size:18px;margin:0 0 4px}.meta{color:#555;font-size:14px;margin:0 0 8px}' +\n  '.reasons{margin:0 0 8px;padding-left:18px;font-size:14px}.row{margin:2px 0;font-size:14px;word-break:break-all}.row span{color:#777}' +\n  '.photos{margin:6px 0 0;font-size:13px}.photos a{display:inline-block;padding:2px 8px;border:1px solid #99a;border-radius:999px;margin:0 2px;text-decoration:none}.offer{font-size:14px;margin:0 0 8px;background:#f3f6ff;border-radius:6px;padding:6px 8px}.offer summary{cursor:pointer;font-weight:600}.offer p{margin:6px 0 0}.offer-none{font-size:13px;color:#8a6d1f;background:#fff8e1;padding:6px 8px;border-radius:6px;margin:0 0 8px}' +\n  '.warn{background:#fff4e5;padding:6px 8px;border-radius:6px;font-size:14px}.subj,.note{display:block;margin:10px 0 4px;font-size:13px;color:#555}' +\n  '.subj input,.note textarea{display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:10px;font-size:15px;border:1px solid #ccc;border-radius:6px;font-family:inherit}' +\n  '.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.actions button{flex:1 1 30%;min-height:44px;border-radius:8px;border:1px solid #ccc;background:#fafafa;font-size:15px}' +\n  '.actions .ok{background:#1a7f37;color:#fff;border-color:#1a7f37}.actions .no{background:#fff;color:#b42318;border-color:#b42318}.actions .ch{background:#fff;color:#8a5a00;border-color:#b7791f}.state{font-size:14px;color:#555;margin:6px 0 0;min-height:1em}';\nconst pageHtml = (batch, t, leads, exp) => '<!doctype html><html lang=\"cs\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">' +\n  '<meta name=\"robots\" content=\"noindex,nofollow\"><title>Dávka ' + esc(batch) + '</title><style>' + CSS + '</style></head>' +\n  '<body data-batch=\"' + esc(batch) + '\" data-t=\"' + esc(t) + '\"><header><h1>Dávka ke schválení · ' + leads.length + ' leadů</h1>' +\n  '<p>' + esc(batch) + ' · odkaz platí do ' + esc(DateTime.fromSeconds(exp).setZone(env('OWNER_TZ', 'Europe/Prague')).toFormat('d. L. HH:mm')) +\n  (env('TEST_MODE', 'true') === 'true' ? ' · 🧪 TEST_MODE – e-maily jdou na tvou adresu' : ' · 🚀 ostrý provoz') + '</p></header><main>' +\n  '<div class=\"bar\"><button id=\"all\">✅ Schválit vše</button><span id=\"allres\"></span></div>' +\n  (leads.length ? leads.map(card).join('') : '<p>V dávce nic není.</p>') +\n  '<p style=\"font-size:13px;color:#777\">Schválené e-maily odejdou v nejbližším okně (po–pá 08:30–11:30 a 13:30–16:00 času firmy). Poznámka k návrhu se ukládá k leadu; „🔁 Upravit návrh“ pošle lead znovu do stavby s tvou poznámkou a vrátí ho do příští dávky.</p>' +\n  '</main><script>' + CLIENT + '</script></body></html>';\n\nconst v = $('Ověřit odkaz').first().json;\nconst leads = clean($input.all()).filter(l => String(l.batch_id) === v.batch);\nleads.sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0));\nreturn [{ json: { html: pageHtml(v.batch, v.t, leads, v.exp) } }];"
+      },
+      "id": "e24d1034-d045-4169-b4d8-70bee7fe8660",
+      "name": "Vykreslit stránku",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2656,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              },
+              {
+                "name": "X-Robots-Tag",
+                "value": "noindex, nofollow"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              }
+            ]
+          }
+        }
+      },
+      "id": "0cf930d7-e0c7-4cb6-941e-5dc051eb828b",
+      "name": "Odpověď: stránka",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2880,
+        608
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!doctype html><html lang=\"cs\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>Odkaz neplatný</title></head><body style=\"font-family:sans-serif;max-width:520px;margin:15vh auto;padding:0 16px;line-height:1.5\"><h1>Odkaz nelze použít</h1><p>Důvod: {{ $json.why }}.</p><p>Novou dávku dostaneš v dalším termínu, nebo spusť workflow 03 ručně.</p></body></html>",
+        "options": {
+          "responseCode": 403,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              },
+              {
+                "name": "X-Robots-Tag",
+                "value": "noindex, nofollow"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              }
+            ]
+          }
+        }
+      },
+      "id": "e1eaebc2-86d2-444e-a91b-486cc1dd0534",
+      "name": "Odpověď: neplatný odkaz",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2448,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "approve-action",
+        "responseMode": "responseNode",
+        "options": {
+          "ignoreBots": true
+        }
+      },
+      "id": "7933062c-b129-41b5-8b98-3f3f64058e31",
+      "name": "Akce (POST /approve-action)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        1776,
+        1008
+      ],
+      "webhookId": "130f382b-b651-4077-9dcd-112810c9b117"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\n// ---- HMAC token schvalovací stránky: t = <exp unix>.<sig>, platnost 24 h ----\nconst cryptoA = require('crypto');\nconst approvalSecret = () => { const s = env('APPROVAL_SECRET', ''); if (!s) throw new Error('Chybí env APPROVAL_SECRET.'); return s; };\nconst signBatch = (batch, exp) => cryptoA.createHmac('sha256', approvalSecret()).update(`${batch}.${exp}`).digest('hex').slice(0, 32);\nconst makeToken = (batch, hours = 24) => { const exp = Math.floor(Date.now() / 1000) + hours * 3600; return `${exp}.${signBatch(batch, exp)}`; };\nconst checkToken = (batch, t) => {\n  const m = String(t || '').match(/^(\\d{9,11})\\.([a-f0-9]{32})$/); if (!m || !batch) return { ok: false, why: 'neplatný odkaz' };\n  const exp = Number(m[1]); if (exp < Date.now() / 1000) return { ok: false, why: 'platnost odkazu (24 h) vypršela' };\n  const exp2 = signBatch(batch, exp); const B = (typeof Buffer !== 'undefined') ? Buffer : require('buffer').Buffer;\n  const ok = exp2.length === m[2].length && cryptoA.timingSafeEqual(B.from(exp2), B.from(m[2]));\n  return ok ? { ok: true, exp } : { ok: false, why: 'neplatný podpis' };\n};\nconst approvalUrl = (batch) => `${env('WEBHOOK_URL', 'https://n8n.krystofkoci.com/').replace(/\\/+$/, '')}/webhook/approve?batch=${encodeURIComponent(batch)}&t=${makeToken(batch)}`;\n\nconst b = ($input.first().json || {}).body || {};\nconst batch = String(b.batch || '').trim();\nconst c = checkToken(batch, String(b.t || '').trim());\nconst action = String(b.action || '');\nconst okAction = ['approve', 'reject', 'edit_subject', 'approve_all', 'edit_note', 'request_changes'].includes(action); // OWNER_NOTE_PATCH_V1\nreturn [{ json: { ok: c.ok && okAction, error: !c.ok ? c.why : (okAction ? '' : 'neznámá akce'), batch, action, id: String(b.id || ''),\n  subject: String(b.subject || '').replace(/[\\r\\n]+/g, ' ').trim().slice(0, 120),\n  note: String(b.note || '').replace(/\\r/g, '').trim().slice(0, 600) } }];"
+      },
+      "id": "bd44f780-e9a7-4023-b012-b9b7c58d7660",
+      "name": "Ověřit akci",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "35322d53-9bc6-4f4d-b7cb-a708f4dd2d01",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "8d4b2ac9-524c-4090-81d2-5f7f4a1a917b",
+      "name": "Akce povolená?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2224,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "options": {}
+      },
+      "id": "b8348c01-c0f9-4823-96df-006faf52e77b",
+      "name": "Leady dávky (akce)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2448,
+        944
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ---- společné pomocné funkce (stejné ve všech workflowech) ----\nconst env = (k, d = '') => { const v = $env[k]; return (v === undefined || v === null || v === '') ? d : String(v); };\nconst clean = (items) => (items || []).map(i => (i && i.json !== undefined) ? i.json : i)\n  .filter(j => j && typeof j === 'object' && Object.values(j).some(v => v !== '' && v !== null && v !== undefined));\nconst blockedCountries = () => { const s = new Set(env('BLOCKED_COUNTRIES', 'CR').split(',').map(x => x.trim().toUpperCase()).filter(Boolean)); s.add('CR'); return s; };\nconst domainOf = (e) => { const m = String(e || '').toLowerCase().match(/@([a-z0-9.-]+)/); return m ? m[1] : ''; };\nconst domainOfUrl = (u) => { try { if (!u) return ''; const h = new URL(/^https?:\\/\\//i.test(u) ? u : 'http://' + u).hostname.toLowerCase(); return h.replace(/^www\\./, ''); } catch (e) { return ''; } };\nconst FREE_MAIL = new Set(['gmail.com','googlemail.com','seznam.cz','email.cz','centrum.cz','volny.cz','atlas.cz','post.cz','tiscali.cz','yahoo.com','yahoo.co.uk','yahoo.ca','yahoo.com.au','hotmail.com','hotmail.co.uk','outlook.com','live.com','icloud.com','me.com','aol.com','protonmail.com','proton.me','mail.com','gmx.com','gmx.de','web.de','bigpond.com','shaw.ca','telus.net','rogers.com','comcast.net','att.net','verizon.net','btinternet.com','sky.com','virginmedia.com']);\nconst parseISO = (s) => { if (!s) return null; const d = DateTime.fromISO(String(s)); return d.isValid ? d : null; };\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst truthy = (v) => ['true', '1', 'yes', 'ano'].includes(String(v ?? '').trim().toLowerCase());\n\nconst a = $('Ověřit akci').first().json;\nconst allLeads = clean($input.all());   // APPROVAL_ANY_BATCH_V1\nconst leads = allLeads.filter(l => String(l.batch_id) === a.batch);\nconst now = DateTime.now().toISO();\nconst fail = (error) => [{ json: { _none: true, result: { ok: false, error } } }];\nconst open = (l) => !l.sent_1_at && ['awaiting_approval', 'approved', 'rejected', 'changes_requested'].includes(String(l.status)); // OWNER_NOTE_PATCH_V1\nif (a.action === 'approve_all') {\n  const todo = leads.filter(l => String(l.status) === 'awaiting_approval');\n  if (!todo.length) return [{ json: { _none: true, result: { ok: true, label: 'Nic dalšího ke schválení', ids: [] } } }];\n  const result = { ok: true, label: `✅ Schváleno ${todo.length} leadů`, ids: todo.map(l => l.id) };\n  return todo.map(l => ({ json: { id: l.id, status: 'approved', approved_at: now, _result: result } }));\n}\nconst l = leads.find(x => String(x.id) === a.id) || allLeads.find(x => String(x.id) === a.id);\nif (!l) return fail('lead nenalezen');\nif (!open(l)) return fail('lead už nejde změnit (stav ' + l.status + ')');\nif (a.action === 'approve') return [{ json: { id: l.id, status: 'approved', approved_at: now, ...(typeof a.note === 'string' && a.note !== String(l.owner_note || '') ? { owner_note: a.note } : {}),\n  _result: { ok: true, label: '✅ schváleno', ids: [l.id] } } }];\nif (a.action === 'edit_note') return [{ json: { id: l.id, owner_note: a.note || '', _result: { ok: true, label: '💬 poznámka uložena (lead stále čeká na schválení)', ids: [l.id] } } }];\nif (a.action === 'request_changes') {\n  if (!a.note) return fail('napiš do poznámky, co se má změnit');\n  return [{ json: { id: l.id, status: 'changes_requested', owner_note: a.note, batch_id: '', notified_at: '', approved_at: '',\n    _result: { ok: true, label: '🔁 poslán k přepracování – nový návrh přijde v další dávce', ids: [l.id] } } }];\n}\nif (a.action === 'reject') return [{ json: { id: l.id, status: 'rejected', approved_at: '', _result: { ok: true, label: '❌ zamítnuto', ids: [l.id] } } }];\nif (a.action === 'edit_subject') {\n  if (!a.subject) return fail('prázdný předmět');\n  return [{ json: { id: l.id, custom_subject: a.subject, _result: { ok: true, label: '✏️ předmět uložen (lead stále čeká na schválení)', ids: [l.id] } } }];\n}\nreturn fail('neznámá akce');"
+      },
+      "id": "afd8d845-5c5a-49fc-90be-1c5edfab2826",
+      "name": "Připravit změny",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2656,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "555075c4-d0b1-4344-8d14-7af7e0508bb3",
+              "leftValue": "={{ $json._none }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "b2da4fcd-3fcd-49a5-aecb-251fd089d14b",
+      "name": "Je co zapsat?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2880,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const { _result, ...row } = $input.item.json; return { json: row };"
+      },
+      "id": "91fd91a0-7aee-4f80-b689-e61c12fa72a3",
+      "name": "Očistit změny",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3104,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.SHEET_ID }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "leads"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "market",
+              "displayName": "market",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lang",
+              "displayName": "lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tz",
+              "displayName": "tz",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "legal_regime",
+              "displayName": "legal_regime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "primary_type",
+              "displayName": "primary_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp",
+              "displayName": "whatsapp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "whatsapp_opt_in",
+              "displayName": "whatsapp_opt_in",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "has_website",
+              "displayName": "has_website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "maps_url",
+              "displayName": "maps_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating",
+              "displayName": "rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rating_count",
+              "displayName": "rating_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "branch",
+              "displayName": "branch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons",
+              "displayName": "reasons",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "reasons_cs",
+              "displayName": "reasons_cs",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "preview_url",
+              "displayName": "preview_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "compare_png_url",
+              "displayName": "compare_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "og_png_url",
+              "displayName": "og_png_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "batch_id",
+              "displayName": "batch_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notified_at",
+              "displayName": "notified_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "approved_at",
+              "displayName": "approved_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_intro",
+              "displayName": "custom_intro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "custom_subject",
+              "displayName": "custom_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "subject_variant",
+              "displayName": "subject_variant",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_1_at",
+              "displayName": "sent_1_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_2_at",
+              "displayName": "sent_2_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sent_3_at",
+              "displayName": "sent_3_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "thread_id",
+              "displayName": "thread_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_message_id",
+              "displayName": "last_message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_reply_at",
+              "displayName": "last_reply_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_channel",
+              "displayName": "last_channel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "auto_reply_count",
+              "displayName": "auto_reply_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "manual_takeover",
+              "displayName": "manual_takeover",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "price_quoted",
+              "displayName": "price_quoted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notes",
+              "displayName": "notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "next_action",
+              "displayName": "next_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "owner_note",
+              "displayName": "owner_note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "extracted_offer",
+              "displayName": "extracted_offer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "offer_photos",
+              "displayName": "offer_photos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9adbf48c-530a-4bdf-92a1-0ee8d391cee5",
+      "name": "Zapsat změny",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        3328,
+        1008
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gsheets-outreach",
+          "name": "Google Sheets – outreach"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($('Připravit změny').first().json._result) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              },
+              {
+                "name": "X-Robots-Tag",
+                "value": "noindex, nofollow"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              }
+            ]
+          }
+        }
+      },
+      "id": "05d84eaf-5807-4092-bfd3-8532ba6c491e",
+      "name": "Odpověď: hotovo",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3536,
+        1008
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.result) }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              },
+              {
+                "name": "X-Robots-Tag",
+                "value": "noindex, nofollow"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              }
+            ]
+          }
+        }
+      },
+      "id": "295d445f-5b49-43ad-81a9-5401e385b860",
+      "name": "Odpověď: beze změny",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3104,
+        848
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: false, error: $json.error }) }}",
+        "options": {
+          "responseCode": 403,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json; charset=utf-8"
+              },
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              },
+              {
+                "name": "X-Robots-Tag",
+                "value": "noindex, nofollow"
+              },
+              {
+                "name": "Referrer-Policy",
+                "value": "no-referrer"
+              }
+            ]
+          }
+        }
+      },
+      "id": "af0f4571-307b-441a-8505-9597565b1ec5",
+      "name": "Odpověď: zamítnuto",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        2448,
+        1120
+      ]
+    }
+  ],
+  "connections": {
+    "Dávky 08/11/14": {
+      "main": [
+        [
+          {
+            "node": "Čekající na schválení",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Čekající na schválení": {
+      "main": [
+        [
+          {
+            "node": "Vybrat dávku",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vybrat dávku": {
+      "main": [
+        [
+          {
+            "node": "Je co schvalovat?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Je co schvalovat?": {
+      "main": [
+        [
+          {
+            "node": "Nic ke schválení",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Zapsat dávku",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zapsat dávku": {
+      "main": [
+        [
+          {
+            "node": "Souhrn dávky",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Souhrn dávky": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp: batch_ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp: batch_ready": {
+      "main": [
+        [
+          {
+            "node": "E-mail: dávka",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stránka (GET /approve)": {
+      "main": [
+        [
+          {
+            "node": "Ověřit odkaz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ověřit odkaz": {
+      "main": [
+        [
+          {
+            "node": "Odkaz platný?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Odkaz platný?": {
+      "main": [
+        [
+          {
+            "node": "Leady dávky",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Odpověď: neplatný odkaz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leady dávky": {
+      "main": [
+        [
+          {
+            "node": "Vykreslit stránku",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vykreslit stránku": {
+      "main": [
+        [
+          {
+            "node": "Odpověď: stránka",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Akce (POST /approve-action)": {
+      "main": [
+        [
+          {
+            "node": "Ověřit akci",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ověřit akci": {
+      "main": [
+        [
+          {
+            "node": "Akce povolená?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Akce povolená?": {
+      "main": [
+        [
+          {
+            "node": "Leady dávky (akce)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Odpověď: zamítnuto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leady dávky (akce)": {
+      "main": [
+        [
+          {
+            "node": "Připravit změny",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Připravit změny": {
+      "main": [
+        [
+          {
+            "node": "Je co zapsat?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Je co zapsat?": {
+      "main": [
+        [
+          {
+            "node": "Odpověď: beze změny",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Očistit změny",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Očistit změny": {
+      "main": [
+        [
+          {
+            "node": "Zapsat změny",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zapsat změny": {
+      "main": [
+        [
+          {
+            "node": "Odpověď: hotovo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "binaryMode": "separate"
+  },
+  "staticData": {
+    "node:Dávky 08/11/14": {
+      "recurrenceRules": [
+        null,
+        null,
+        null
+      ],
+      "recurrenceRuleSignatures": [
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "10951ccf-2496-46ff-b965-dbc40c56eb68",
+  "activeVersionId": "10951ccf-2496-46ff-b965-dbc40c56eb68",
+  "versionCounter": 8,
+  "triggerCount": 3,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-25T18:39:04.148Z",
+      "createdAt": "2026-10-25T18:39:04.148Z",
+      "role": "workflow:owner",
+      "workflowId": "weboutreachwf003",
+      "projectId": "qlm5jIHOlquhrXmj",
+      "project": {
+        "updatedAt": "2026-10-25T18:45:57.237Z",
+        "createdAt": "2026-10-25T18:38:47.559Z",
+        "id": "qlm5jIHOlquhrXmj",
+        "name": "Krystof Koci <kontakt@krystofkoci.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "d5729b57-8469-4ca0-a7fb-0500133a81aa"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "TestMode",
+    "description": ""
+  }
+}

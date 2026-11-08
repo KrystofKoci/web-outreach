@@ -1,0 +1,16 @@
+{{greeting}},
+
+{{custom_intro}}
+
+I was browsing businesses in your area and came across your website along the way. Websites these days are built to look more modern and inviting – so I took the liberty of preparing a no-obligation draft of what yours could look like with a fresh coat of paint:
+
+{{preview_url}}
+
+{{reviews_line}}
+
+The draft is a single page focused on what customers decide by: clarity, a visible contact and a plain description of your services. The texts and photos are a working version – we would shape the final look together with you. If you wanted more, I can also build a more elaborate variant: subtle animations and separate pages (Services, Pricing, Contact) that a customer switches between in one tap. I build websites myself, not as an agency.
+
+If the draft catches your eye, do not hesitate to contact me – I can first adjust it to your liking, so you see the result before deciding anything.
+
+{{owner_name}}
+{{owner_site}}

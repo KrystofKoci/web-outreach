@@ -1,0 +1,5 @@
+--
+{{owner_name}} · {{owner_address}} · {{sender_email}} · {{owner_site}}
+I am writing to this address because it is conspicuously published as your business contact and the offer relates directly to your business role. This is a single, individually prepared message – not a mailing list.
+If you would rather not hear from me: {{unsubscribe_url}} – or reply "NO THANKS". The request is honoured immediately.
+Privacy: https://krystofkoci.com/ochrana-udaju

@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+
+<html data-tema="tmava" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>{{ page_title }}</title>
+<script>
+  /* stránka má jen tmavou verzi (data-tema="tmava" pevně v <html>) */
+  (function(){var q=new URLSearchParams(location.search),h=document.documentElement;
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&q.get('pohyb')!=='0')h.classList.add('pohyb');})();
+</script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="{{ A }}zaklad.css" rel="stylesheet"/>
+<style>
+  /* V04 Celoplošná atmosféra – elektrikář Fáze (kolo 4: jen tmavá verze).
+     Hero: rodinný dům za soumraku přes celou plochu v paspartu. Podpisový pohyb „nahození proudu“: po načtení
+     zablikají a rozsvítí se venkovní světla (lampy u vchodu a lampa u cesty), o chvilku později okna.
+     Vypínač vpravo dole zhasne / rozsvítí kdykoli (funguje i s omezenými animacemi, jen bez blikání).
+     Pod službami dotazník, pod ním „Rady a tipy“ (4 články, plný text v HTML, rozbalení tlačítkem), na konci kontakty (telefon, WhatsApp, e-mail) a patička. */
+  :root {
+    --pozadi:#090B12; --plocha:#11141D; --plocha-2:#171B26; --text:#ECEBE5; --tlumeny:#A3A5AE; --linka:rgba(236,235,229,.13); --linka-pole:rgba(236,235,229,.42);
+    --kobalt:#6E8FFF; --akcent:#F9B318; --na-akcentu:#15161A; --stopa:#7A5A1A;
+    --cteni:#D3D4D9;
+    --ram-okraj: 22px; --ram-radius: 14px;
+    --zare-ram: 0 0 0 1px rgba(255,200,110,.16), 0 10px 120px -10px rgba(249,179,24,.36), 0 0 40px -6px rgba(255,190,90,.26);
+    --na-foto:#F4F2EC; --na-foto-tl:rgba(244,242,236,.8); --fokus-foto:#F4F2EC;
+    --ram-pozadi: #07080B;
+    --ram-zavoj: linear-gradient(0deg, rgba(5,6,10,.8) 0%, rgba(5,6,10,.3) 30%, rgba(5,6,10,0) 48%), linear-gradient(90deg, rgba(5,6,10,.5), rgba(5,6,10,0) 42%);
+    color-scheme: dark;
+  }
+  body { background: var(--pozadi); color: var(--text); font-family: "Archivo", system-ui, sans-serif; font-size: 16px; line-height: 1.5; }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; }
+  .doplnit { color: var(--tlumeny); }
+
+  /* ---------- lišta ---------- */
+  .lista { position: relative; z-index: 20; height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 calc(var(--ram-okraj) + 14px); }
+  .logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 21px; letter-spacing: -.03em; }
+  .logo svg { width: 26px; height: 14px; color: var(--kobalt); }
+  .vpravo { display: flex; align-items: center; gap: 28px; }
+  .lista nav ul { display: flex; gap: 26px; font-size: 14.5px; }
+  .lista nav a { color: var(--tlumeny); } .lista nav a:hover { color: var(--text); }
+  /* telefon výrazně: žlutá pilulka, vidět i na mobilu */
+  .tel { display: inline-flex; align-items: center; gap: 10px; height: 46px; padding: 0 20px 0 16px; border-radius: 999px; background: var(--akcent); color: var(--na-akcentu); font-weight: 600; font-size: 15.5px; white-space: nowrap; }
+  .tel .doplnit { color: inherit; font-weight: 500; }
+  .tel:hover { background: #FFC63F; }
+  .tel:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+  .tel svg { width: 16px; height: 16px; flex: none; }
+  .menu-tl { display: none; height: 46px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--linka-pole); align-items: center; gap: 8px; font-size: 14px; }
+  .menu-tl i { display: block; width: 16px; height: 1px; background: currentColor; box-shadow: 0 5px 0 currentColor; transform: translateY(-2.5px); }
+  .menu-panel { position: absolute; top: 66px; right: 12px; left: 12px; z-index: 40; flex-direction: column; gap: 2px; padding: 8px; border-radius: 20px; background: var(--plocha); border: 1px solid var(--linka); box-shadow: 0 24px 50px -28px rgba(0,0,0,.6); }
+  .menu-panel:not([hidden]) { display: flex; }
+  .menu-panel a { padding: 13px 16px; border-radius: 12px; font-size: 16px; }
+
+  /* ---------- hero: obraz v paspartu ---------- */
+  .hero { position: relative; padding: 0 var(--ram-okraj) var(--ram-okraj); }
+  .ram { position: relative; height: max(calc(100svh - 74px - var(--ram-okraj)), 600px); border-radius: var(--ram-radius); overflow: hidden; isolation: isolate;
+    container-type: size; background: var(--ram-pozadi); box-shadow: var(--zare-ram); transition: box-shadow .8s; --stopa-z: 4; }
+  .hero:not(.zapnuto) .ram { box-shadow: 0 0 0 1px rgba(236,235,229,.06); }
+  /* plátno 3 : 2 vždy pokrývá rám (jako object-fit: cover), světla v něm sedí v procentech */
+  .platno { position: absolute; z-index: 0; --w: max(100cqw, 150cqh); --h: max(100cqh, 66.667cqw);
+    width: var(--w); height: var(--h); left: clamp(100cqw - var(--w), 50cqw - var(--fx, .5) * var(--w), 0px); top: clamp(100cqh - var(--h), 50cqh - var(--fy, .56) * var(--h), 0px); }
+  .platno img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  /* vrstvy světla: venkovní světla a okna; každá má svou fotku (výřez rozsvíceného stavu s alfou) a záři */
+  .vrstva { position: absolute; inset: 0; opacity: 0; transition: opacity .35s; pointer-events: none; }
+  .hero.zapnuto .vrstva { opacity: 1; }
+  .vrstva.blik { transition: none; }
+  .zare { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); mix-blend-mode: screen; pointer-events: none; }
+  .z-lampa { width: 7%; aspect-ratio: 1; background: radial-gradient(closest-side, rgba(255,236,190,.75), rgba(255,200,110,.28) 45%, rgba(249,179,24,0)); }
+  .z-cesta { width: 6%; aspect-ratio: 1; background: radial-gradient(closest-side, rgba(255,250,235,.7), rgba(220,225,255,.18) 50%, rgba(220,225,255,0)); }
+  .z-okno { width: 9%; aspect-ratio: 1.3; background: radial-gradient(closest-side, rgba(255,200,120,.22), rgba(255,190,100,0)); }
+  .z-zem { left: 43%; top: 72%; width: 40%; aspect-ratio: 2.6; background: radial-gradient(closest-side, rgba(255,190,100,.16), rgba(255,190,100,0)); }
+  .lista::after { content: ""; position: absolute; left: 20%; right: 20%; bottom: -60px; height: 80px; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(249,179,24,.09), transparent); opacity: 0; transition: opacity .8s; }
+  body:has(.hero.zapnuto) .lista::after { opacity: 1; }
+  .ram::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: var(--ram-zavoj); }
+  /* ?pohyb=0 (i bez omezení animací v systému): žádné přechody světla, statický konečný stav hned */
+  html:not(.pohyb) .vrstva, html:not(.pohyb) .ram, html:not(.pohyb) .lista::after { transition: none; }
+
+  .roh { position: absolute; z-index: 5; color: var(--na-foto-tl); }
+  .roh-lh { left: clamp(20px, 2.6vw, 40px); top: clamp(20px, 3svh, 32px); display: flex; gap: 18px; }
+  .roh-ph { right: clamp(20px, 2.6vw, 40px); top: clamp(20px, 3svh, 32px); text-align: right; }
+  .roh .doplnit { color: var(--na-foto); }
+
+  .text { position: absolute; z-index: 5; left: clamp(20px, 2.6vw, 40px); bottom: clamp(22px, 4svh, 40px); max-width: 520px; color: var(--na-foto); }
+  .hero h1 { font-weight: 500; font-size: clamp(2.1rem, 3.3vw, 3.4rem); line-height: 1.04; letter-spacing: -.035em; }
+  .hero h1 .tl { color: var(--na-foto-tl); font-weight: 400; }
+  .text p { margin-top: 16px; max-width: 30em; color: var(--na-foto-tl); font-size: 16px; }
+  .cta { margin-top: 24px; height: 54px; display: inline-flex; align-items: center; padding: 0 7px 0 24px; border-radius: 999px; background: var(--akcent); color: var(--na-akcentu); font-weight: 600; font-size: 15.5px; --fokus: var(--fokus-foto); }
+  .cta [data-magnet-vnitrek] { align-items: center; gap: 16px; }
+  .cta .kruh { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(21,22,26,.1); }
+  .cta svg { width: 16px; height: 16px; }
+
+  /* vypínač: skutečný přepínač světla */
+  .vypinac { position: absolute; z-index: 6; right: clamp(20px, 2.6vw, 40px); bottom: clamp(22px, 4svh, 40px); display: flex; align-items: center; gap: 16px; color: var(--na-foto); border-radius: 16px; }
+  .vypinac:focus-visible { outline: 2px solid var(--fokus-foto); outline-offset: 4px; }
+  .vypinac .stav { text-align: right; line-height: 1.6; }
+  .vypinac .stav b { display: block; font-family: "Archivo", sans-serif; font-weight: 500; font-size: 15px; letter-spacing: -.01em; text-transform: none; }
+  .vypinac .stav span { color: var(--na-foto-tl); }
+  .ramecek { width: 68px; height: 96px; border-radius: 12px; background: linear-gradient(160deg, #F2EFE8, #D9D5CB); box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 18px 30px -12px rgba(0,0,0,.7); display: grid; place-items: center; }
+  .kolebka { width: 42px; height: 66px; border-radius: 8px; position: relative; overflow: hidden;
+    background: linear-gradient(180deg, #E6E2D9 0%, #F7F5EF 48%, #CFCBC1 52%, #E9E6DF 100%); box-shadow: 0 0 0 1px rgba(0,0,0,.12), 0 4px 8px -2px rgba(0,0,0,.35) inset; transition: background .25s; }
+  .hero.zapnuto .kolebka { background: linear-gradient(180deg, #CFCBC1 0%, #E9E6DF 48%, #F7F5EF 52%, #E6E2D9 100%); box-shadow: 0 0 0 1px rgba(0,0,0,.12), 0 -4px 8px -2px rgba(0,0,0,.35) inset; }
+  .kolebka::after { content: ""; position: absolute; left: 50%; top: 11px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: #9E9A92; transition: background .3s, box-shadow .3s; }
+  .hero.zapnuto .kolebka::after { background: var(--akcent); box-shadow: 0 0 10px 2px rgba(249,179,24,.7); }
+
+  /* ---------- sekce ---------- */
+  .sekce { padding: clamp(80px, 9vw, 130px) calc(var(--ram-okraj) + 14px) 0; max-width: 1380px; margin: 0 auto; }
+  .sekce-hlava { display: flex; justify-content: space-between; align-items: end; gap: 30px; flex-wrap: wrap; margin-bottom: clamp(28px, 4vw, 50px); }
+  .sekce h2 { font-weight: 600; font-size: clamp(2rem, 3.2vw, 3rem); line-height: 1.05; letter-spacing: -.035em; }
+  .sekce-hlava p { color: var(--tlumeny); max-width: 30em; }
+
+  /* služby (vyměnitelný blok data-sluzby) */
+  .radky { border-top: 1px solid var(--text); }
+  .radky li { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 6fr) minmax(0, 2fr); gap: 24px; align-items: baseline; padding: 24px 0 26px; border-bottom: 1px solid var(--linka); }
+  .radky h3 { font-weight: 500; font-size: clamp(1.3rem, 1.8vw, 1.6rem); letter-spacing: -.025em; }
+  .radky p { color: var(--tlumeny); max-width: 36em; }
+  .radky .cena { justify-self: end; color: var(--tlumeny); font-size: 14.5px; }
+
+  /* dotazník */
+  .dotaz-mriz { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(30px, 5vw, 80px); align-items: start; }
+  .dotaz-mriz .sekce-hlava { display: block; margin: 0; }
+  .dotaz-mriz .sekce-hlava p { margin-top: 18px; }
+  .formular { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 16px; padding: clamp(20px, 2.4vw, 32px); border-radius: 22px; background: var(--plocha); border: 1px solid var(--linka); }
+  .pole { display: flex; flex-direction: column; gap: 8px; }
+  .pole.cela { grid-column: 1 / -1; }
+  .pole label { font-size: 14.5px; font-weight: 500; }
+  .pole label small { font-weight: 400; color: var(--tlumeny); font-size: 13.5px; }
+  .pole input, .pole textarea { font: inherit; color: var(--text); background: var(--pozadi); border: 1px solid var(--linka-pole); border-radius: 14px; padding: 13px 16px; min-height: 50px; width: 100%; }
+  .pole textarea { min-height: 150px; resize: vertical; line-height: 1.5; }
+  .pole input::placeholder, .pole textarea::placeholder { color: #7D808A; }
+  .pole input:focus-visible, .pole textarea:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; border-radius: 14px; }
+  .pole [aria-invalid="true"] { border-color: var(--akcent); }
+  .chyba { font-size: 13.5px; color: var(--text); display: flex; gap: 8px; align-items: center; }
+  .chyba::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--akcent); flex: none; }
+  .chyba[hidden] { display: none; }
+  .odeslat { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin-top: 4px; }
+  .odeslat .cta { margin: 0; border: 0; cursor: pointer; --fokus: var(--text); }
+  .hlaska { color: var(--tlumeny); font-size: 14.5px; max-width: 26em; }
+  .hlaska.ukazka { color: var(--text); }
+
+  /* kontakty a patička */
+  .kontakt { padding-bottom: 0; }
+  .kontakty { border-top: 1px solid var(--text); }
+  .kontakty li { border-bottom: 1px solid var(--linka); }
+  .kontakty a { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 6fr) auto; gap: 24px; align-items: center; padding: 26px 0; }
+  .kontakty .druh { color: var(--tlumeny); }
+  .kontakty .udaj { font-weight: 500; font-size: clamp(1.5rem, 2.6vw, 2.4rem); letter-spacing: -.03em; line-height: 1.1; overflow-wrap: anywhere; }
+  .kontakty .udaj .doplnit { color: var(--text); }
+  .kontakty .sipka { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--linka-pole); transition: background-color .3s, color .3s, border-color .3s; }
+  .kontakty .sipka svg { width: 16px; height: 16px; }
+  .kontakty a:hover .sipka { background: var(--akcent); color: var(--na-akcentu); border-color: var(--akcent); }
+  .kontakty a:focus-visible { outline: 2px solid var(--text); outline-offset: 4px; border-radius: 6px; }
+  .paticka { max-width: 1380px; margin: clamp(70px, 8vw, 110px) auto 0; padding: 28px calc(var(--ram-okraj) + 14px) 34px; display: flex; justify-content: space-between; align-items: center; gap: 16px 30px; flex-wrap: wrap; color: var(--tlumeny); font-size: 14px; border-top: 1px solid var(--linka); }
+  .paticka .logo { color: var(--text); font-size: 18px; }
+  .paticka ul { display: flex; gap: 10px 26px; flex-wrap: wrap; }
+  .paticka a:hover { color: var(--text); }
+
+
+  /* rady a tipy: články jako řádky s linkami (jako služby); perex vidět, plný text v HTML se rozbalí tlačítkem (aria-expanded) */
+  .clanky { border-top: 1px solid var(--text); }
+  .clanek { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 6fr) auto; column-gap: 24px; align-items: start; padding: 26px 0 28px; border-bottom: 1px solid var(--linka); scroll-margin-top: 16px; }
+  .clanek h3 { font-weight: 500; font-size: clamp(1.3rem, 1.8vw, 1.6rem); line-height: 1.15; letter-spacing: -.025em; scroll-margin-top: 24px; }
+  .clanek .perex { color: var(--tlumeny); max-width: 36em; }
+  .clanek .perex .doplnit { color: var(--text); }
+  .rozbalit { display: inline-flex; align-items: center; gap: 12px; height: 44px; padding: 0 5px 0 18px; margin-top: -6px; border-radius: 999px; border: 1px solid var(--linka-pole); font-size: 14.5px; font-weight: 500; white-space: nowrap; }
+  .rozbalit:hover { border-color: var(--text); }
+  .rozbalit:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; border-radius: 999px; }
+  .rozbalit .znak { position: relative; width: 34px; height: 34px; border-radius: 50%; background: var(--plocha-2); flex: none; }
+  .rozbalit .znak::before, .rozbalit .znak::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 1.5px; margin: -.75px 0 0 -6px; background: currentColor; }
+  .rozbalit .znak::after { transform: rotate(90deg); }
+  .rozbalit[aria-expanded="true"] .znak::after { transform: rotate(0deg); }
+  html.pohyb .rozbalit .znak::after { transition: transform .3s cubic-bezier(.2,.7,.1,1); }
+  .clanek-text { grid-column: 2 / 4; max-width: 42em; padding-top: 26px; color: var(--cteni); font-size: 16.5px; line-height: 1.65; }
+  .clanek-text[hidden] { padding-top: 0; } /* sbalený text (hidden="until-found") nechává jen prázdný box – bez odsazení */
+  html.pohyb .clanek-text:not([hidden]) { animation: clanek-in .45s cubic-bezier(.2,.7,.1,1); }
+  @keyframes clanek-in { from { opacity: 0; transform: translate3d(0, 8px, 0); } }
+  .clanek-text h4 { margin: 30px 0 10px; color: var(--text); font-weight: 600; font-size: 1.125rem; line-height: 1.3; letter-spacing: -.015em; }
+  .clanek-text h4:first-child { margin-top: 0; }
+  .clanek-text p + p { margin-top: 12px; }
+  .clanek-text ul, .clanek-text ol { display: grid; gap: 10px; margin-top: 12px; }
+  .clanek-text ul + p, .clanek-text ol + p { margin-top: 14px; }
+  .clanek-text ul li { position: relative; padding-left: 22px; }
+  .clanek-text ul li::before { content: "–"; position: absolute; left: 2px; top: 0; color: var(--tlumeny); }
+  .clanek-text ol { counter-reset: krok; }
+  .clanek-text ol li { position: relative; padding-left: 38px; counter-increment: krok; }
+  .clanek-text ol li::before { content: counter(krok); position: absolute; left: 0; top: .15em; width: 25px; height: 25px; border-radius: 50%; border: 1px solid var(--linka-pole); color: var(--text); font: 500 12.5px/23px "IBM Plex Mono", ui-monospace, monospace; text-align: center; }
+  .clanek-text strong { color: var(--text); font-weight: 600; }
+  .clanek-text p.vyzva { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--linka); }
+  .vyzva-uvod { color: var(--text); font-weight: 500; width: 100%; }
+  .vyzva-tel { display: inline-flex; align-items: center; height: 46px; padding: 0 20px; border-radius: 999px; background: var(--akcent); color: var(--na-akcentu); font-weight: 600; font-size: 15px; white-space: nowrap; }
+  .vyzva-tel .doplnit { color: inherit; font-weight: 500; margin-left: .3em; }
+  .vyzva-tel:hover { background: #FFC63F; }
+  .vyzva-tel:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; border-radius: 999px; }
+  .vyzva-dotaz { color: var(--text); text-decoration: underline; text-decoration-color: var(--linka-pole); text-underline-offset: 4px; }
+  .vyzva-dotaz:hover { text-decoration-color: currentColor; }
+
+  @media (max-width: 1000px) {
+    .lista nav { display: none; }
+    .menu-tl { display: inline-flex; }
+    .vpravo { gap: 8px; }
+    .dotaz-mriz { grid-template-columns: 1fr; }
+  }
+  /* ---------- mobil: rám na výšku, plátno zaostřené na vchod s lampami ---------- */
+  @media (max-width: 760px) {
+    :root { --ram-okraj: 10px; }
+    .lista { height: 66px; padding: 0 12px 0 16px; }
+    .logo { font-size: 19px; gap: 8px; } .logo svg { width: 22px; }
+    .tel { height: 42px; padding: 0 14px 0 12px; font-size: 14.5px; gap: 8px; }
+    .menu-tl { height: 42px; padding: 0 14px; }
+    .menu-panel { top: 60px; }
+    .ram { height: max(calc(100svh - 66px - var(--ram-okraj)), 620px); }
+    .platno { --fx: .42; --fy: .5; }
+    .roh-lh { display: none; }
+    .roh-ph { left: 20px; right: auto; text-align: left; }
+    .text { right: 20px; bottom: 24px; }
+    .hero h1 { font-size: clamp(2rem, 8.6vw, 2.5rem); }
+    .text p { font-size: 15px; }
+    .vypinac { top: 18px; bottom: auto; right: 16px; gap: 12px; }
+    .vypinac .stav { display: none; }
+    .ramecek { width: 52px; height: 74px; border-radius: 10px; }
+    .kolebka { width: 32px; height: 50px; }
+    .kolebka::after { top: 8px; width: 6px; height: 6px; margin-left: -3px; }
+    .sekce { padding: 70px 16px 0; }
+    .radky li { grid-template-columns: 1fr auto; gap: 6px 16px; }
+    .radky p { grid-column: 1 / -1; grid-row: 2; }
+    .radky .cena { grid-column: 2; grid-row: 1; }
+    .formular { grid-template-columns: 1fr; padding: 18px; }
+    .kontakty a { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 20px 0; }
+    .kontakty .druh { grid-column: 1; grid-row: 1; }
+    .kontakty .udaj { grid-column: 1; grid-row: 2; font-size: 1.5rem; }
+    .kontakty .sipka { grid-column: 2; grid-row: 1 / 3; }
+    .paticka { padding: 24px 16px 30px; }
+    .clanek { grid-template-columns: minmax(0, 1fr); padding: 22px 0 24px; }
+    .clanek .perex { margin-top: 10px; }
+    .rozbalit { justify-self: start; margin-top: 16px; }
+    .clanek-text { grid-column: 1; padding-top: 22px; font-size: 16px; }
+  }
+  @media (max-width: 370px) {
+    .tel .tel-slovo { display: none; }
+  }
+</style>
+<style id="pz-css">
+.pz-hod{padding:clamp(56px,9vw,104px) 24px;text-align:center;color:inherit;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-hod .pz-in{max-width:560px;margin:0 auto}
+.pz-hod .pz-cislo{font-size:clamp(44px,7vw,72px);line-height:1;margin:0;font-weight:500;letter-spacing:-.02em}
+.pz-hod .pz-cislo span{font-size:.32em;opacity:.7;letter-spacing:0;margin-left:.3em}
+.pz-hod .pz-hv{position:relative;display:inline-block;font-size:22px;letter-spacing:4px;margin:14px 0 8px;color:color-mix(in srgb,currentColor 22%,transparent)}
+.pz-hod .pz-hv b{position:absolute;inset:0 auto 0 0;overflow:hidden;white-space:nowrap;color:var(--akcent,var(--accent,#E3A008));font-weight:400}
+.pz-hod .pz-pod{margin:0 0 14px;opacity:.78}
+.pz-hod a{color:inherit}
+.pz-pata{padding:28px 24px 34px;text-align:center;font-size:14px;opacity:.85;border-top:1px solid color-mix(in srgb,currentColor 14%,transparent)}
+.pz-pata p{margin:4px 0}.pz-pata a{color:inherit}
+.pz-credit{font-size:12px;opacity:.7;text-align:center;padding:0 24px 22px}
+.pz-credit a{color:inherit}
+.pz-pv{position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;background:#111827;color:#fff;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;
+ padding:10px 14px;border-radius:14px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.pz-pv a{color:#fff}.pz-pv .pz-cta{background:#fff;color:#111827;text-decoration:none;font-weight:700;padding:.4em .85em;border-radius:999px}
+.pz-pv button{background:none;border:0;color:#fff;opacity:.8;cursor:pointer;font:inherit;text-decoration:underline}
+.pz-pv.pz-skryt{display:none}
+@media print{.pz-pv{display:none}}
+</style></head>
+<body>
+<header class="lista">
+<a aria-label="{{ brand }}, electrician – home" class="logo" href="#"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 26 14"><path d="M1 7c3-8 6-8 8 0s5 8 8 0 5-8 8 0"></path></svg>{{ brand }}</a>
+<div class="vpravo">
+<nav aria-label="Main"><ul><li><a href="#sluzby">Services</a></li><li><a href="#dotaz">Enquiry</a></li><li><a href="#rady">Tips</a></li><li><a href="#kontakt">Contact</a></li></ul></nav>
+{% if phone %}<a aria-label="Zavolat: telefon {{ phone }}" class="tel" href="tel:{{ phone_href }}"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 16 16"><path d="M3.5 2.5h2.6l1.2 3-1.6 1a7.5 7.5 0 0 0 3.8 3.8l1-1.6 3 1.2v2.6a1 1 0 0 1-1 1A11.5 11.5 0 0 1 2.5 3.5a1 1 0 0 1 1-1z"></path></svg><span class="tel-slovo">Phone</span> {{ phone }}</a>{% endif %}
+<button aria-controls="menu" aria-expanded="false" class="menu-tl" data-menu-zaklad="" type="button"><i></i>Menu</button>
+</div>
+<nav aria-label="Menu" class="menu-panel" hidden="" id="menu">
+<a href="#sluzby">Services</a><a href="#dotaz">Enquiry</a><a href="#rady">Tips</a><a href="#kontakt">Contact</a>
+</nav>
+</header>
+<main>
+<section aria-label="Home" class="hero" id="hero">
+<div class="ram" data-stopa="">
+<div aria-hidden="true" class="platno">
+<img alt="" fetchpriority="high" height="1600" src="{{ A }}img/V04-elektro-dum-vyp.webp" width="2400"/>
+<span class="vrstva" id="v-svetla">
+<img alt="" height="1600" src="{{ A }}img/V04-elektro-dum-svetla.webp" width="2400"/>
+<span class="zare z-zem"></span>
+<span class="zare z-lampa" style="left:39.2%;top:49.3%"></span>
+<span class="zare z-lampa" style="left:47%;top:49.4%"></span>
+<span class="zare z-cesta" style="left:92.7%;top:29.3%"></span>
+</span>
+<span class="vrstva" id="v-okna">
+<img alt="" height="1600" src="{{ A }}img/V04-elektro-dum-okna.webp" width="2400"/>
+<span class="zare z-okno" style="left:27.2%;top:52.2%"></span>
+<span class="zare z-okno" style="left:53.7%;top:51.1%"></span>
+<span class="zare z-okno" style="left:65.5%;top:54%"></span>
+</span>
+</div>
+<span class="sr-only">Photo: a stone family house at dusk, two wall lamps by the entrance and a street lamp by the path. The switch turns on the windows and outdoor lights.</span>
+<p class="roh roh-lh mono" data-po-nadpisu="0.3"><span>Inspections</span><span>Timing belt</span><span>Lighting</span><span>Faults</span></p>
+
+<div class="text">
+<h1 data-slozit="">Flip the switch.<br/><span class="tl">And the lights come on.</span></h1>
+<p data-po-nadpisu="0.2">Inspections, rewiring and repairs in flats and houses. We find the cause and explain what we did.</p>
+<a class="cta" data-magnet="" data-po-nadpisu="0.3" href="#dotaz"><span data-magnet-vnitrek="">Book an electrician<span aria-hidden="true" class="kruh"><svg fill="none" stroke="currentColor" stroke-width="1.6" viewbox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></span></span></a>
+</div>
+<button aria-checked="false" aria-label="The house lights in the photo" class="vypinac" id="vypinac" role="switch" type="button">
+<span class="stav mono"><b id="stav-text">Lights off</b><span>Try the switch</span></span>
+<span aria-hidden="true" class="ramecek"><span class="kolebka"></span></span>
+</button>
+</div>
+</section>
+<section class="sekce sluzby" id="sluzby">
+<div class="sekce-hlava">
+<h2 data-odhalit="">What we can wire up for you</h2>
+<p data-odhalit="">From small repairs to whole homes. You get a quote before every job and proper paperwork after it.</p>
+</div>
+
+<ul class="radky" data-odhalit="deti" data-sluzby="elektro">
+<li data-sluzba="revize"><h3>Electrical inspections</h3><p>Safety reports for selling or letting a property, and periodic checks on older installations.</p></li>
+<li data-sluzba="rozvody"><h3>Rewiring and renovations</h3><p>When the walls are open, it’s the best time to replace the wiring too. We design circuits with room for more appliances.</p><span class="cena">Price on request</span></li>
+<li data-sluzba="rozvadece"><h3>Consumer units and breakers</h3><p>Replacing old fuses with breakers, adding RCD protection and clear labelling in the consumer unit.</p><span class="cena">Price on request</span></li>
+<li data-sluzba="poruchy"><h3>Faults and repairs</h3><p>A dead socket, a flickering light or a burnt-out switch. We fix it and tell you why it happened.</p></li>
+</ul>
+</section>
+<section aria-labelledby="dotaz-h" class="sekce dotaz" id="dotaz">
+<div class="dotaz-mriz">
+<div class="sekce-hlava">
+<h2 data-odhalit="" id="dotaz-h">Tell us what you need</h2>
+<p data-odhalit="">A few sentences are enough: what isn’t working or what you want installed, and where. We’ll get back to you to agree a time and a quote.</p>
+</div>
+<form class="formular" data-formular="dotaz" data-odhalit="" novalidate="">
+<div class="pole">
+<label for="f-jmeno">Full name</label>
+<input aria-describedby="e-jmeno" autocomplete="name" id="f-jmeno" name="jmeno" required="" type="text"/>
+<span class="chyba" hidden="" id="e-jmeno">Please enter your full name.</span>
+</div>
+<div class="pole">
+<label for="f-telefon">Phone</label>
+<input aria-describedby="e-telefon" autocomplete="tel" id="f-telefon" inputmode="tel" name="telefon" required="" type="tel"/>
+<span class="chyba" hidden="" id="e-telefon">Add your phone number so we can call you.</span>
+</div>
+<div class="pole cela">
+<label for="f-email">E-mail <small>(optional)</small></label>
+<input aria-describedby="e-email" autocomplete="email" id="f-email" name="email" type="email"/>
+<span class="chyba" hidden="" id="e-email">Please check your e-mail – the @ or the domain is missing.</span>
+</div>
+<div class="pole cela">
+<label for="f-zprava">Your enquiry</label>
+<textarea aria-describedby="e-zprava" id="f-zprava" name="zprava" placeholder="E.g. the kitchen breaker trips when I turn on the oven." required="" rows="5"></textarea>
+<span class="chyba" hidden="" id="e-zprava">Tell us what you need help with.</span>
+</div>
+<div class="odeslat">
+<p aria-live="polite" class="hlaska" id="hlaska">We’ll only use your details to reply to your enquiry.</p>
+<button class="cta" type="submit"><span data-magnet-vnitrek="">Send enquiry<span aria-hidden="true" class="kruh"><svg fill="none" stroke="currentColor" stroke-width="1.6" viewbox="0 0 16 16"><path d="M3 8h10M9 4l4 4-4 4"></path></svg></span></span></button>
+</div>
+</form>
+</div>
+</section>
+<section aria-labelledby="rady-h" class="sekce rady" id="rady">
+<div class="sekce-hlava">
+<h2 data-odhalit="" id="rady-h">Tips and advice</h2>
+<p data-odhalit="">What to do when something electrical at home isn’t working as it should. Safety always comes first, and repairs belong with a professional.</p>
+</div>
+
+<div class="clanky" data-odhalit="deti">
+<article aria-labelledby="rada-kabel-h" class="clanek" id="rada-kabel">
+<h3 id="rada-kabel-h">Chewed or damaged cable: what to do?</h3>
+<p class="perex">A chewed, pinched or cut cable can be live even if the appliance still works. What to do straight away, what not to touch and when to call an electrician {{ city_in }}.</p>
+<button aria-controls="rada-kabel-text" aria-expanded="false" class="rozbalit" type="button">Read article<span class="sr-only">: Chewed or damaged cable: what to do</span><span aria-hidden="true" class="znak"></span></button>
+<div class="clanek-text" hidden="until-found" id="rada-kabel-text">
+<h4>Don’t touch the damaged spot</h4>
+<p>Cables at home are most often damaged by pets or rodents, furniture pushed against a wall or doors that trap a cord. If the insulation is chewed through or cracked, you may see bare wire – and it stays live as long as the cable is plugged in.</p>
+<p>A cable can be dangerous even when there’s hardly anything to see on the outside – the insulation only needs to be crushed or nicked inside. So don’t touch the damaged spot, and keep children and pets away from it.</p>
+<h4>What to do straight away</h4>
+<p>If it’s an appliance cord or an extension lead and the plug is undamaged and easy to reach, unplug it. Keep your hands dry, stand on a dry floor and pull the plug body, never the cable.</p>
+<p>If the damaged cable is fixed in a wall or trunking, if the plug is damaged too, or if you can’t reach it safely, switch off that circuit’s breaker at the consumer unit. If you don’t know which one, switch off the main switch. Don’t plug in an appliance with a damaged cord again.</p>
+<h4>Why not electrical tape</h4>
+<p>Tape restores the look of a cable, not its safety. It doesn’t restore the original insulation or strength, it loosens over time and the damage underneath can get worse. A taped cable also looks fine, so it’s easy to forget about. Cutting and joining cables at home is just as risky.</p>
+<h4>How an electrician fixes it</h4>
+<p>An electrician assesses how far the damage goes. For an appliance cord or extension lead, replacing the whole cable is usually safest. For wiring in a wall, they check the rest of the circuit and test the installation after the repair. If it’s an appliance, they’ll advise whether a repair is worth it or it belongs with a service centre.</p>
+<h4>If someone gets an electric shock</h4>
+<p>Don’t touch the person while they’re in contact with the conductor. First cut the power at the breaker or main switch, then call your local emergency number. Even if they seem fine, they should be checked by a doctor.</p>
+<p class="vyzva"><span class="vyzva-uvod">Got a damaged cable at home?</span> {% if phone %}<a class="vyzva-tel" href="tel:{{ phone_href }}">Call us on {{ phone }}</a>{% endif %} <a class="vyzva-dotaz" href="#dotaz">or describe the situation in the form</a></p>
+</div>
+</article>
+<article aria-labelledby="rada-jistic-h" class="clanek" id="rada-jistic">
+<h3 id="rada-jistic-h">Why does my breaker keep tripping?</h3>
+<p class="perex">A breaker that keeps tripping is warning you about something. The most common causes, what you can safely try yourself and when it’s time to call an electrician {{ city_in }}.</p>
+<button aria-controls="rada-jistic-text" aria-expanded="false" class="rozbalit" type="button">Read article<span class="sr-only">: Why does my breaker keep tripping</span><span aria-hidden="true" class="znak"></span></button>
+<div class="clanek-text" hidden="until-found" id="rada-jistic-text">
+<h4>A breaker protects you – it doesn’t trip for no reason</h4>
+<p>A breaker switches a circuit off when more current flows than the circuit is designed for, or when there’s a short circuit. The RCD – usually next to the breakers, with a test button – watches for something else: it trips when some current leaks out of the circuit, for example through moisture or damaged insulation. Both protect you and the installation. If they trip, something is wrong somewhere.</p>
+<h4>The most common causes</h4>
+<ul><li><strong>Overloaded circuit:</strong> several high-power appliances run on one circuit at once, such as a kettle, a microwave and an electric heater.</li><li><strong>Faulty appliance:</strong> a short circuit or damaged insulation inside the appliance or its cord.</li><li><strong>Moisture:</strong> water in a socket or junction box, an outdoor socket after rain, a damp bathroom or basement.</li><li><strong>Wiring fault:</strong> a loose connection, a damaged cable in the wall or old wiring at the end of its life.</li></ul>
+<p>The breaker or RCD itself can be faulty too – but only testing will tell.</p>
+<h4>What you can do yourself</h4>
+<p>Unplug every appliance on the affected circuit and try resetting the breaker once. If it holds, plug the appliances back in one at a time. Stop using the one that makes it trip again.</p>
+<p>If the breaker trips straight away even with everything unplugged, or keeps tripping, don’t keep resetting it. Never hold the lever up by force and never swap the breaker for a “bigger” one – the circuit would no longer be protected. If you smell burning, hear crackling or see scorch marks, leave the breaker off and call a professional straight away.</p>
+<h4>What an electrician will do</h4>
+<p>An electrician tests the circuit: insulation, connections, breakers and RCDs, and what is running on it. Based on the results they propose a fix – repairing the specific fault, splitting an overloaded circuit, a dedicated circuit for high-power appliances, adding RCD protection or updating the consumer unit. You’ll get an explanation of why the breaker was tripping and what we recommend next.</p>
+<p class="vyzva"><span class="vyzva-uvod">Breaker still tripping?</span> {% if phone %}<a class="vyzva-tel" href="tel:{{ phone_href }}">Call us on {{ phone }}</a>{% endif %} <a class="vyzva-dotaz" href="#dotaz">or describe the situation in the form</a></p>
+</div>
+</article>
+<article aria-labelledby="rada-zasuvka-h" class="clanek" id="rada-zasuvka">
+<h3 id="rada-zasuvka-h">What to do if a socket gets hot or sparks?</h3>
+<p class="perex">A warm socket, sparks when plugging in or a smell of burnt plastic are warning signs you shouldn’t ignore. What to do straight away and why an electrician {{ city_in }} should check it.</p>
+<button aria-controls="rada-zasuvka-text" aria-expanded="false" class="rozbalit" type="button">Read article<span class="sr-only">: What to do if a socket gets hot or sparks</span><span aria-hidden="true" class="znak"></span></button>
+<div class="clanek-text" hidden="until-found" id="rada-zasuvka-text">
+<h4>Stop using the socket immediately</h4>
+<p>Neither a socket nor a plug should feel noticeably warm in normal use. If they’re hot, sparking, crackling, smell burnt, or the plastic around them is discoloured or warped, a fault is already happening. Don’t wait to see if it happens again.</p>
+<h4>Step by step</h4>
+<ol><li>Switch off the breaker for that socket’s circuit at the consumer unit. If you don’t know which one, switch off the main switch.</li><li>Only then pull out the plug. If the socket is hot or damaged, let it cool down first.</li><li>Don’t use the socket until it’s been checked, and tell everyone at home not to switch the breaker back on.</li><li>If there’s smoke or flames, leave the room and call your local emergency number. Never use water on live equipment.</li></ol>
+<h4>Why a socket gets hot</h4>
+<p>Most often it’s a loose or corroded terminal connection, worn contacts that hold the plug loosely, or overloading – for example high-power appliances on adaptors and extension leads. A damaged appliance plug can also be to blame.</p>
+<p>A bad connection resists the current and heats up. The heat gradually damages the insulation and surrounding plastic, so the problem won’t fix itself – quite the opposite. It’s also a warning sign if a plug sits loosely in the socket, or a lamp flickers when you touch its plug.</p>
+<h4>What to avoid</h4>
+<ul><li>Don’t run several high-power appliances such as a heater, a kettle or a hair dryer from one socket through an adaptor.</li><li>Don’t daisy-chain extension leads and adaptors.</li><li>Fully unwind a cable reel under heavy load – a coiled cable heats up more.</li><li>Don’t use a socket with a cracked or loose cover.</li></ul>
+<h4>What an electrician will do</h4>
+<p>An electrician opens the socket, checks the terminals and supply wires, and repairs or replaces it as needed. They also check the plug of the appliance that was connected and the load on the whole circuit. If the socket is regularly overloaded, they’ll suggest extra sockets or a dedicated circuit so it doesn’t happen again.</p>
+<p class="vyzva"><span class="vyzva-uvod">Socket getting hot?</span> {% if phone %}<a class="vyzva-tel" href="tel:{{ phone_href }}">Call us on {{ phone }}</a>{% endif %} <a class="vyzva-dotaz" href="#dotaz">or describe the situation in the form</a></p>
+</div>
+</article>
+<article aria-labelledby="rada-revize-h" class="clanek" id="rada-revize">
+<h3 id="rada-revize-h">When do you need an electrical safety inspection?</h3>
+<p class="perex">An inspection confirms your wiring is safe. When it’s worth having one and how to prepare – for flats and houses {{ city_in }}.</p>
+<button aria-controls="rada-revize-text" aria-expanded="false" class="rozbalit" type="button">Read article<span class="sr-only">: When do you need an electrical safety inspection</span><span aria-hidden="true" class="znak"></span></button>
+<div class="clanek-text" hidden="until-found" id="rada-revize-text">
+<h4>What an inspection is</h4>
+<p>An electrical inspection is a professional check of your installation, with measurements and tests. A qualified electrician carries it out and sums up the result in a written report: the condition of the installation, any faults found and whether it is safe to use.</p>
+<p>The inspection itself doesn’t fix anything. Faults go into the report, and putting them right is the next step – so the report gives you a clear list of what needs doing.</p>
+<h4>When an inspection is required</h4>
+<p>New wiring should be tested before it’s put into use, and so should significant changes to an existing installation – a renovation, new circuits or a new consumer unit. What exactly is required depends on local rules, and your electrician can tell you.</p>
+<h4>When an inspection is worth it</h4>
+<ul><li><strong>Buying or selling a property:</strong> the report shows the real condition of the wiring. The buyer knows what they’re getting, and the seller has it documented.</li><li><strong>Old wiring:</strong> aluminium wiring or older circuits without an earth conductor, once common, are worth checking even if they still work.</li><li><strong>Insurance:</strong> after damage caused by an electrical fault, such as a fire, your insurer may look into the condition of the installation. Your policy terms say what exactly they require.</li><li><strong>After a flood or fire</strong> and after any damage where you’re not sure whether the wiring was affected.</li></ul>
+<h4>How often</h4>
+<p>The electrician recommends when the next inspection is due in the report itself, based on the type of property and how it’s used. So you don’t need to guess – just check your last report. If you don’t have one, that alone is a good reason to book an inspection.</p>
+<h4>How to prepare</h4>
+<p>Make sure the consumer unit and every room are accessible. Have any previous reports or installation documents ready. The power usually needs to be switched off for a while during the inspection, so expect a short outage.</p>
+<p class="vyzva"><span class="vyzva-uvod">Need an inspection?</span> {% if phone %}<a class="vyzva-tel" href="tel:{{ phone_href }}">Call us on {{ phone }}</a>{% endif %} <a class="vyzva-dotaz" href="#dotaz">or describe the situation in the form</a></p>
+</div>
+</article>
+</div>
+</section>
+{# SEKCE_PATCH_V1 #}{% include "_onas.html.j2" %}
+<section aria-labelledby="kontakt-h" class="sekce kontakt" id="kontakt">
+<div class="sekce-hlava">
+<h2 data-odhalit="" id="kontakt-h">Rather talk on the phone?</h2>
+<p data-odhalit="">Call, message us on WhatsApp or send an email.</p>
+</div>
+<ul class="kontakty" data-odhalit="deti">
+{% if phone %}<li><a href="tel:{{ phone_href }}"><span class="druh mono">Phone</span><span class="udaj">{{ phone }}</span><span aria-hidden="true" class="sipka"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 16 16"><path d="M3.5 2.5h2.6l1.2 3-1.6 1a7.5 7.5 0 0 0 3.8 3.8l1-1.6 3 1.2v2.6a1 1 0 0 1-1 1A11.5 11.5 0 0 1 2.5 3.5a1 1 0 0 1 1-1z"></path></svg></span></a></li>{% endif %}
+
+{% if email %}<li><a href="mailto:{{ email }}"><span class="druh mono">E-mail</span><span class="udaj">{{ email }}</span><span aria-hidden="true" class="sipka"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewbox="0 0 16 16"><rect height="9" rx="1.5" width="12" x="2" y="3.5"></rect><path d="M2.5 4.5l5.5 4 5.5-4"></path></svg></span></a></li>{% endif %}
+</ul>
+{% include "_mapa.html.j2" %}
+</section>
+</main>
+{% include "_recenze.html.j2" %}
+{% if rating %}<section aria-label="Rating on Google" class="pz-hod"><div class="pz-in">
+<p class="pz-cislo">{{ rating_txt }}<span>out of 5</span></p>
+<p aria-hidden="true" class="pz-hv">★★★★★<b style="width:{{ rating_pct }}%">★★★★★</b></p>
+<p class="pz-pod">Rating on Google{% if show_count %} · {{ rating_count }} reviews{% endif %}</p>
+{% if maps_url %}<p><a href="{{ maps_url }}" rel="noopener" target="_blank">View on Google Maps</a></p>{% endif %}
+</div></section>{% endif %}<footer class="paticka">
+<a aria-label="{{ brand }}, electrician – back to top" class="logo" href="#"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 26 14"><path d="M1 7c3-8 6-8 8 0s5 8 8 0 5-8 8 0"></path></svg>{{ brand }}</a>
+<ul>
+{% if address %}<li>Address {{ address }}</li>{% endif %}
+
+<li><a href="#">Back to top</a></li>
+</ul>
+</footer>
+<script>
+  (function () {
+    var b = document.querySelector('.menu-tl'), p = document.getElementById('menu');
+    b.addEventListener('click', function () { var o = p.hidden; p.hidden = !o; b.setAttribute('aria-expanded', o ? 'true' : 'false'); });
+    p.addEventListener('click', function (e) { if (e.target.closest('a')) { p.hidden = true; b.setAttribute('aria-expanded', 'false'); } });
+  })();
+
+  /* Nahození proudu: s povoleným pohybem zablikají a rozsvítí se venkovní světla, okna o chvilku později; bez pohybu svítí rovnou.
+     Vypínač přepíná světlo kdykoliv (i s omezenými animacemi). */
+  (function () {
+    var hero = document.getElementById('hero'), v = document.getElementById('vypinac'), t = document.getElementById('stav-text');
+    var skupiny = [[document.getElementById('v-svetla'), 0], [document.getElementById('v-okna'), 160]];
+    var q = new URLSearchParams(location.search);
+    var pohyb = !matchMedia('(prefers-reduced-motion: reduce)').matches && q.get('pohyb') !== '0';
+    var casovace = [];
+    function zrus() { casovace.forEach(clearTimeout); casovace = []; skupiny.forEach(function (s) { s[0].style.opacity = ''; s[0].classList.remove('blik'); }); }
+    function nastav(on) {
+      hero.classList.toggle('zapnuto', on);
+      v.setAttribute('aria-checked', on ? 'true' : 'false');
+      t.textContent = on ? 'Lights on' : 'Lights off';
+    }
+    function nahod() {
+      zrus();
+      if (!pohyb) { nastav(true); return; }
+      var kroky = [[0, .55], [80, .05], [150, .8], [230, .15], [300, .4], [380, .1], [520, 1]];
+      v.setAttribute('aria-checked', 'true'); t.textContent = 'Lights on';
+      skupiny.forEach(function (s) {
+        var z = s[0], od = s[1];
+        z.classList.add('blik');
+        kroky.forEach(function (k) { casovace.push(setTimeout(function () { z.style.opacity = k[1]; }, od + k[0])); });
+      });
+      casovace.push(setTimeout(function () { zrus(); nastav(true); }, 720));
+    }
+    v.addEventListener('click', function () {
+      var on = v.getAttribute('aria-checked') !== 'true';
+      if (on && pohyb) nahod(); else { zrus(); nastav(on); }
+    });
+    if (!pohyb) { nastav(true); return; }
+    var start = function () { casovace.push(setTimeout(nahod, 900)); };
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
+  })();
+
+  /* Dotazník: ukázka – kontrola povinných polí, fokus na první chybné, nic se neodesílá. */
+  (function () {
+    var f = document.querySelector('[data-formular="dotaz"]'), h = document.getElementById('hlaska');
+    function chyba(el, ano) {
+      el.setAttribute('aria-invalid', ano ? 'true' : 'false');
+      document.getElementById(el.getAttribute('aria-describedby')).hidden = !ano;
+    }
+    function spatne(el) {
+      var v = el.value.trim();
+      if (el.required && !v) return true;
+      if (el.type === 'email' && v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return true;
+      return false;
+    }
+    f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var prvni = null;
+      f.querySelectorAll('input, textarea').forEach(function (el) { var s = spatne(el); chyba(el, s); if (s && !prvni) prvni = el; });
+      if (prvni) { prvni.focus(); h.classList.remove('ukazka'); h.textContent = 'Please fill in the highlighted fields.'; return; }
+      h.classList.add('ukazka'); h.textContent = 'Thank you, we’ll get back to you soon.';
+    });
+    f.addEventListener('input', function (e) { if (e.target.getAttribute('aria-invalid') === 'true' && !spatne(e.target)) chyba(e.target, false); });
+  })();
+
+  /* Rady a tipy: rozbalení článku. Text je v HTML (hidden="until-found" – prohlížeč ho najde i hledáním na stránce a sám rozbalí).
+     Odkaz na článek (#rada-…) ho rovnou otevře. */
+  (function () {
+    var tl = document.querySelectorAll('.clanek .rozbalit');
+    function nastav(b, o) {
+      var t = document.getElementById(b.getAttribute('aria-controls'));
+      b.setAttribute('aria-expanded', o ? 'true' : 'false');
+      if (o) t.removeAttribute('hidden'); else t.setAttribute('hidden', 'until-found');
+    }
+    tl.forEach(function (b) {
+      b.addEventListener('click', function () { nastav(b, b.getAttribute('aria-expanded') !== 'true'); });
+      document.getElementById(b.getAttribute('aria-controls')).addEventListener('beforematch', function () { nastav(b, true); });
+    });
+    function zOdkazu() {
+      var c = location.hash && /^#rada-[a-z-]+$/.test(location.hash) && document.querySelector(location.hash);
+      if (!c || !c.classList.contains('clanek')) return;
+      nastav(c.querySelector('.rozbalit'), true);
+      /* posun podle rozvržení (offsetTop), ne podle rámečku: články při odhalení ještě dojíždějí o 22 px */
+      var y = 0, el = c; while (el) { y += el.offsetTop; el = el.offsetParent; }
+      window.scrollTo(0, y - 16);
+    }
+    window.addEventListener('hashchange', zOdkazu); zOdkazu();
+    window.addEventListener('load', function () { setTimeout(zOdkazu, 0); });
+  })();
+</script>
+<script defer="" src="{{ A }}zaklad.js"></script>
+
+<script id="sluzby-vychozi" type="application/json">
+[
+  {"id": "revize", "nazev": "Electrical inspections", "popis": "Safety reports for selling or letting a property, and periodic checks on older installations."},
+  {"id": "rozvody", "nazev": "Rewiring and renovations", "popis": "When the walls are open, it’s the best time to replace the wiring too. We design circuits with room for more appliances."},
+  {"id": "rozvadece", "nazev": "Consumer units and breakers", "popis": "Replacing old fuses with breakers, adding RCD protection and clear labelling in the consumer unit."},
+  {"id": "poruchy", "nazev": "Faults and repairs", "popis": "A dead socket, a flickering light or a burnt-out switch. We fix it and tell you why it happened."}
+]
+</script>
+
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Chewed or damaged cable: what to do?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Na poškozené místo nesahejte. Kabely v domácnosti nejčastěji poškodí domácí zvířata nebo hlodavci, nábytek přisunutý ke zdi nebo dveře, které šňůru přivřou. Když je izolace prokousnutá nebo prasklá, může být vidět holý vodič. Ten je pod napětím, dokud je kabel zapojený. Nebezpečný může být i kabel, na kterém zvenku skoro nic není vidět. Stačí, že je izolace uvnitř zmáčknutá nebo naříznutá. Na poškozené místo proto nesahejte a držte od něj děti i zvířata. Co udělat hned. Pokud jde o šňůru spotřebiče nebo prodlužovačku a zástrčka je nepoškozená a dobře dosažitelná, vytáhněte ji ze zásuvky. Mějte suché ruce, stůjte na suché podlaze a tahejte za tělo zástrčky, nikdy za kabel. Když vede poškozený kabel pevně ve zdi nebo v liště, když je poškozená i zástrčka, nebo když na ni bezpečně nedosáhnete, vypněte v rozvaděči jistič okruhu, na kterém kabel je. Pokud nevíte který, vypněte hlavní vypínač. Spotřebič s poškozenou šňůrou už znovu nezapojujte. Proč ne izolepa. Izolepa kabelu vrátí jen vzhled, ne bezpečnost. Neobnoví původní izolaci ani pevnost kabelu, časem se uvolní a poškození pod ní se může dál zhoršovat. Zalepený kabel navíc vypadá v pořádku, a proto na něj snadno zapomenete. Stejně riskantní je kabel doma stříhat a spojovat. Jak to vyřeší elektrikář. Elektrikář posoudí, jak daleko poškození sahá. U šňůry spotřebiče nebo prodlužovačky je obvykle nejbezpečnější vyměnit celý kabel. U vedení ve zdi zkontroluje i zbytek okruhu a po opravě měřením ověří, že je instalace v pořádku. Když jde o spotřebič, poradí, jestli se oprava vyplatí, nebo patří do servisu. Když proud někoho zasáhl. Na zasaženého nesahejte, dokud je ve styku s vodičem. Nejdřív vypněte proud jističem nebo hlavním vypínačem a pak volejte záchrannou službu na 155 nebo 112. I když se zdá, že je v pořádku, měl by ho prohlédnout lékař."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Why does my breaker keep tripping?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Jistič chrání, nevypadává jen tak. Jistič vypne okruh, když jím teče větší proud, než na jaký je okruh stavěný, nebo když vznikne zkrat. Proudový chránič, který bývá v rozvaděči vedle jističů a má testovací tlačítko, hlídá něco jiného: vypne, když část proudu uniká mimo okruh, například přes vlhkost nebo poškozenou izolaci. Obojí chrání vás i instalaci. To, že vypadávají, je signál, že je někde problém. Nejčastější příčiny. Přetížený okruh: na jednom okruhu běží naráz víc výkonných spotřebičů, třeba rychlovarná konvice, mikrovlnka a přímotop. Vadný spotřebič: zkrat nebo poškozená izolace uvnitř spotřebiče nebo v jeho šňůře. Vlhkost: voda v zásuvce nebo krabici, venkovní zásuvka po dešti, vlhká koupelna nebo sklep. Porucha vedení: uvolněný spoj, poškozený kabel ve zdi nebo dosluhující staré rozvody. Vadný může být i samotný jistič nebo chránič. To ale pozná až měření. Co můžete udělat sami. Odpojte ze zásuvek na postiženém okruhu všechny spotřebiče a jistič zkuste nahodit jednou. Když drží, zapojujte spotřebiče postupně po jednom. Ten, po kterém jistič znovu vypadne, dál nepoužívejte. Když jistič vypadne hned, i když je všechno odpojené, nebo vypadává opakovaně, nezkoušejte ho nahazovat pořád dokola. Nedržte páčku násilím nahoře a nikdy jistič neměňte za „silnější“ – okruh by pak nebyl chráněný. Pokud cítíte spáleninu, slyšíte praskání nebo vidíte stopy ohně, nechte jistič vypnutý a volejte rovnou odborníka. Co udělá elektrikář. Elektrikář okruh proměří: zkontroluje stav izolace vedení, spoje, jističe i chrániče a podívá se, co všechno na okruhu běží. Podle výsledku navrhne řešení sítě – opravu konkrétní závady, rozdělení přetíženého okruhu na víc menších, samostatný okruh pro výkonné spotřebiče, doplnění proudového chrániče nebo úpravu rozvaděče. Dostanete vysvětlení, proč jistič vypadával, a co doporučujeme dál."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What to do if a socket gets hot or sparks?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Přestaňte zásuvku hned používat. Zásuvka ani zástrčka by při běžném provozu neměly být znatelně teplé. Když hřejí, jiskří, praskají, zapáchají spáleninou nebo je plast kolem nich zabarvený či zdeformovaný, závada už probíhá. Nečekejte, jestli se to zopakuje. Postup krok za krokem. V rozvaděči vypněte jistič okruhu, na kterém zásuvka je. Když nevíte který, vypněte hlavní vypínač. Teprve potom vytáhněte zástrčku. Pokud je zásuvka horká nebo poškozená, nechte ji nejdřív vychladnout. Zásuvku do kontroly nepoužívejte a upozorněte ostatní v domácnosti, ať jistič nenahazují. Když se objeví kouř nebo plamen, odejděte z místnosti a volejte hasiče na 150 nebo 112. Zařízení pod napětím nehaste vodou. Proč zásuvka hřeje. Nejčastěji jde o uvolněný nebo zoxidovaný spoj ve svorce, o opotřebované kontakty, které zástrčku drží jen volně, nebo o přetížení – třeba když jsou přes rozbočovače a prodlužovačky zapojené výkonné spotřebiče. Na vině může být i poškozená zástrčka spotřebiče. Špatný spoj klade proudu odpor a zahřívá se. Teplo pak postupně poškozuje izolaci i plast kolem, takže se problém sám od sebe nezlepší, spíš naopak. Varovné je i to, když zástrčka v zásuvce drží volně nebo když lampa zapojená do zásuvky bliká, jakmile se zástrčky dotknete. Čemu se vyhnout. Nezapojujte do jedné zásuvky přes rozbočovač víc výkonných spotřebičů, jako je přímotop, rychlovarná konvice nebo fén. Nezapojujte prodlužovačky a rozbočovače za sebe. Prodlužovačku na navijáku při větším zatížení rozviňte celou, namotaný kabel se zahřívá víc. Nepoužívejte zásuvku s prasklým nebo uvolněným krytem. Co udělá elektrikář. Elektrikář zásuvku otevře, zkontroluje svorky a přívodní vodiče a podle stavu ji opraví nebo vymění. Prověří i zástrčku spotřebiče, který byl zapojený, a zatížení celého okruhu. Pokud je zásuvka dlouhodobě přetěžovaná, navrhne další zásuvky nebo samostatný okruh, aby se situace neopakovala."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "When do you need an electrical safety inspection?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Co je revize. Revize je odborná prohlídka elektroinstalace spojená s měřením a zkouškami. Dělá ji revizní technik s platným osvědčením a výsledek shrne v revizní zprávě: v jakém stavu instalace je, jaké závady našel a jestli je instalace schopná bezpečného provozu. Revize sama nic neopravuje. Zjištěné závady technik zapíše do zprávy a jejich odstranění je další krok. Zpráva vám tak dá přehled, co je potřeba opravit. Kdy je revize nutná. Nová elektroinstalace se musí před uvedením do provozu zrevidovat. Totéž platí, když se stávající instalace rozšiřuje nebo mění, třeba při rekonstrukci bytu, přidání okruhů nebo výměně rozvaděče. Této první revizi se říká výchozí a revizní zprávu z ní budete potřebovat i ke kolaudaci nové stavby. Kdy se revize vyplatí. Koupě nebo prodej nemovitosti: revizní zpráva ukáže skutečný stav rozvodů. Kupující ví, do čeho jde, a prodávající má stav doložený. Staré rozvody: hliníkové vodiče nebo starší rozvody bez ochranného vodiče, které se dřív běžně používaly, stojí za kontrolu, i když zatím fungují. Pojištění: při škodě způsobené závadou elektroinstalace, třeba při požáru, může pojišťovna zkoumat stav instalace. Co přesně požaduje, najdete v pojistných podmínkách. Po zatopení nebo požáru a po jakémkoli poškození, kdy si nejste jistí, jestli instalace neutrpěla. Jak často. Lhůtu další pravidelné revize doporučí revizní technik přímo v revizní zprávě podle typu stavby a způsobu používání. Termín tedy nemusíte odhadovat, stačí se podívat do poslední zprávy. Když žádnou nemáte, je to samo o sobě dobrý důvod revizi objednat. Jak se připravit. Zajistěte přístup k rozvaděči a do všech místností. Pokud máte starší revizní zprávy nebo dokumentaci k instalaci, připravte je. Během revize je obvykle potřeba na chvíli vypnout proud, takže počítejte s krátkou přestávkou."
+   }
+  }
+ ]
+}
+</script>
+<p class="pz-credit">Website draft by: <a href="{{ owner_site }}" rel="noopener">{{ owner_name }}</a> · Photos: Unsplash</p>
+{% if show_banner %}<div class="pz-pv" id="pz-pv" role="note"><span>Non-binding draft of a new website for <strong>{{ name }}</strong> · prepared by {{ owner_name }}</span>
+<a class="pz-cta" href="{{ want_url }}">I want this website</a>{% if wa_url %}<a class="pz-cta" href="{{ wa_url }}" rel="noopener" target="_blank">WhatsApp</a>{% endif %}
+<button data-pz-skryt="" type="button">Hide</button></div>{% endif %}
+<script id="pz-js">(function(){
+var pv=document.getElementById('pz-pv');if(pv){var x=pv.querySelector('[data-pz-skryt]');x&&x.addEventListener('click',function(){pv.classList.add('pz-skryt');});}
+var HOOK="{{ form_webhook_url }}",LEAD="{{ lead_id }}";
+function lab(f,el){var l=el.id&&f.querySelector('label[for="'+el.id+'"]');if(!l)l=el.closest('label');var s=(l?l.textContent:'')||el.name||'';return s.replace(/\s+/g,' ').replace(/\*/g,'').trim();}
+document.addEventListener('submit',function(e){var f=e.target;if(!f||f.tagName!=='FORM'||f.hasAttribute('data-pz-ignore')||!HOOK)return;
+  var d={lead_id:LEAD,source:'preview',name:'',email:'',phone:'',message:''},rest=[],seen={};
+  Array.prototype.forEach.call(f.elements,function(el){ if(!el.name||el.type==='submit'||el.type==='button')return; if((el.type==='checkbox'||el.type==='radio')&&!el.checked)return;
+   var v=(el.value||'').trim(); if(!v)return; var n=el.name.toLowerCase();
+   if(/^(jmeno|name|jmeno_prijmeni)$/.test(n))d.name=v; else if(/^(email|e-mail)$/.test(n))d.email=v; else if(/^(telefon|phone|tel)$/.test(n))d.phone=v;
+   else {var k=lab(f,el)||el.name; if(seen[k]){seen[k].push(v);}else{seen[k]=[v];rest.push(k);}} });
+  d.message=rest.map(function(k){return k+': '+seen[k].join(', ');}).join('\n');
+  setTimeout(function(){ if(f.querySelector('[aria-invalid="true"],.chyba,.is-invalid'))return; if(!f.hasAttribute('novalidate')&&!f.checkValidity())return; if(!d.name&&!d.email&&!d.phone)return;
+   try{fetch(HOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});}catch(err){}
+  },0);
+},true);
+})();</script></body>
+</html>
