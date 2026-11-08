@@ -24,8 +24,8 @@ class AuditHtmlTests(unittest.TestCase):
             self.assertIn(k, keys)
         self.assertGreaterEqual(res.score, 80)
         self.assertEqual(res.branch, "redesign")
-        self.assertEqual(res.emails[0], "info@instalaterstvi-novak.cz")
-        self.assertIn("josef.novak@seznam.cz", res.emails)
+        self.assertEqual(res.emails[0], "info@example.com")
+        self.assertIn("josef.novak@example.com", res.emails)
         # sorted by weight desc
         weights = [r.weight for r in res.reasons]
         self.assertEqual(weights, sorted(weights, reverse=True))
@@ -42,7 +42,7 @@ class AuditHtmlTests(unittest.TestCase):
         self.assertEqual(res.lang, "cs")
         self.assertLess(res.score, 20)
         self.assertEqual(res.branch, "skip")
-        self.assertEqual(res.emails, ["servis@autoservis-dvorak.cz"])
+        self.assertEqual(res.emails, ["servis@example.com"])
 
     def test_parked_site_is_no_website(self):
         html = (FIX / "parked_site.html").read_text(encoding="utf-8")

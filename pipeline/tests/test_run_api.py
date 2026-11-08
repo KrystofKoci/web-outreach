@@ -63,8 +63,8 @@ class ProcessLeadTests(unittest.TestCase):
                                         "primary_type": "car_repair"}, settings=s, with_screenshots=False, with_llm=False)
             self.assertEqual(out["branch"], "skip")
             self.assertFalse(out["built"])
-            self.assertEqual(out["best_email"], "servis@autoservis-dvorak.cz")
-            self.assertEqual(out["emails"], ["servis@autoservis-dvorak.cz"])
+            self.assertEqual(out["best_email"], "servis@example.com")
+            self.assertEqual(out["emails"], ["servis@example.com"])
 
 
 class ApiDispatchTests(unittest.TestCase):
